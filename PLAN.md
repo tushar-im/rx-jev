@@ -29,7 +29,12 @@ safe, allowed, or right for anyone.
    - **Stance**, a Choice over the five answer categories.
    - **Evidence**, a Choice over candidate sentence IDs plus `none`. Select, never generate.
 6. **Store the full probability distributions**, keyed by label `set_id` and `version`.
-7. **Serve from the store.** Only custom questions call Jev live.
+7. **Serve from the store, compute on a miss.** A miss means no stored judgments exist for
+   this label `set_id`, `version`, prompt hash and model version. On a miss, the API runs
+   step 5 for all standard questions in one request, stores the result, then serves it.
+   Answers not yet checked by a pharmacist carry `reviewed: false`. If Jev fails, the API
+   returns a 503 Problem Details response and stores nothing. It never serves a partial or
+   guessed answer. Custom questions always call Jev live and are never stored as reviewed.
 
 ### Answer categories
 
@@ -117,7 +122,9 @@ tests and lint green on both sides.
 
 - M2.1 Judge module: builds stance and evidence questions from the catalog.
 - M2.2 Store module: persist distributions keyed by label version.
-- M2.3 `GET /api/labels/{rxcui}/answers` serves stored judgments, computing on first miss.
+- M2.3 `GET /api/labels/{rxcui}/answers` serves stored judgments. On a miss it computes
+  and stores all standard questions for that label version, with `reviewed: false`, as
+  defined in step 7 above. A Jev failure returns 503 Problem Details.
 - M2.4 Batch script: precompute the review set of 100 common drugs.
 
 **Needs:** a TypeSafe API key, and Jev's maximum input size confirmed from the docs.

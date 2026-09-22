@@ -168,3 +168,40 @@ def test_no_ingredients_is_rejected() -> None:
 )
 def test_matches_ingredients(substances: list[str], ingredients: list[str], expected: bool) -> None:
     assert matches_ingredients(substances, ingredients) is expected
+
+
+def test_keeps_paging_with_growing_pages_until_results_run_out() -> None:
+    combos = [fake_label(f"combo-{n}", ["IBUPROFEN", "FAMOTIDINE"]) for n in range(60)]
+    results = [*combos, fake_label("late-single", ["IBUPROFEN"])]
+    limits: list[str] = []
+
+    def paged(request: httpx.Request) -> httpx.Response:
+        params = request.url.params
+        if (
+            "HUMAN OTC DRUG" not in params["search"]
+            or "is_original_packager" not in params["search"]
+        ):
+            return httpx.Response(404, json={"error": {"code": "NOT_FOUND"}})
+        limits.append(params["limit"])
+        skip, limit = int(params["skip"]), int(params["limit"])
+        return httpx.Response(200, json={"results": results[skip : skip + limit]})
+
+    labels = make_client(httpx.MockTransport(paged)).canonical_labels(["ibuprofen"])
+
+    assert labels.otc is not None
+    assert labels.otc.set_id == "late-single"
+    assert labels.otc.is_original_packager is True
+    assert limits == ["5", "25", "100"]
+
+
+def test_no_exact_match_after_exhausting_results_falls_back_then_returns_none() -> None:
+    combos = [fake_label(f"combo-{n}", ["IBUPROFEN", "FAMOTIDINE"]) for n in range(40)]
+
+    def paged(request: httpx.Request) -> httpx.Response:
+        params = request.url.params
+        if "HUMAN OTC DRUG" not in params["search"]:
+            return httpx.Response(404, json={"error": {"code": "NOT_FOUND"}})
+        skip, limit = int(params["skip"]), int(params["limit"])
+        return httpx.Response(200, json={"results": combos[skip : skip + limit]})
+
+    assert make_client(httpx.MockTransport(paged)).canonical_labels(["ibuprofen"]).otc is None

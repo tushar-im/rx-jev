@@ -23,6 +23,8 @@ router = APIRouter(prefix="/api/labels", tags=["labels"])
 class CandidateView(BaseModel):
     id: str
     text: str
+    # Verbatim governing text for a bullet item. Show it with the candidate, never drop it.
+    lead_in: str | None
 
 
 class QuestionSections(BaseModel):
@@ -94,7 +96,7 @@ def _view(label: Label) -> LabelView:
         questions=questions,
         sections={
             name: [
-                CandidateView(id=c.id, text=c.text)
+                CandidateView(id=c.id, text=c.text, lead_in=c.lead_in.text if c.lead_in else None)
                 for c in split_section(name, label.sections[name])
             ]
             for name in referenced

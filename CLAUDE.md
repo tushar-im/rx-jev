@@ -27,6 +27,8 @@ make lint          # ruff check/format + oxlint + tsc
   Headings say "What the label says about X".
 - Never generate or paraphrase label text. Jev selects a candidate sentence by ID and the UI
   shows that sentence verbatim.
+- When a candidate has a `lead_in` (the text a bullet item hangs off, such as "contraindicated
+  in patients with:"), show it with the candidate, both verbatim. Never show the item alone.
 - Keep `not_mentioned` and `no_known_issue` as separate categories everywhere: model
   questions, storage, API schema, UI.
 - Low confidence shows the "couldn't find a clear answer" state, never the top guess.

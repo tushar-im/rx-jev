@@ -180,7 +180,8 @@ def get_question(question_id: str) -> Question:
 
 
 def label_format(label: Label) -> LabelFormat:
-    return "otc" if _OTC_MARKERS & label.sections.keys() else "prescription"
+    has_otc_marker = any(label.sections.get(marker, "").strip() for marker in _OTC_MARKERS)
+    return "otc" if has_otc_marker else "prescription"
 
 
 def candidate_sections(question_id: QuestionId, label: Label) -> list[str]:

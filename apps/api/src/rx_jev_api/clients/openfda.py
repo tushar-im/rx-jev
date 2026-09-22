@@ -7,6 +7,7 @@ openFDA holds hundreds of labels per ingredient, one per repackager. The canonic
 Run separately for OTC and prescription labels.
 """
 
+from collections.abc import Iterator
 from datetime import date, datetime
 from typing import Literal
 
@@ -23,10 +24,16 @@ __all__ = [
     "OpenFdaClient",
     "UpstreamError",
     "matches_ingredients",
+    "page_sizes",
 ]
 
+# The first page is small because the canonical label is usually near the top and
+# prescription labels are large. Later pages grow so a long tail of combination products
+# cannot hide an exact match, and paging runs until results are exhausted.
 PAGE_SIZE = 5
-MAX_PAGES = 4
+_LATER_PAGE_SIZES = (25, 100)
+# openFDA refuses skip values above this.
+_MAX_SKIP = 25_000
 DAILYMED_URL = "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid="
 
 ProductType = Literal["otc", "prescription"]
@@ -83,6 +90,13 @@ class _SearchResponse(BaseModel):
     results: list[_RawLabel] = []
 
 
+def page_sizes() -> Iterator[int]:
+    yield PAGE_SIZE
+    yield from _LATER_PAGE_SIZES
+    while True:
+        yield _LATER_PAGE_SIZES[-1]
+
+
 def matches_ingredients(substances: list[str], ingredients: list[str]) -> bool:
     """True when each ingredient pairs with exactly one substance and none are left over.
 
@@ -125,19 +139,23 @@ class OpenFdaClient:
 
     def _first_match(self, search: str, ingredients: list[str]) -> _RawLabel | None:
         # Results come newest first, so the first exact match is the canonical label.
-        for page in range(MAX_PAGES):
-            results = self._search(search, skip=page * PAGE_SIZE)
+        skip = 0
+        for limit in page_sizes():
+            if skip > _MAX_SKIP:
+                raise UpstreamError("openFDA result set too large to search for a canonical label")
+            results = self._search(search, skip=skip, limit=limit)
             for raw in results:
                 if matches_ingredients(raw.openfda.substance_name, ingredients):
                     return raw
-            if len(results) < PAGE_SIZE:
+            if len(results) < limit:
                 return None
+            skip += limit
         return None
 
-    def _search(self, search: str, skip: int) -> list[_RawLabel]:
+    def _search(self, search: str, skip: int, limit: int) -> list[_RawLabel]:
         params: dict[str, str | int] = {
             "search": search,
-            "limit": PAGE_SIZE,
+            "limit": limit,
             "skip": skip,
             "sort": "effective_time:desc",
         }

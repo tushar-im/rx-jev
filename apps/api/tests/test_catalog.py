@@ -104,3 +104,13 @@ def test_section_order_follows_the_catalog_not_the_label() -> None:
     label = label_with({"warnings": "W.", "ask_doctor": "A.", "do_not_use": "D."})
 
     assert candidate_sections("diabetes", label) == ["do_not_use", "ask_doctor", "warnings"]
+
+
+def test_blank_otc_marker_does_not_flip_a_prescription_label_to_otc() -> None:
+    label = label_with(
+        {"do_not_use": "  ", "boxed_warning": "WARNING: LACTIC ACIDOSIS."},
+        product_type="prescription",
+    )
+
+    assert label_format(label) == "prescription"
+    assert candidate_sections("boxed_warning", label) == ["boxed_warning"]

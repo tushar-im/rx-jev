@@ -74,7 +74,7 @@ def test_sections_hold_verbatim_candidates_for_referenced_sections_only(
     candidate = otc["sections"]["pregnancy_or_breast_feeding"][0]
     assert candidate["id"] == "pregnancy_or_breast_feeding:1"
     assert candidate["text"].startswith("If pregnant or breast-feeding")
-    assert set(candidate) == {"id", "text"}
+    assert set(candidate) == {"id", "text", "lead_in"}
 
 
 def test_combination_rxcui_resolves_its_ingredients(client: TestClient) -> None:
@@ -121,3 +121,12 @@ def test_upstream_failure_is_502_problem_without_leaking(client: TestClient) -> 
     assert response.headers["content-type"].startswith(PROBLEM_JSON)
     assert response.json()["detail"] == "A drug data source is unavailable. Try again later."
     assert "secret" not in response.text
+
+
+def test_bullet_candidates_expose_their_lead_in(client: TestClient) -> None:
+    label = client.get("/api/labels/6809").json()["labels"][0]
+    candidates = label["sections"]["contraindications"]
+
+    item = next(c for c in candidates if c["text"] == "Hypersensitivity to metformin.")
+    assert item["lead_in"] is not None
+    assert item["lead_in"].endswith("is contraindicated in patients with:")

@@ -116,3 +116,92 @@ def test_every_candidate_is_a_verbatim_span_of_real_label_text(
                     checked += 1
 
     assert checked > 500
+
+
+def lead_ins(section: str, text: str) -> list[tuple[str, str | None]]:
+    return [(c.text, c.lead_in.text if c.lead_in else None) for c in split_section(section, text)]
+
+
+def test_bullets_carry_their_governing_lead_in() -> None:
+    text = (
+        "Metformin is contraindicated in patients with: • Severe renal impairment. "
+        "• Hypersensitivity to metformin."
+    )
+
+    assert lead_ins("contraindications", text) == [
+        ("Metformin is contraindicated in patients with:", None),
+        ("Severe renal impairment.", "Metformin is contraindicated in patients with:"),
+        ("Hypersensitivity to metformin.", "Metformin is contraindicated in patients with:"),
+    ]
+
+
+def test_otc_heading_without_colon_is_a_lead_in() -> None:
+    assert lead_ins(
+        "stop_use", "Stop use and ask a doctor if • you feel faint • pain gets worse"
+    ) == [
+        ("Stop use and ask a doctor if", None),
+        ("you feel faint", "Stop use and ask a doctor if"),
+        ("pain gets worse", "Stop use and ask a doctor if"),
+    ]
+
+
+def test_nested_list_uses_inner_lead_in_and_self_contained_items_use_outer() -> None:
+    text = (
+        "Directions ■ do not take more than directed ■ adults and children 12 years and older: "
+        "■ take 1 tablet every 4 to 6 hours ■ do not exceed 6 tablets in 24 hours "
+        "■ children under 12 years: ask a doctor"
+    )
+
+    assert lead_ins("dosage_and_administration", text) == [
+        ("Directions", None),
+        ("do not take more than directed", "Directions"),
+        ("adults and children 12 years and older:", "Directions"),
+        ("take 1 tablet every 4 to 6 hours", "adults and children 12 years and older:"),
+        ("do not exceed 6 tablets in 24 hours", "adults and children 12 years and older:"),
+        ("children under 12 years: ask a doctor", "Directions"),
+    ]
+
+
+def test_new_list_after_prose_takes_a_new_lead_in() -> None:
+    text = (
+        "Intro: • Geriatric Use: Assess renal function. Other prose here. "
+        "Use caution in patients with: • heart failure • sepsis"
+    )
+
+    assert lead_ins("w", text)[-2:] == [
+        ("heart failure", "Use caution in patients with:"),
+        ("sepsis", "Use caution in patients with:"),
+    ]
+
+
+def test_prose_and_later_sentences_in_an_item_have_no_lead_in() -> None:
+    result = lead_ins("w", "Intro: • First item. Trailing prose.")
+
+    assert result == [("Intro:", None), ("First item.", "Intro:"), ("Trailing prose.", None)]
+
+
+def test_lead_in_is_a_verbatim_span(recorded_labels: list[CanonicalLabels]) -> None:
+    checked = 0
+    for canonical in recorded_labels:
+        for label in (canonical.otc, canonical.prescription):
+            if label is None:
+                continue
+            for section, text in label.sections.items():
+                for c in split_section(section, text):
+                    if c.lead_in is not None:
+                        assert c.lead_in.text == text[c.lead_in.start : c.lead_in.end]
+                        assert c.lead_in.end <= c.start
+                        checked += 1
+
+    assert checked > 20
+
+
+def test_company_and_country_abbreviations_do_not_split() -> None:
+    text = (
+        "Made by Acme Pvt. Ltd. Sangareddy, India. Report to the U.S. Food and Drug Administration."
+    )
+
+    assert texts("w", text) == [
+        "Made by Acme Pvt. Ltd. Sangareddy, India.",
+        "Report to the U.S. Food and Drug Administration.",
+    ]

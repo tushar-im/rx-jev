@@ -1,70 +1,72 @@
 """Record openFDA label search pages as test fixtures.
 
-Run: uv run python scripts/record_openfda.py
+Run: uv run python scripts/record_openfda.py [output_dir]
 
-Replays the canonical-label search strategy for a handful of drugs and saves every page
-it touches. To keep fixtures small, label sections are dropped from every result except
-the first exact ingredient match in each search, which is the label the tests expect.
+Drives the real OpenFdaClient through a recording transport, so the recorded requests are
+exactly the ones the client makes. An upstream failure (429, 5xx) raises UpstreamError and
+aborts the run instead of being recorded as "no match". To keep fixtures small, label
+sections are dropped from every result except the selected canonical labels.
 """
 
 import hashlib
 import json
+import sys
 from pathlib import Path
 
 import httpx
 
+from rx_jev_api.clients.openfda import OpenFdaClient
+
 BASE = "https://api.fda.gov"
-OUT = Path(__file__).parent.parent / "tests" / "fixtures" / "openfda"
-PAGE_SIZE = 5
-MAX_PAGES = 4
-PRODUCT_TYPES = ["HUMAN OTC DRUG", "HUMAN PRESCRIPTION DRUG"]
+DEFAULT_OUT = Path(__file__).parent.parent / "tests" / "fixtures" / "openfda"
 CASES = [["ibuprofen"], ["metformin"], ["acetaminophen", "diphenhydramine"], ["loratadine"]]
 METADATA = {"id", "set_id", "version", "effective_time", "openfda"}
 
 
-def fixture_name(search: str, skip: int) -> str:
-    return hashlib.sha1(f"{search}|{skip}|{PAGE_SIZE}".encode()).hexdigest()[:12] + ".json"
+def fixture_name(request: httpx.Request) -> str:
+    # Must match tests/recorded.py.
+    params = request.url.params
+    key = f"{params['search']}|{params['skip']}|{params['limit']}"
+    return hashlib.sha1(key.encode()).hexdigest()[:12] + ".json"
 
 
-def is_exact(label: dict, ingredients: list[str]) -> bool:
-    subs = [s.upper() for s in label.get("openfda", {}).get("substance_name", [])]
-    wanted = [i.upper() for i in ingredients]
-    return len(subs) == len(wanted) and all(
-        any(s == w or s.startswith(w + " ") for s in subs) for w in wanted
-    )
+class RecordingTransport(httpx.BaseTransport):
+    def __init__(self) -> None:
+        self._inner = httpx.HTTPTransport()
+        self.pages: dict[str, dict] = {}
 
-
-def record(client: httpx.Client, search: str, ingredients: list[str]) -> bool:
-    for page in range(MAX_PAGES):
-        skip = page * PAGE_SIZE
-        params = {"search": search, "limit": PAGE_SIZE, "skip": skip, "sort": "effective_time:desc"}
-        response = client.get("/drug/label.json", params=params)
-        body = response.json()
-        found = False
-        for label in body.get("results", []):
-            if not found and is_exact(label, ingredients):
-                found = True
-                continue
-            for key in list(label):
-                if key not in METADATA:
-                    del label[key]
-        envelope = {"status": response.status_code, "body": body}
-        (OUT / fixture_name(search, skip)).write_text(json.dumps(envelope, indent=1) + "\n")
-        print(f"{response.status_code} skip={skip} found={found} {search}")
-        if found or response.status_code != 200 or len(body.get("results", [])) < PAGE_SIZE:
-            return found
-    return False
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        response = self._inner.handle_request(request)
+        response.read()
+        if response.status_code in (200, 404):
+            self.pages[fixture_name(request)] = {
+                "status": response.status_code,
+                "body": response.json(),
+            }
+        return response
 
 
 def main() -> None:
-    OUT.mkdir(parents=True, exist_ok=True)
-    with httpx.Client(base_url=BASE, timeout=60) as client:
+    out = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_OUT
+    transport = RecordingTransport()
+    winners: set[str] = set()
+    with httpx.Client(transport=transport, base_url=BASE, timeout=60) as http:
+        client = OpenFdaClient(http)
         for ingredients in CASES:
-            for product_type in PRODUCT_TYPES:
-                base = " AND ".join(f'openfda.substance_name:"{i}"' for i in ingredients)
-                base += f' AND openfda.product_type:"{product_type}"'
-                if not record(client, base + " AND openfda.is_original_packager:true", ingredients):
-                    record(client, base, ingredients)
+            labels = client.canonical_labels(ingredients)
+            for label in (labels.otc, labels.prescription):
+                if label is not None:
+                    winners.add(label.set_id)
+                    print(f"{' + '.join(ingredients)}: {label.product_type} {label.set_id}")
+
+    out.mkdir(parents=True, exist_ok=True)
+    for name, envelope in transport.pages.items():
+        for result in envelope["body"].get("results", []):
+            if result.get("set_id") not in winners:
+                for key in [k for k in result if k not in METADATA]:
+                    del result[key]
+        (out / name).write_text(json.dumps(envelope, indent=1) + "\n")
+    print(f"Wrote {len(transport.pages)} pages to {out}")
 
 
 if __name__ == "__main__":

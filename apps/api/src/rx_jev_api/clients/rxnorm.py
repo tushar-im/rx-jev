@@ -67,12 +67,7 @@ class RxNormClient:
             return None
         matched = lookup.idGroup.rxnormId[0]
 
-        related = self._get(_RelatedResponse, f"/rxcui/{matched}/related.json", {"tty": "IN MIN"})
-        by_tty = {g.tty: g.conceptProperties for g in related.relatedGroup.conceptGroup}
-        ingredients = sorted(
-            (Ingredient(rxcui=c.rxcui, name=c.name) for c in by_tty.get("IN", [])),
-            key=lambda i: i.name,
-        )
+        ingredients, mins = self._related(matched)
         if not ingredients:
             return None
 
@@ -80,8 +75,22 @@ class RxNormClient:
             query=query,
             matched_rxcui=matched,
             ingredients=ingredients,
-            rxcui=_ingredient_set_rxcui(ingredients, by_tty.get("MIN", [])),
+            rxcui=_ingredient_set_rxcui(ingredients, mins),
         )
+
+    def ingredients_of(self, rxcui: str) -> list[Ingredient]:
+        """Ingredients of any RxNorm concept; empty when RxNorm does not know the RxCUI."""
+        ingredients, _ = self._related(rxcui)
+        return ingredients
+
+    def _related(self, rxcui: str) -> tuple[list[Ingredient], list[_Concept]]:
+        related = self._get(_RelatedResponse, f"/rxcui/{rxcui}/related.json", {"tty": "IN MIN"})
+        by_tty = {g.tty: g.conceptProperties for g in related.relatedGroup.conceptGroup}
+        ingredients = sorted(
+            (Ingredient(rxcui=c.rxcui, name=c.name) for c in by_tty.get("IN", [])),
+            key=lambda i: i.name,
+        )
+        return ingredients, by_tty.get("MIN", [])
 
     def _get[T: BaseModel](self, model: type[T], path: str, params: dict[str, str | int]) -> T:
         try:

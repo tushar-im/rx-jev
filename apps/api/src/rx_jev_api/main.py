@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from rx_jev_api.config import get_settings
 from rx_jev_api.problems import register_problem_handlers
-from rx_jev_api.routers import health
+from rx_jev_api.routers import health, labels
 
 app = FastAPI(title="rx-jev API", version="0.1.0")
 
@@ -16,3 +16,4 @@ app.add_middleware(
 register_problem_handlers(app)
 
 app.include_router(health.router)
+app.include_router(labels.router)

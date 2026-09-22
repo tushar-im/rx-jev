@@ -1,0 +1,269 @@
+{
+  "relatedGroup": {
+    "conceptGroup": [
+      {
+        "conceptProperties": [
+          {
+            "language": "ENG",
+            "name": "ibuprofen",
+            "rxcui": "5640",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "IN",
+            "umlscui": ""
+          }
+        ],
+        "tty": "IN"
+      },
+      {
+        "conceptProperties": [
+          {
+            "language": "ENG",
+            "name": "ibuprofen / phenylephrine",
+            "rxcui": "1007329",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "ibuprofen / vitamin B12",
+            "rxcui": "1007373",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "carisoprodol / ibuprofen",
+            "rxcui": "1007410",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "ibuprofen / lidocaine",
+            "rxcui": "1007482",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "cyclonium / ibuprofen",
+            "rxcui": "1007823",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "hydroxocobalamin / ibuprofen",
+            "rxcui": "1007917",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "homatropine / ibuprofen",
+            "rxcui": "1008079",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "ibuprofen / niacin",
+            "rxcui": "1008170",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "ibuprofen / scopolamine",
+            "rxcui": "1008440",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "ibuprofen / pseudoisocytidine",
+            "rxcui": "1008502",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "ibuprofen / methocarbamol",
+            "rxcui": "1009037",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "caffeine / ergotamine / ibuprofen",
+            "rxcui": "1009128",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "famotidine / ibuprofen",
+            "rxcui": "1100065",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "chlorpheniramine / ibuprofen / phenylephrine",
+            "rxcui": "1310502",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "chondroitin sulfates / glucosamine / ibuprofen",
+            "rxcui": "1597118",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "hydrocodone / ibuprofen",
+            "rxcui": "214627",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "ibuprofen / pseudoephedrine",
+            "rxcui": "214652",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "ibuprofen / menthol",
+            "rxcui": "392617",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "chlorpheniramine / ibuprofen / pseudoephedrine",
+            "rxcui": "404789",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "ibuprofen / oxycodone",
+            "rxcui": "484259",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "diphenhydramine / ibuprofen",
+            "rxcui": "644895",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "ibuprofen / levomenthol",
+            "rxcui": "687386",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "codeine / ibuprofen",
+            "rxcui": "710303",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "ibuprofen / tolperisone",
+            "rxcui": "814985",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "acetaminophen / ibuprofen",
+            "rxcui": "818102",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "carisoprodol / dexamethasone / ibuprofen",
+            "rxcui": "820465",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "chlorzoxazone / ibuprofen",
+            "rxcui": "821036",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          }
+        ],
+        "tty": "MIN"
+      }
+    ],
+    "rxcui": null
+  }
+}

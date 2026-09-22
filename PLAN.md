@@ -119,13 +119,16 @@ Each milestone ends with tests green and a commit tagged with its ID. Stop at ev
 Monorepo, FastAPI health route, Problem Details handlers, React shell with zod client,
 tests and lint green on both sides.
 
-### M1 Label ingestion, no AI
+### M1 Label ingestion, no AI (done)
 
 - M1.1 RxNorm client: name to ingredient and RxCUI, with recorded fixtures.
 - M1.2 openFDA client: canonical label selection rule, with recorded fixtures.
 - M1.3 Section mapper: question ID to section fields for OTC and prescription.
 - M1.4 Sentence splitter: sections to numbered candidate sentences.
 - M1.5 `GET /api/labels/{rxcui}` returns parsed sections and candidates.
+
+Live lookups take 4 to 6 seconds, mostly openFDA search pages. The M2 store absorbs this for
+repeat lookups. A name search endpoint for the UI is left to M3.1.
 
 ### M2 Jev judgments
 

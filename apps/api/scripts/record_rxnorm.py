@@ -8,6 +8,8 @@ import httpx
 BASE = "https://rxnav.nlm.nih.gov/REST"
 OUT = Path(__file__).parent.parent / "tests" / "fixtures" / "rxnorm"
 NAMES = ["Advil", "advill", "metformin", "Tylenol PM", "xyzzynotadrug"]
+# Ingredient-set RxCUIs looked up directly; 0 is not a real concept.
+RXCUIS = ["5640", "214181", "0"]
 
 
 def slug(text: str) -> str:
@@ -27,6 +29,9 @@ def main() -> None:
             for rxcui in lookup["idGroup"].get("rxnormId", []):
                 related = client.get(f"/rxcui/{rxcui}/related.json", params={"tty": "IN MIN"})
                 save(f"related_{rxcui}", related.json())
+        for rxcui in RXCUIS:
+            related = client.get(f"/rxcui/{rxcui}/related.json", params={"tty": "IN MIN"})
+            save(f"related_{rxcui}", related.json())
 
 
 if __name__ == "__main__":

@@ -56,7 +56,8 @@ make lint          # ruff check/format + oxlint + tsc
 
 - TDD: write the failing test first. Never edit an assertion to make a test pass.
 - Unit tests never hit the network. openFDA, RxNorm and TypeSafe responses are recorded
-  as JSON fixtures under `apps/api/tests/fixtures/`.
+  as JSON fixtures under `apps/api/tests/fixtures/`. Re-record with the scripts in
+  `apps/api/scripts/`; tests replay them through `tests/recorded.py`.
 - Test fixtures must contain only public label data. No patient data, real or fake.
 
 ## Workflow

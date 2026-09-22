@@ -92,3 +92,18 @@ def test_network_failure_raises_upstream_error() -> None:
 
     with pytest.raises(UpstreamError):
         client.resolve("Advil")
+
+
+def test_ingredients_of_single_ingredient_rxcui(client: RxNormClient) -> None:
+    assert client.ingredients_of("5640") == [Ingredient(rxcui="5640", name="ibuprofen")]
+
+
+def test_ingredients_of_combination_rxcui(client: RxNormClient) -> None:
+    assert client.ingredients_of("214181") == [
+        Ingredient(rxcui="161", name="acetaminophen"),
+        Ingredient(rxcui="3498", name="diphenhydramine"),
+    ]
+
+
+def test_ingredients_of_unknown_rxcui_is_empty(client: RxNormClient) -> None:
+    assert client.ingredients_of("0") == []

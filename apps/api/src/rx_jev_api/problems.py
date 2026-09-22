@@ -8,6 +8,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from rx_jev_api.clients.errors import UpstreamError
+
 PROBLEM_JSON = "application/problem+json"
 
 logger = logging.getLogger(__name__)
@@ -35,6 +37,11 @@ async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResp
     return problem(422, f"Invalid request: {fields}")
 
 
+async def _upstream_error(request: Request, exc: UpstreamError) -> JSONResponse:
+    logger.warning("Upstream failure on %s %s", request.method, request.url.path, exc_info=exc)
+    return problem(502, "A drug data source is unavailable. Try again later.")
+
+
 async def _unhandled_error(request: Request, exc: Exception) -> JSONResponse:
     # Log the real cause server-side; never send it to the client.
     logger.error("Unhandled exception on %s %s", request.method, request.url.path, exc_info=exc)
@@ -44,6 +51,7 @@ async def _unhandled_error(request: Request, exc: Exception) -> JSONResponse:
 def register_problem_handlers(app: FastAPI) -> None:
     app.add_exception_handler(StarletteHTTPException, _http_error)  # type: ignore[arg-type]
     app.add_exception_handler(RequestValidationError, _validation_error)  # type: ignore[arg-type]
+    app.add_exception_handler(UpstreamError, _upstream_error)  # type: ignore[arg-type]
     # Registered on Exception, Starlette routes this through ServerErrorMiddleware,
     # so it only runs for errors the handlers above did not catch.
     app.add_exception_handler(Exception, _unhandled_error)

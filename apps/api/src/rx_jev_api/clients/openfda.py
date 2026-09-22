@@ -19,6 +19,7 @@ __all__ = [
     "PAGE_SIZE",
     "CanonicalLabels",
     "Label",
+    "ProductType",
     "OpenFdaClient",
     "UpstreamError",
     "matches_ingredients",

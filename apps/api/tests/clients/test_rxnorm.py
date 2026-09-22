@@ -1,32 +1,13 @@
-import json
-from pathlib import Path
-
 import httpx
 import pytest
 
 from rx_jev_api.clients.rxnorm import Ingredient, RxNormClient, UpstreamError
-
-FIXTURES = Path(__file__).parent.parent / "fixtures" / "rxnorm"
-
-
-def recorded(request: httpx.Request) -> httpx.Response:
-    """Serve recorded RxNorm fixtures; fail loudly on any unrecorded request."""
-    path = request.url.path
-    if path.endswith("/rxcui.json"):
-        name = request.url.params["name"].lower().replace(" ", "_")
-        fixture = FIXTURES / f"rxcui_{name}.json"
-    elif path.endswith("/related.json"):
-        rxcui = path.split("/")[-2]
-        fixture = FIXTURES / f"related_{rxcui}.json"
-    else:
-        raise AssertionError(f"Unexpected request: {request.url}")
-    return httpx.Response(200, json=json.loads(fixture.read_text()))
+from tests.recorded import rxnorm_http
 
 
 @pytest.fixture
 def client() -> RxNormClient:
-    http = httpx.Client(transport=httpx.MockTransport(recorded), base_url="https://rxnav.test")
-    return RxNormClient(http)
+    return RxNormClient(rxnorm_http())
 
 
 def test_brand_name_resolves_to_its_ingredient(client: RxNormClient) -> None:

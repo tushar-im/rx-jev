@@ -1,7 +1,4 @@
-import hashlib
-import json
 from datetime import date
-from pathlib import Path
 
 import httpx
 import pytest
@@ -12,19 +9,7 @@ from rx_jev_api.clients.openfda import (
     UpstreamError,
     matches_ingredients,
 )
-
-FIXTURES = Path(__file__).parent.parent / "fixtures" / "openfda"
-
-
-def recorded(request: httpx.Request) -> httpx.Response:
-    """Serve pages saved by scripts/record_openfda.py; fail on any unrecorded request."""
-    params = request.url.params
-    key = f"{params['search']}|{params['skip']}|{params['limit']}"
-    fixture = FIXTURES / (hashlib.sha1(key.encode()).hexdigest()[:12] + ".json")
-    if not fixture.exists():
-        raise AssertionError(f"Unrecorded request: {params}")
-    envelope = json.loads(fixture.read_text())
-    return httpx.Response(envelope["status"], json=envelope["body"])
+from tests.recorded import openfda_http
 
 
 def make_client(handler: httpx.MockTransport, api_key: str | None = None) -> OpenFdaClient:
@@ -33,7 +18,7 @@ def make_client(handler: httpx.MockTransport, api_key: str | None = None) -> Ope
 
 @pytest.fixture
 def client() -> OpenFdaClient:
-    return make_client(httpx.MockTransport(recorded))
+    return OpenFdaClient(openfda_http())
 
 
 def fake_label(set_id: str, substances: list[str], original: bool = True) -> dict:
@@ -166,7 +151,7 @@ def test_malformed_payload_raises_upstream_error() -> None:
 
 def test_no_ingredients_is_rejected() -> None:
     with pytest.raises(ValueError):
-        make_client(httpx.MockTransport(recorded)).canonical_labels([])
+        OpenFdaClient(openfda_http()).canonical_labels([])
 
 
 @pytest.mark.parametrize(

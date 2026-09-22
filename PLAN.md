@@ -66,21 +66,25 @@ Fixed for every question:
 
 ### Question catalog, v1
 
-Section names are real openFDA fields. OTC and prescription labels use different ones.
+Section names are real openFDA fields, listed in priority order. The code in
+[catalog.py](apps/api/src/rx_jev_api/catalog.py) is the source of truth. The mapper picks the
+column by the sections a label actually has, not its product type metadata. Older
+prescription labels lack `warnings_and_cautions`, so `warnings` and `precautions` stand in
+(shown in italics below).
 
 | Group | Question | OTC sections | Prescription sections |
 |---|---|---|---|
 | Who | Pregnancy | `pregnancy_or_breast_feeding` | `pregnancy`, `use_in_specific_populations` |
 | Who | Breastfeeding | `pregnancy_or_breast_feeding` | `nursing_mothers`, `use_in_specific_populations` |
-| Who | Children | `dosage_and_administration`, `do_not_use` | `pediatric_use` |
+| Who | Children | `do_not_use`, `dosage_and_administration` | `pediatric_use` |
 | Who | Older adults | `ask_doctor`, `dosage_and_administration` | `geriatric_use` |
-| Conditions | Diabetes, high blood pressure, kidney, liver, heart, asthma, glaucoma, enlarged prostate, stomach ulcers | `ask_doctor`, `do_not_use`, `warnings` | `contraindications`, `warnings_and_cautions`, `use_in_specific_populations` |
-| Combinations | Alcohol | `warnings`, `when_using` | `warnings_and_cautions`, `drug_interactions` |
+| Conditions | Diabetes, high blood pressure, kidney, liver, heart, asthma, glaucoma, enlarged prostate, stomach ulcers | `do_not_use`, `ask_doctor`, `warnings` | `contraindications`, `warnings_and_cautions`, _`warnings`_, _`precautions`_, `use_in_specific_populations` |
+| Combinations | Alcohol | `warnings`, `when_using` | `warnings_and_cautions`, _`warnings`_, _`precautions`_, `drug_interactions` |
 | Combinations | Blood thinners | `ask_doctor_or_pharmacist` | `drug_interactions` |
-| Daily life | Drowsiness and driving | `when_using` | `warnings_and_cautions`, `information_for_patients` |
+| Daily life | Drowsiness and driving | `when_using` | `warnings_and_cautions`, _`warnings`_, _`precautions`_, `information_for_patients` |
 | Daily life | Take with food | `dosage_and_administration` | `dosage_and_administration` |
 | Serious | Boxed warning present | n/a | `boxed_warning` |
-| Serious | Allergy warnings | `warnings`, `do_not_use` | `contraindications` |
+| Serious | Allergy warnings | `do_not_use`, `warnings` | `contraindications` |
 
 ## Architecture
 
@@ -136,7 +140,7 @@ tests and lint green on both sides.
 
 ### GATE 1 Pharmacist review
 
-A pharmacist reviews the stored answers for 100 drugs against the 20 questions. Record,
+A pharmacist reviews the stored answers for 100 drugs against the 19 v1 questions. Record,
 per question, stance accuracy, evidence accuracy, and every case where `not_mentioned` and
 `no_known_issue` were confused. Set confidence thresholds from this data, not from cookbook
 defaults. **Do not start M3 until thresholds are agreed.**

@@ -1,0 +1,179 @@
+{
+  "relatedGroup": {
+    "conceptGroup": [
+      {
+        "conceptProperties": [
+          {
+            "language": "ENG",
+            "name": "metformin",
+            "rxcui": "6809",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "IN",
+            "umlscui": ""
+          }
+        ],
+        "tty": "IN"
+      },
+      {
+        "conceptProperties": [
+          {
+            "language": "ENG",
+            "name": "chlorpropamide / metformin",
+            "rxcui": "1007411",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "metformin / ropinirole",
+            "rxcui": "1008476",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "metformin / saxagliptin",
+            "rxcui": "1043562",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "linagliptin / metformin",
+            "rxcui": "1243019",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "alogliptin / metformin",
+            "rxcui": "1368384",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "dapagliflozin / metformin",
+            "rxcui": "1486436",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "canagliflozin / metformin",
+            "rxcui": "1545149",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "empagliflozin / metformin",
+            "rxcui": "1664314",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "ertugliflozin / metformin",
+            "rxcui": "1992684",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "dapagliflozin / metformin / saxagliptin",
+            "rxcui": "2117292",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "empagliflozin / linagliptin / metformin",
+            "rxcui": "2281864",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "glyburide / metformin",
+            "rxcui": "285129",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "glipizide / metformin",
+            "rxcui": "352381",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "metformin / pioglitazone",
+            "rxcui": "607999",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "metformin / rosiglitazone",
+            "rxcui": "614348",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "metformin / sitagliptin",
+            "rxcui": "729717",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "metformin / repaglinide",
+            "rxcui": "802646",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          }
+        ],
+        "tty": "MIN"
+      }
+    ],
+    "rxcui": null
+  }
+}

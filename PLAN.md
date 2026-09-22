@@ -19,9 +19,14 @@ safe, allowed, or right for anyone.
 ## How an answer is produced
 
 1. **Resolve the name.** RxNorm turns "Advil" into an ingredient and an RxCUI.
-2. **Pick one canonical label.** openFDA returns hundreds of labels per ingredient, one per
-   repackager: 907 OTC ibuprofen labels, 338 prescription metformin labels at time of
-   writing. Prefer the original packager, then the latest `effective_time`.
+2. **Pick one canonical label per product type.** openFDA returns hundreds of labels per
+   ingredient, one per repackager: 907 OTC ibuprofen labels, 338 prescription metformin
+   labels at time of writing. Some drugs, such as ibuprofen, have both an OTC and a
+   prescription label; the API returns one of each and the UI lets the person switch. For
+   each type: the label's ingredient list must match exactly (salt forms allowed), prefer
+   the original packager and fall back to repackagers, then take the latest
+   `effective_time`. openFDA stores only product-level RxCUIs, so the search uses
+   ingredient names, not the ingredient RxCUI.
 3. **Map the question to sections.** Code, not the model, decides which label sections can
    answer each question. See the catalog below.
 4. **Split those sections into sentences.** These are the only candidates Jev may pick from.
@@ -61,21 +66,25 @@ Fixed for every question:
 
 ### Question catalog, v1
 
-Section names are real openFDA fields. OTC and prescription labels use different ones.
+Section names are real openFDA fields, listed in priority order. The code in
+[catalog.py](apps/api/src/rx_jev_api/catalog.py) is the source of truth. The mapper picks the
+column by the sections a label actually has, not its product type metadata. Older
+prescription labels lack `warnings_and_cautions`, so `warnings` and `precautions` stand in
+(shown in italics below).
 
 | Group | Question | OTC sections | Prescription sections |
 |---|---|---|---|
 | Who | Pregnancy | `pregnancy_or_breast_feeding` | `pregnancy`, `use_in_specific_populations` |
 | Who | Breastfeeding | `pregnancy_or_breast_feeding` | `nursing_mothers`, `use_in_specific_populations` |
-| Who | Children | `dosage_and_administration`, `do_not_use` | `pediatric_use` |
+| Who | Children | `do_not_use`, `dosage_and_administration` | `pediatric_use` |
 | Who | Older adults | `ask_doctor`, `dosage_and_administration` | `geriatric_use` |
-| Conditions | Diabetes, high blood pressure, kidney, liver, heart, asthma, glaucoma, enlarged prostate, stomach ulcers | `ask_doctor`, `do_not_use`, `warnings` | `contraindications`, `warnings_and_cautions`, `use_in_specific_populations` |
-| Combinations | Alcohol | `warnings`, `when_using` | `warnings_and_cautions`, `drug_interactions` |
+| Conditions | Diabetes, high blood pressure, kidney, liver, heart, asthma, glaucoma, enlarged prostate, stomach ulcers | `do_not_use`, `ask_doctor`, `warnings` | `contraindications`, `warnings_and_cautions`, _`warnings`_, _`precautions`_, `use_in_specific_populations` |
+| Combinations | Alcohol | `warnings`, `when_using` | `warnings_and_cautions`, _`warnings`_, _`precautions`_, `drug_interactions` |
 | Combinations | Blood thinners | `ask_doctor_or_pharmacist` | `drug_interactions` |
-| Daily life | Drowsiness and driving | `when_using` | `warnings_and_cautions`, `information_for_patients` |
+| Daily life | Drowsiness and driving | `when_using` | `warnings_and_cautions`, _`warnings`_, _`precautions`_, `information_for_patients` |
 | Daily life | Take with food | `dosage_and_administration` | `dosage_and_administration` |
 | Serious | Boxed warning present | n/a | `boxed_warning` |
-| Serious | Allergy warnings | `warnings`, `do_not_use` | `contraindications` |
+| Serious | Allergy warnings | `do_not_use`, `warnings` | `contraindications` |
 
 ## Architecture
 
@@ -110,13 +119,16 @@ Each milestone ends with tests green and a commit tagged with its ID. Stop at ev
 Monorepo, FastAPI health route, Problem Details handlers, React shell with zod client,
 tests and lint green on both sides.
 
-### M1 Label ingestion, no AI
+### M1 Label ingestion, no AI (done)
 
 - M1.1 RxNorm client: name to ingredient and RxCUI, with recorded fixtures.
 - M1.2 openFDA client: canonical label selection rule, with recorded fixtures.
 - M1.3 Section mapper: question ID to section fields for OTC and prescription.
 - M1.4 Sentence splitter: sections to numbered candidate sentences.
 - M1.5 `GET /api/labels/{rxcui}` returns parsed sections and candidates.
+
+Live lookups take 4 to 6 seconds, mostly openFDA search pages. The M2 store absorbs this for
+repeat lookups. A name search endpoint for the UI is left to M3.1.
 
 ### M2 Jev judgments
 
@@ -131,7 +143,7 @@ tests and lint green on both sides.
 
 ### GATE 1 Pharmacist review
 
-A pharmacist reviews the stored answers for 100 drugs against the 20 questions. Record,
+A pharmacist reviews the stored answers for 100 drugs against the 19 v1 questions. Record,
 per question, stance accuracy, evidence accuracy, and every case where `not_mentioned` and
 `no_known_issue` were confused. Set confidence thresholds from this data, not from cookbook
 defaults. **Do not start M3 until thresholds are agreed.**
@@ -160,5 +172,11 @@ reference tool, not a device giving individual advice. **Do not launch publicly 
 - **Jev input limit.** Long prescription labels may need sections sent in several requests.
 - **openFDA rate limits.** Anonymous access is limited per IP. Register a free key before
   the M2.4 batch job.
-- **Canonical label rule.** "Original packager, latest date" is a starting guess. Validate it
-  in M1.2 against a handful of drugs.
+- **Canonical label rule.** Checked in M1.2 against ibuprofen, metformin, acetaminophen with
+  diphenhydramine, loratadine, atorvastatin and sertraline. Preferring the brand's NDA was
+  rejected: for prescription ibuprofen it picks IV hospital products. Open: the rule does
+  not yet consider route or dosage form, so a rare injectable could win for a drug that is
+  usually oral. Revisit at Gate 1.
+- **Mislabelled product types.** Some repackager labels marked prescription use OTC
+  sections, and older prescription labels use `warnings` and `precautions` instead of
+  `warnings_and_cautions`. The M1.3 mapper must select by the sections actually present.

@@ -1,0 +1,408 @@
+{
+ "status": 200,
+ "body": {
+  "meta": {
+   "disclaimer": "Do not rely on openFDA to make decisions regarding medical care. While we make every effort to ensure that data is accurate, you should assume all results are unvalidated. We may limit or otherwise restrict your access to the API in line with our Terms of Service.",
+   "terms": "https://open.fda.gov/terms/",
+   "license": "https://open.fda.gov/license/",
+   "last_updated": "2026-09-18",
+   "results": {
+    "skip": 0,
+    "limit": 5,
+    "total": 831
+   }
+  },
+  "results": [
+   {
+    "spl_product_data_elements": [
+     "Ibuprofen Ibuprofen IBUPROFEN IBUPROFEN SILICON DIOXIDE FERRIC OXIDE RED POLYETHYLENE GLYCOL, UNSPECIFIED POLYVINYL ALCOHOL, UNSPECIFIED POVIDONE K30 STARCH, PREGELATINIZED CORN SODIUM STARCH GLYCOLATE TYPE A CORN STEARIC ACID TALC TITANIUM DIOXIDE G2"
+    ],
+    "spl_unclassified_section": [
+     "Drug Facts"
+    ],
+    "active_ingredient": [
+     "Active ingredient (in each tablet) Ibuprofen 200 mg (NSAID)* *nonsteroidal anti-inflammatory drug"
+    ],
+    "purpose": [
+     "Purposes Pain reliever/fever reducer"
+    ],
+    "indications_and_usage": [
+     "Uses temporarily relieves minor aches and pains due to: headache muscular aches minor pain of arthritis toothache backache the common cold menstrual cramps temporarily reduces fever"
+    ],
+    "warnings": [
+     "Warnings Allergy alert Ibuprofen may cause a severe allergic reaction, especially in people allergic to aspirin. Symptoms may include: hives facial swelling asthma (wheezing) shock skin reddening rash blisters If an allergic reaction occurs, stop use and seek medical help right away. Stomach bleeding warning This product contains an NSAID, which may cause severe stomach bleeding. The chance is higher if you: are age 60 or older have had stomach ulcers or bleeding problems take a blood thinning (anticoagulant) or steroid drug take other drugs containing prescription or nonprescription NSAIDs [aspirin, ibuprofen, naproxen, or others] have 3 or more alcoholic drinks every day while using this product take more or for a longer time than directed Heart attack and stroke warning NSAIDs, except aspirin, increase the risk of heart attack, heart failure, and stroke. These can be fatal. The risk is higher if you use more than directed or for longer than directed. Do not use if you have ever had an allergic reaction to ibuprofen any other pain reliever/fever reducer right before or after heart surgery Ask a doctor before use if you have problems or serious side effects from taking pain relievers or fever reducers the stomach bleeding warning applies to you you have a history of stomach problems, such as heartburn you have high blood pressure, heart disease, liver cirrhosis, kidney disease, asthma, or had a stroke you are taking a diuretic Ask a doctor or pharmacist before use if you are taking aspirin for heart attack or stroke, because ibuprofen may decrease this benefit of aspirin under a doctor's care for any serious condition taking any other drug When using this product take with food or milk if stomach upset occurs Stop use and ask a doctor if \u25a0 you experience any of the following signs of stomach bleeding: \u25a0 feel faint \u25a0 vomit blood \u25a0 have bloody or black stools \u25a0 have stomach pain that does not get better \u25a0 you have symptoms of heart problems or stroke: \u25a0 chest pain \u25a0 trouble breathing \u25a0 weakness in one part or side of body \u25a0 slurred speech \u25a0 leg swelling \u25a0 pain gets worse or lasts more than 10 days \u25a0 fever gets worse or lasts more than 3 days \u25a0 redness or swelling is present in the painful area \u25a0 any new symptoms appear If pregnant or breast-feeding, ask a health professional before use. It is especially important not to use ibuprofen at 20 weeks or later in pregnancy unless definitely directed to do so by a doctor because it may cause problems in the unborn child or complications during delivery. Keep out of reach of children. In case of overdose, get medical help or contact a Poison Control Center right away. (1-800-222-1222)"
+    ],
+    "do_not_use": [
+     "Do not use if you have ever had an allergic reaction to ibuprofen any other pain reliever/fever reducer right before or after heart surgery"
+    ],
+    "ask_doctor": [
+     "Ask a doctor before use if you have problems or serious side effects from taking pain relievers or fever reducers the stomach bleeding warning applies to you you have a history of stomach problems, such as heartburn you have high blood pressure, heart disease, liver cirrhosis, kidney disease, asthma, or had a stroke you are taking a diuretic"
+    ],
+    "ask_doctor_or_pharmacist": [
+     "Ask a doctor or pharmacist before use if you are taking aspirin for heart attack or stroke, because ibuprofen may decrease this benefit of aspirin under a doctor's care for any serious condition taking any other drug"
+    ],
+    "when_using": [
+     "When using this product take with food or milk if stomach upset occurs"
+    ],
+    "stop_use": [
+     "Stop use and ask a doctor if \u25a0 you experience any of the following signs of stomach bleeding: \u25a0 feel faint \u25a0 vomit blood \u25a0 have bloody or black stools \u25a0 have stomach pain that does not get better \u25a0 you have symptoms of heart problems or stroke: \u25a0 chest pain \u25a0 trouble breathing \u25a0 weakness in one part or side of body \u25a0 slurred speech \u25a0 leg swelling \u25a0 pain gets worse or lasts more than 10 days \u25a0 fever gets worse or lasts more than 3 days \u25a0 redness or swelling is present in the painful area \u25a0 any new symptoms appear"
+    ],
+    "pregnancy_or_breast_feeding": [
+     "If pregnant or breast-feeding, ask a health professional before use. It is especially important not to use ibuprofen at 20 weeks or later in pregnancy unless definitely directed to do so by a doctor because it may cause problems in the unborn child or complications during delivery."
+    ],
+    "keep_out_of_reach_of_children": [
+     "Keep out of reach of children. In case of overdose, get medical help or contact a Poison Control Center right away. (1-800-222-1222)"
+    ],
+    "dosage_and_administration": [
+     "Directions \u25a0 do not take more than directed \u25a0 the smallest effective dose should be used \u25a0 adults and children 12 years and older: \u25a0 take 1 tablet every 4 to 6 hours while symptoms persist \u25a0 if pain or fever does not respond to 1 tablet, 2 tablets may be used \u25a0 do not exceed 6 tablets in 24 hours, unless directed by a doctor \u25a0 children under 12 years: ask a doctor"
+    ],
+    "storage_and_handling": [
+     "Other information read all warnings and directions before use store at 20-25\u00b0C (68-77\u00b0F) avoid excessive heat above 40\u00b0C (104\u00b0F)"
+    ],
+    "inactive_ingredient": [
+     "Inactive ingredients colloidal silicon dioxide, corn starch, iron oxide red, polyethylene glycol, polyvinyl alcohol, povidone K30, pregelatinized starch, sodium starch glycolate, stearic acid, talc, titanium dioxide"
+    ],
+    "questions": [
+     "Questions or comments? 1-844-705-4384"
+    ],
+    "package_label_principal_display_panel": [
+     "PRINCIPAL DISPLAY PANEL \u2020Compare to the active ingredient in Advil\u00ae NDC 71141-114-32 Actual Size Ibuprofen Tablets, 200 mg Pain Reliever/Fever Reducer (NSAID) 100 COATED TABLETS image description"
+    ],
+    "set_id": "0ca02f8b-4413-4e7c-a67b-8c67c53e1343",
+    "id": "5b11f41c-97b6-e924-e063-6394a90a3527",
+    "effective_time": "20260909",
+    "version": "5",
+    "openfda": {
+     "application_number": [
+      "ANDA079174"
+     ],
+     "brand_name": [
+      "Ibuprofen"
+     ],
+     "generic_name": [
+      "IBUPROFEN"
+     ],
+     "manufacturer_name": [
+      "Lidl US LLC"
+     ],
+     "product_ndc": [
+      "71141-114"
+     ],
+     "product_type": [
+      "HUMAN OTC DRUG"
+     ],
+     "route": [
+      "ORAL"
+     ],
+     "substance_name": [
+      "IBUPROFEN"
+     ],
+     "rxcui": [
+      "310965"
+     ],
+     "spl_id": [
+      "5b11f41c-97b6-e924-e063-6394a90a3527"
+     ],
+     "spl_set_id": [
+      "0ca02f8b-4413-4e7c-a67b-8c67c53e1343"
+     ],
+     "package_ndc": [
+      "71141-114-32",
+      "71141-114-22"
+     ],
+     "is_original_packager": [
+      true
+     ],
+     "nui": [
+      "N0000000160",
+      "M0001335",
+      "N0000175722"
+     ],
+     "pharm_class_moa": [
+      "Cyclooxygenase Inhibitors [MoA]"
+     ],
+     "pharm_class_cs": [
+      "Anti-Inflammatory Agents, Non-Steroidal [CS]"
+     ],
+     "pharm_class_epc": [
+      "Nonsteroidal Anti-inflammatory Drug [EPC]"
+     ],
+     "unii": [
+      "WK2XYI10QM"
+     ]
+    }
+   },
+   {
+    "set_id": "54b08d24-d5e9-4111-9d97-329896e8309d",
+    "id": "1adf40ea-9fec-4e6a-a2dc-eaf5c35dd1d3",
+    "effective_time": "20260909",
+    "version": "4",
+    "openfda": {
+     "application_number": [
+      "ANDA214836"
+     ],
+     "brand_name": [
+      "dual action"
+     ],
+     "generic_name": [
+      "ACETAMINOPHEN, IBUPROFEN"
+     ],
+     "manufacturer_name": [
+      "Rite Aid Corporation"
+     ],
+     "product_ndc": [
+      "11822-5777"
+     ],
+     "product_type": [
+      "HUMAN OTC DRUG"
+     ],
+     "route": [
+      "ORAL"
+     ],
+     "substance_name": [
+      "ACETAMINOPHEN",
+      "IBUPROFEN"
+     ],
+     "rxcui": [
+      "2387532"
+     ],
+     "spl_id": [
+      "1adf40ea-9fec-4e6a-a2dc-eaf5c35dd1d3"
+     ],
+     "spl_set_id": [
+      "54b08d24-d5e9-4111-9d97-329896e8309d"
+     ],
+     "package_ndc": [
+      "11822-5777-1",
+      "11822-5777-0",
+      "11822-5777-2"
+     ],
+     "is_original_packager": [
+      true
+     ],
+     "nui": [
+      "N0000000160",
+      "M0001335",
+      "N0000175722"
+     ],
+     "pharm_class_moa": [
+      "Cyclooxygenase Inhibitors [MoA]"
+     ],
+     "pharm_class_cs": [
+      "Anti-Inflammatory Agents, Non-Steroidal [CS]"
+     ],
+     "pharm_class_epc": [
+      "Nonsteroidal Anti-inflammatory Drug [EPC]"
+     ],
+     "unii": [
+      "362O9ITL9D",
+      "WK2XYI10QM"
+     ]
+    }
+   },
+   {
+    "set_id": "596a1007-08ea-00ec-e063-6394a90a5eb2",
+    "id": "5b12026f-214a-f700-e063-6394a90ab7a8",
+    "effective_time": "20260909",
+    "version": "2",
+    "openfda": {
+     "application_number": [
+      "ANDA079205"
+     ],
+     "brand_name": [
+      "Ibuprofen"
+     ],
+     "generic_name": [
+      "IBUPROFEN"
+     ],
+     "manufacturer_name": [
+      "GOODSENSE"
+     ],
+     "product_ndc": [
+      "50804-185"
+     ],
+     "product_type": [
+      "HUMAN OTC DRUG"
+     ],
+     "route": [
+      "ORAL"
+     ],
+     "substance_name": [
+      "IBUPROFEN"
+     ],
+     "rxcui": [
+      "310964"
+     ],
+     "spl_id": [
+      "5b12026f-214a-f700-e063-6394a90ab7a8"
+     ],
+     "spl_set_id": [
+      "596a1007-08ea-00ec-e063-6394a90a5eb2"
+     ],
+     "package_ndc": [
+      "50804-185-01",
+      "50804-185-02"
+     ],
+     "is_original_packager": [
+      true
+     ],
+     "upc": [
+      "0846036000856"
+     ],
+     "nui": [
+      "N0000000160",
+      "M0001335",
+      "N0000175722"
+     ],
+     "pharm_class_moa": [
+      "Cyclooxygenase Inhibitors [MoA]"
+     ],
+     "pharm_class_cs": [
+      "Anti-Inflammatory Agents, Non-Steroidal [CS]"
+     ],
+     "pharm_class_epc": [
+      "Nonsteroidal Anti-inflammatory Drug [EPC]"
+     ],
+     "unii": [
+      "WK2XYI10QM"
+     ]
+    }
+   },
+   {
+    "set_id": "c6e68886-edcb-414d-9cba-0d97772ef8b6",
+    "id": "74ae2e55-1fb2-458c-b692-8f4c16151b78",
+    "effective_time": "20260909",
+    "version": "8",
+    "openfda": {
+     "application_number": [
+      "ANDA074937"
+     ],
+     "brand_name": [
+      "ibuprofen childrens"
+     ],
+     "generic_name": [
+      "IBUPROFEN"
+     ],
+     "manufacturer_name": [
+      "Rite Aid Corporation"
+     ],
+     "product_ndc": [
+      "11822-0897"
+     ],
+     "product_type": [
+      "HUMAN OTC DRUG"
+     ],
+     "route": [
+      "ORAL"
+     ],
+     "substance_name": [
+      "IBUPROFEN"
+     ],
+     "rxcui": [
+      "197803"
+     ],
+     "spl_id": [
+      "74ae2e55-1fb2-458c-b692-8f4c16151b78"
+     ],
+     "spl_set_id": [
+      "c6e68886-edcb-414d-9cba-0d97772ef8b6"
+     ],
+     "package_ndc": [
+      "11822-0897-4",
+      "11822-0897-8",
+      "11822-0897-1"
+     ],
+     "is_original_packager": [
+      true
+     ],
+     "nui": [
+      "N0000000160",
+      "M0001335",
+      "N0000175722"
+     ],
+     "pharm_class_moa": [
+      "Cyclooxygenase Inhibitors [MoA]"
+     ],
+     "pharm_class_cs": [
+      "Anti-Inflammatory Agents, Non-Steroidal [CS]"
+     ],
+     "pharm_class_epc": [
+      "Nonsteroidal Anti-inflammatory Drug [EPC]"
+     ],
+     "unii": [
+      "WK2XYI10QM"
+     ]
+    }
+   },
+   {
+    "set_id": "15709fa7-114b-453c-b63d-f1c4f28f0f95",
+    "id": "3016b2b7-13fd-44c1-aaa9-6a553cee42bb",
+    "effective_time": "20260908",
+    "version": "7",
+    "openfda": {
+     "application_number": [
+      "ANDA206568"
+     ],
+     "brand_name": [
+      "Ibuprofen minis"
+     ],
+     "generic_name": [
+      "IBUPROFEN"
+     ],
+     "manufacturer_name": [
+      "The Kroger Co."
+     ],
+     "product_ndc": [
+      "30142-743"
+     ],
+     "product_type": [
+      "HUMAN OTC DRUG"
+     ],
+     "route": [
+      "ORAL"
+     ],
+     "substance_name": [
+      "IBUPROFEN"
+     ],
+     "rxcui": [
+      "310964"
+     ],
+     "spl_id": [
+      "3016b2b7-13fd-44c1-aaa9-6a553cee42bb"
+     ],
+     "spl_set_id": [
+      "15709fa7-114b-453c-b63d-f1c4f28f0f95"
+     ],
+     "package_ndc": [
+      "30142-743-80",
+      "30142-743-32",
+      "30142-743-16"
+     ],
+     "is_original_packager": [
+      true
+     ],
+     "upc": [
+      "0041260007958"
+     ],
+     "nui": [
+      "N0000000160",
+      "M0001335",
+      "N0000175722"
+     ],
+     "pharm_class_moa": [
+      "Cyclooxygenase Inhibitors [MoA]"
+     ],
+     "pharm_class_cs": [
+      "Anti-Inflammatory Agents, Non-Steroidal [CS]"
+     ],
+     "pharm_class_epc": [
+      "Nonsteroidal Anti-inflammatory Drug [EPC]"
+     ],
+     "unii": [
+      "WK2XYI10QM"
+     ]
+    }
+   }
+  ]
+ }
+}

@@ -1,0 +1,343 @@
+{
+ "status": 200,
+ "body": {
+  "meta": {
+   "disclaimer": "Do not rely on openFDA to make decisions regarding medical care. While we make every effort to ensure that data is accurate, you should assume all results are unvalidated. We may limit or otherwise restrict your access to the API in line with our Terms of Service.",
+   "terms": "https://open.fda.gov/terms/",
+   "license": "https://open.fda.gov/license/",
+   "last_updated": "2026-09-18",
+   "results": {
+    "skip": 0,
+    "limit": 5,
+    "total": 198
+   }
+  },
+  "results": [
+   {
+    "set_id": "9819155b-2713-42be-867e-16605e7643d0",
+    "id": "7fd2aabb-24db-49c6-a943-74dc35da3877",
+    "effective_time": "20260908",
+    "version": "8",
+    "openfda": {
+     "application_number": [
+      "M012"
+     ],
+     "brand_name": [
+      "Nighttime Severe Cold and Cough"
+     ],
+     "generic_name": [
+      "ACETAMINOPHEN, DIPHENHYDRAMINE, PHENYLEPHRINE"
+     ],
+     "manufacturer_name": [
+      "RARITAN PHARMACEUTICALS INC"
+     ],
+     "product_ndc": [
+      "68163-541"
+     ],
+     "product_type": [
+      "HUMAN OTC DRUG"
+     ],
+     "route": [
+      "ORAL"
+     ],
+     "substance_name": [
+      "ACETAMINOPHEN",
+      "DIPHENHYDRAMINE HYDROCHLORIDE",
+      "PHENYLEPHRINE HYDROCHLORIDE"
+     ],
+     "rxcui": [
+      "1659960"
+     ],
+     "spl_id": [
+      "7fd2aabb-24db-49c6-a943-74dc35da3877"
+     ],
+     "spl_set_id": [
+      "9819155b-2713-42be-867e-16605e7643d0"
+     ],
+     "package_ndc": [
+      "68163-541-06"
+     ],
+     "is_original_packager": [
+      true
+     ],
+     "unii": [
+      "362O9ITL9D",
+      "TC2D6JAD40",
+      "04JA59TNSJ"
+     ]
+    }
+   },
+   {
+    "set_id": "058b2021-8a61-40b0-8a2e-a784d2b847fb",
+    "id": "dc571b5a-8582-4468-becf-267119166482",
+    "effective_time": "20260902",
+    "version": "8",
+    "openfda": {
+     "application_number": [
+      "M012"
+     ],
+     "brand_name": [
+      "Maximum Strength Nighttime Cold and Flu"
+     ],
+     "generic_name": [
+      "ACETAMINOPHEN , DIPHENHYDRAMINE HCL,PHENYLEPHRINE HCL"
+     ],
+     "manufacturer_name": [
+      "THE KROGER CO"
+     ],
+     "product_ndc": [
+      "30142-736"
+     ],
+     "product_type": [
+      "HUMAN OTC DRUG"
+     ],
+     "route": [
+      "ORAL"
+     ],
+     "substance_name": [
+      "ACETAMINOPHEN",
+      "DIPHENHYDRAMINE HYDROCHLORIDE",
+      "PHENYLEPHRINE HYDROCHLORIDE"
+     ],
+     "rxcui": [
+      "1375932"
+     ],
+     "spl_id": [
+      "dc571b5a-8582-4468-becf-267119166482"
+     ],
+     "spl_set_id": [
+      "058b2021-8a61-40b0-8a2e-a784d2b847fb"
+     ],
+     "package_ndc": [
+      "30142-736-06"
+     ],
+     "is_original_packager": [
+      true
+     ],
+     "unii": [
+      "362O9ITL9D",
+      "TC2D6JAD40",
+      "04JA59TNSJ"
+     ]
+    }
+   },
+   {
+    "set_id": "7def6781-0881-46bf-ad7a-7a3f23a8d9f7",
+    "id": "6274b9f7-e082-4696-9877-e1ba783d98c0",
+    "effective_time": "20260902",
+    "version": "4",
+    "openfda": {
+     "application_number": [
+      "M010"
+     ],
+     "brand_name": [
+      "Nighttime Severe Cold and Cough"
+     ],
+     "generic_name": [
+      "ACETAMINOPHEN, DIPHENHYDRAMINE, PHENYLEPHRINE"
+     ],
+     "manufacturer_name": [
+      "KROGER COMPANY"
+     ],
+     "product_ndc": [
+      "41226-541"
+     ],
+     "product_type": [
+      "HUMAN OTC DRUG"
+     ],
+     "route": [
+      "ORAL"
+     ],
+     "substance_name": [
+      "ACETAMINOPHEN",
+      "DIPHENHYDRAMINE HYDROCHLORIDE",
+      "PHENYLEPHRINE HYDROCHLORIDE"
+     ],
+     "rxcui": [
+      "1659960"
+     ],
+     "spl_id": [
+      "6274b9f7-e082-4696-9877-e1ba783d98c0"
+     ],
+     "spl_set_id": [
+      "7def6781-0881-46bf-ad7a-7a3f23a8d9f7"
+     ],
+     "package_ndc": [
+      "41226-541-06"
+     ],
+     "is_original_packager": [
+      true
+     ],
+     "unii": [
+      "362O9ITL9D",
+      "TC2D6JAD40",
+      "04JA59TNSJ"
+     ]
+    }
+   },
+   {
+    "spl_product_data_elements": [
+     "Pain Reliever PM Extra Strength Acetaminophen, Diphenhydramine HCl ACETAMINOPHEN ACETAMINOPHEN DIPHENHYDRAMINE HYDROCHLORIDE DIPHENHYDRAMINE STARCH, CORN D&C RED NO. 27 FD&C BLUE NO. 1 GELATIN GLYCERIN HYPROMELLOSES MALTODEXTRIN CELLULOSE, MICROCRYSTALLINE POLYETHYLENE GLYCOL, UNSPECIFIED POVIDONE WATER SILICON DIOXIDE STEARIC ACID TITANIUM DIOXIDE CROSCARMELLOSE SODIUM ALUMINUM OXIDE BP50"
+    ],
+    "active_ingredient": [
+     "Active ingredients (in each geltab) Acetaminophen 500 mg Diphenhydramine HCl 25 mg"
+    ],
+    "purpose": [
+     "Purposes Pain reliever Nighttime sleep-aid"
+    ],
+    "indications_and_usage": [
+     "Uses temporary relief of occasional headaches and minor aches and pains with accompanying sleeplessness."
+    ],
+    "warnings": [
+     "Warnings Liver warning : This product contains acetaminophen. Severe liver damage may occur if you take: more than 4,000 mg of acetaminophen in 24 hours with other drugs containing acetaminophen 3 or more alcoholic drinks every day while using this product Allergy alert: Acetaminophen may cause severe skin reactions. Symptoms may include: skin reddening blisters rash If a skin reaction occurs, stop use and seek medical help right away, Do not use with any other drug containing acetaminophen (prescription or nonprescription). If you are not sure whether a drug contains acetaminophen, ask a doctor or pharmacist. with any other product containing diphenhydramine, even one used on skin in children under 12 years of age if you have ever had an allergic reaction to this product or any of its ingredients Ask a doctor before use if you have liver disease a breathing problem such as emphysema or chronic bronchitis trouble urinating due to an enlarged prostate gland glaucoma Ask a doctor or pharmacist before use if you are taking the blood thinning drug warfarin taking sedatives or tranquilizers When using this product drowsiness will occur avoid alcoholic drinks do not drive a motor vehicle or operate machinery Stop use and ask a doctor if sleeplessness persists continuously for more than 2 weeks. Insomnia may be a symptom of serious underlying medical illness. new symptoms occur redness or swelling is present pain gets worse or lasts more than 10 days fever gets worse or lasts more than 3 days These could be signs of a serious condition. If pregnant or breast-feeding, ask a health professional before use. Keep out of reach of children. Overdose warning: In case of overdose, get medical help or contact a Poison Control Center (1-800-222-1222) right away: Quick medical attention is critical for adults as well as for children even if you do not notice any signs or symptoms."
+    ],
+    "do_not_use": [
+     "Do not use with any other drug containing acetaminophen (prescription or nonprescription). If you are not sure whether a drug contains acetaminophen, ask a doctor or pharmacist. with any other product containing diphenhydramine, even one used on skin in children under 12 years of age if you have ever had an allergic reaction to this product or any of its ingredients"
+    ],
+    "ask_doctor": [
+     "Ask a doctor before use if you have liver disease a breathing problem such as emphysema or chronic bronchitis trouble urinating due to an enlarged prostate gland glaucoma"
+    ],
+    "ask_doctor_or_pharmacist": [
+     "Ask a doctor or pharmacist before use if you are taking the blood thinning drug warfarin taking sedatives or tranquilizers"
+    ],
+    "when_using": [
+     "When using this product drowsiness will occur avoid alcoholic drinks do not drive a motor vehicle or operate machinery"
+    ],
+    "stop_use": [
+     "Stop use and ask a doctor if sleeplessness persists continuously for more than 2 weeks. Insomnia may be a symptom of serious underlying medical illness. new symptoms occur redness or swelling is present pain gets worse or lasts more than 10 days fever gets worse or lasts more than 3 days These could be signs of a serious condition."
+    ],
+    "pregnancy_or_breast_feeding": [
+     "If pregnant or breast-feeding, ask a health professional before use."
+    ],
+    "keep_out_of_reach_of_children": [
+     "Keep out of reach of children. Overdose warning: In case of overdose, get medical help or contact a Poison Control Center (1-800-222-1222) right away: Quick medical attention is critical for adults as well as for children even if you do not notice any signs or symptoms."
+    ],
+    "dosage_and_administration": [
+     "Directions do not take more than directed (see overdose warning) adults and children 12 years and over: take 2 geltabs at bedtime. Do not take more than 2 geltabs of this product in 24 hours. children under 12 years: do not use"
+    ],
+    "storage_and_handling": [
+     "Other information store between 20-25\u00baC (68-86\u00baF) avoid high humidity and excessive heat"
+    ],
+    "inactive_ingredient": [
+     "Inactive ingredients corn starch, croscarmellose sodium, D&C red #27 aluminum lake, edible black ink, FD&C blue #1 aluminum lake, gelatin, glycerin, hypromellose, maltodextrin, microcrystalline cellulose, polyethylene glycol, povidone, purified water, silicon dioxide, stearic acid, titanium dioxide"
+    ],
+    "questions": [
+     "Questions or comments? Call toll free 1-888-423-0139"
+    ],
+    "package_label_principal_display_panel": [
+     "Principal Display Panel COMPARE TO EXTRA STRENGTH TYLENOL\u00ae PM ACTIVE INGREDIENTS* EXTRA STRENGTH NIGHTTIME Pain Relief PM ACETAMINOPHEN, DIPHENHYDRAMINE HCl, 500/25mg PAIN RELIEVER / NIGHTTIME SLEEP-AID GELTABS For Ages 12 Years and Over *This product is not manufactured or distributed by Kenvue Brands LLC., distributor of Extra Strength Tylenol\u00ae PM. TAMPER EVIDENT: DO NOT USE IF PRINTED SAFETY SEAL UNDER CAP IS BROKEN OR MISSING. KEEP OUTER CARTON FOR COMPLETE WARNINGS AND PRODUCT INFORMATION. DISTRIBUTED BY TOPCO ASSOCIATES LLC ITASCA, IL 60143",
+     "Product Label TOPCARE HEALTH Extra Strength Nighttime Pain Relief PM Acetaminophen 500 mg Diphenhydramine HCl 25 mg"
+    ],
+    "set_id": "923b443d-73cc-4c52-92e4-a075786b1ae3",
+    "id": "8f866a48-29e1-489c-9798-e5b9c1615243",
+    "effective_time": "20260901",
+    "version": "9",
+    "openfda": {
+     "application_number": [
+      "M013"
+     ],
+     "brand_name": [
+      "Pain Reliever PM Extra Strength"
+     ],
+     "generic_name": [
+      "ACETAMINOPHEN, DIPHENHYDRAMINE HCL"
+     ],
+     "manufacturer_name": [
+      "TOP CARE (Topco Associates LLC)"
+     ],
+     "product_ndc": [
+      "36800-466"
+     ],
+     "product_type": [
+      "HUMAN OTC DRUG"
+     ],
+     "route": [
+      "ORAL"
+     ],
+     "substance_name": [
+      "ACETAMINOPHEN",
+      "DIPHENHYDRAMINE HYDROCHLORIDE"
+     ],
+     "rxcui": [
+      "1092189"
+     ],
+     "spl_id": [
+      "8f866a48-29e1-489c-9798-e5b9c1615243"
+     ],
+     "spl_set_id": [
+      "923b443d-73cc-4c52-92e4-a075786b1ae3"
+     ],
+     "package_ndc": [
+      "36800-466-10",
+      "36800-466-50"
+     ],
+     "is_original_packager": [
+      true
+     ],
+     "upc": [
+      "0036800251410"
+     ],
+     "unii": [
+      "362O9ITL9D",
+      "TC2D6JAD40"
+     ]
+    }
+   },
+   {
+    "set_id": "24173e77-92ec-4a87-a471-d6867837c180",
+    "id": "fe731291-4046-4366-96f7-2bcd869124f7",
+    "effective_time": "20260831",
+    "version": "10",
+    "openfda": {
+     "application_number": [
+      "M012"
+     ],
+     "brand_name": [
+      "Acetaminophen PM Extra Strength"
+     ],
+     "generic_name": [
+      "ACETAMINOPHEN, DIPHENHYDRAMINE HCL"
+     ],
+     "manufacturer_name": [
+      "United Natural Foods, Inc. dba UNFI"
+     ],
+     "product_ndc": [
+      "41163-228"
+     ],
+     "product_type": [
+      "HUMAN OTC DRUG"
+     ],
+     "route": [
+      "ORAL"
+     ],
+     "substance_name": [
+      "ACETAMINOPHEN",
+      "DIPHENHYDRAMINE HYDROCHLORIDE"
+     ],
+     "rxcui": [
+      "1092189"
+     ],
+     "spl_id": [
+      "fe731291-4046-4366-96f7-2bcd869124f7"
+     ],
+     "spl_set_id": [
+      "24173e77-92ec-4a87-a471-d6867837c180"
+     ],
+     "package_ndc": [
+      "41163-228-50"
+     ],
+     "is_original_packager": [
+      true
+     ],
+     "upc": [
+      "0041163265394"
+     ],
+     "unii": [
+      "362O9ITL9D",
+      "TC2D6JAD40"
+     ]
+    }
+   }
+  ]
+ }
+}

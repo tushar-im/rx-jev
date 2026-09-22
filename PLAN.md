@@ -19,9 +19,14 @@ safe, allowed, or right for anyone.
 ## How an answer is produced
 
 1. **Resolve the name.** RxNorm turns "Advil" into an ingredient and an RxCUI.
-2. **Pick one canonical label.** openFDA returns hundreds of labels per ingredient, one per
-   repackager: 907 OTC ibuprofen labels, 338 prescription metformin labels at time of
-   writing. Prefer the original packager, then the latest `effective_time`.
+2. **Pick one canonical label per product type.** openFDA returns hundreds of labels per
+   ingredient, one per repackager: 907 OTC ibuprofen labels, 338 prescription metformin
+   labels at time of writing. Some drugs, such as ibuprofen, have both an OTC and a
+   prescription label; the API returns one of each and the UI lets the person switch. For
+   each type: the label's ingredient list must match exactly (salt forms allowed), prefer
+   the original packager and fall back to repackagers, then take the latest
+   `effective_time`. openFDA stores only product-level RxCUIs, so the search uses
+   ingredient names, not the ingredient RxCUI.
 3. **Map the question to sections.** Code, not the model, decides which label sections can
    answer each question. See the catalog below.
 4. **Split those sections into sentences.** These are the only candidates Jev may pick from.
@@ -160,5 +165,11 @@ reference tool, not a device giving individual advice. **Do not launch publicly 
 - **Jev input limit.** Long prescription labels may need sections sent in several requests.
 - **openFDA rate limits.** Anonymous access is limited per IP. Register a free key before
   the M2.4 batch job.
-- **Canonical label rule.** "Original packager, latest date" is a starting guess. Validate it
-  in M1.2 against a handful of drugs.
+- **Canonical label rule.** Checked in M1.2 against ibuprofen, metformin, acetaminophen with
+  diphenhydramine, loratadine, atorvastatin and sertraline. Preferring the brand's NDA was
+  rejected: for prescription ibuprofen it picks IV hospital products. Open: the rule does
+  not yet consider route or dosage form, so a rare injectable could win for a drug that is
+  usually oral. Revisit at Gate 1.
+- **Mislabelled product types.** Some repackager labels marked prescription use OTC
+  sections, and older prescription labels use `warnings` and `precautions` instead of
+  `warnings_and_cautions`. The M1.3 mapper must select by the sections actually present.

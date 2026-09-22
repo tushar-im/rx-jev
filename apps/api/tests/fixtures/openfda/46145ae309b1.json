@@ -1,0 +1,327 @@
+{
+ "status": 200,
+ "body": {
+  "meta": {
+   "disclaimer": "Do not rely on openFDA to make decisions regarding medical care. While we make every effort to ensure that data is accurate, you should assume all results are unvalidated. We may limit or otherwise restrict your access to the API in line with our Terms of Service.",
+   "terms": "https://open.fda.gov/terms/",
+   "license": "https://open.fda.gov/license/",
+   "last_updated": "2026-09-18",
+   "results": {
+    "skip": 0,
+    "limit": 5,
+    "total": 341
+   }
+  },
+  "results": [
+   {
+    "spl_product_data_elements": [
+     "childrens allergy relief Loratadine LORATADINE LORATADINE EDETATE DISODIUM GLYCERIN MALTITOL SODIUM PHOSPHATE, MONOBASIC, UNSPECIFIED FORM PHOSPHORIC ACID PROPYLENE GLYCOL WATER SODIUM BENZOATE SORBITOL SUCRALOSE"
+    ],
+    "active_ingredient": [
+     "Active ingredient (in each 5 mL teaspoonful) Loratadine 5 mg"
+    ],
+    "purpose": [
+     "Purpose Antihistamine"
+    ],
+    "indications_and_usage": [
+     "Uses temporarily relieves these symptoms due to hay fever or other upper respiratory allergies: \u2022 runny nose \u2022 itchy, watery eyes \u2022 sneezing \u2022 itching of the nose or throat"
+    ],
+    "warnings": [
+     "Warnings Do not use if you have ever had an allergic reaction to this product or any of its ingredients Ask a doctor before use if you have liver or kidney disease. Your doctor should determine if you need a different dose. When using this product do not take more than directed. Taking more than directed may cause drowsiness. Stop use and ask a doctor if an allergic reaction to this product occurs. Seek medical help right away. If pregnant or breast feeding, ask a health professional before use. Keep out of reach of children. In case of overdose, get medical help or contact a Poison Control Center right away (1-800-222-1222)."
+    ],
+    "do_not_use": [
+     "Do not use if you have ever had an allergic reaction to this product or any of its ingredients"
+    ],
+    "ask_doctor": [
+     "Ask a doctor before use if you have liver or kidney disease. Your doctor should determine if you need a different dose."
+    ],
+    "when_using": [
+     "When using this product do not take more than directed. Taking more than directed may cause drowsiness."
+    ],
+    "stop_use": [
+     "Stop use and ask a doctor if an allergic reaction to this product occurs. Seek medical help right away."
+    ],
+    "pregnancy_or_breast_feeding": [
+     "If pregnant or breast feeding, ask a health professional before use."
+    ],
+    "keep_out_of_reach_of_children": [
+     "Keep out of reach of children. In case of overdose, get medical help or contact a Poison Control Center right away (1-800-222-1222)."
+    ],
+    "dosage_and_administration": [
+     "Directions \u2022 use only with enclosed dosing cup adults and children 6 years and over 2 teaspoonfuls (tsp) daily; do not take more than 2 teaspoonfuls (tsp) in 24 hours children 2 to under 6 years of age 1 teaspoonful (tsp) daily; do not take more than 1 teaspoonful (tsp) in 24 hours children under 2 years of age ask a doctor consumers with liver or kidney disease ask a doctor Other information \u2022 do not use if carton is opened, or if printed neckband is broken or missing \u2022 store between 20\u00b0 to 25\u00b0C (68\u00b0 to 77\u00b0F)"
+    ],
+    "dosage_and_administration_table": [
+     "<table width=\"100%\"><col width=\"50%\"/><col width=\"50%\"/><tbody><tr><td styleCode=\"Rrule Botrule \" valign=\"top\"><paragraph>adults and children 6 years and over</paragraph></td><td styleCode=\"Botrule Lrule \" valign=\"top\"><paragraph>2 teaspoonfuls (tsp) daily; do not take more than 2 teaspoonfuls (tsp) in 24 hours</paragraph></td></tr><tr><td styleCode=\"Rrule Botrule \" valign=\"top\"><paragraph>children 2 to under 6 years of age</paragraph></td><td styleCode=\"Lrule Toprule Botrule \" valign=\"top\"><paragraph>1 teaspoonful (tsp) daily; do not take more than 1 teaspoonful (tsp) in 24 hours</paragraph></td></tr><tr><td styleCode=\"Rrule Botrule \" valign=\"top\"><paragraph>children under 2 years of age</paragraph></td><td styleCode=\"Lrule Toprule Botrule \" valign=\"top\"><paragraph>ask a doctor</paragraph></td></tr><tr><td valign=\"top\"><paragraph>consumers with liver or kidney disease</paragraph></td><td valign=\"top\"><paragraph>ask a doctor</paragraph></td></tr></tbody></table>"
+    ],
+    "storage_and_handling": [
+     "Other information \u2022 do not use if carton is opened, or if printed neckband is broken or missing \u2022 store between 20\u00b0 to 25\u00b0C (68\u00b0 to 77\u00b0F)"
+    ],
+    "inactive_ingredient": [
+     "Inactive ingredients edetate disodium, glycerin, maltitol, monobasic sodium phosphate, natural and artificial grape flavor, phosphoric acid, propylene glycol, purified water, sodium benzoate, sorbitol, sucralose Questions or comments? 1-800-719-9260"
+    ],
+    "questions": [
+     "Questions or comments? 1-800-719-9260"
+    ],
+    "package_label_principal_display_panel": [
+     "Package/Label Principal Display Panel 24 HOUR Compare to the active ingredient of Children\u2019s Claritin \u00ae FREE FROM DYE FREE SUGAR FREE FOR AGES 2 YEARS & OLDER CHILDREN\u2019S ALLERGY RELIEF LORATADINE ORAL SOLUTION 5 mg/5 mL ANTIHISTAMINE NON-DROWSY* INDOOR & OUTDOOR ALLERGIES 24 HOUR RELIEF OF: Sneezing \u2022 Runny nose Itchy, watery eyes Itchy throat or nose DYE FREE GRAPE FLAVOR *When taken as directed. See Drug Facts Panel. 4 FL OZ (120 mL) childrens-allergy-relief-grape-carton-image.jpg"
+    ],
+    "set_id": "539336e6-7979-47ed-b1ea-fd46ef547aee",
+    "id": "845127a4-6d8b-44cb-9e25-b2393f147058",
+    "effective_time": "20260904",
+    "version": "4",
+    "openfda": {
+     "application_number": [
+      "ANDA075728"
+     ],
+     "brand_name": [
+      "childrens allergy relief"
+     ],
+     "generic_name": [
+      "LORATADINE"
+     ],
+     "manufacturer_name": [
+      "Rite Aid Corporation"
+     ],
+     "product_ndc": [
+      "11822-0620"
+     ],
+     "product_type": [
+      "HUMAN OTC DRUG"
+     ],
+     "route": [
+      "ORAL"
+     ],
+     "substance_name": [
+      "LORATADINE"
+     ],
+     "rxcui": [
+      "692783"
+     ],
+     "spl_id": [
+      "845127a4-6d8b-44cb-9e25-b2393f147058"
+     ],
+     "spl_set_id": [
+      "539336e6-7979-47ed-b1ea-fd46ef547aee"
+     ],
+     "package_ndc": [
+      "11822-0620-0"
+     ],
+     "is_original_packager": [
+      true
+     ],
+     "unii": [
+      "7AJO3BO7QN"
+     ]
+    }
+   },
+   {
+    "set_id": "7b804f66-9323-4119-a856-1e6f08280781",
+    "id": "e278c23f-3866-42dc-9062-596e13eb0e45",
+    "effective_time": "20260904",
+    "version": "5",
+    "openfda": {
+     "application_number": [
+      "ANDA076011"
+     ],
+     "brand_name": [
+      "loratadine"
+     ],
+     "generic_name": [
+      "LORATADINE"
+     ],
+     "manufacturer_name": [
+      "Rite Aid Corporation"
+     ],
+     "product_ndc": [
+      "11822-0558"
+     ],
+     "product_type": [
+      "HUMAN OTC DRUG"
+     ],
+     "route": [
+      "ORAL"
+     ],
+     "substance_name": [
+      "LORATADINE"
+     ],
+     "rxcui": [
+      "311373"
+     ],
+     "spl_id": [
+      "e278c23f-3866-42dc-9062-596e13eb0e45"
+     ],
+     "spl_set_id": [
+      "7b804f66-9323-4119-a856-1e6f08280781"
+     ],
+     "package_ndc": [
+      "11822-0558-0"
+     ],
+     "is_original_packager": [
+      true
+     ],
+     "unii": [
+      "7AJO3BO7QN"
+     ]
+    }
+   },
+   {
+    "set_id": "f08ebf00-a1d7-4a6f-a84f-195d000de53d",
+    "id": "ae28fcd5-fbb2-487e-9981-e76fe978abcd",
+    "effective_time": "20260904",
+    "version": "6",
+    "openfda": {
+     "application_number": [
+      "ANDA076050"
+     ],
+     "brand_name": [
+      "Allergy Relief D"
+     ],
+     "generic_name": [
+      "LORATADINE, PSEUDOEPHEDRINE SULFATE"
+     ],
+     "manufacturer_name": [
+      "Rite Aid Corporation"
+     ],
+     "product_ndc": [
+      "11822-1055"
+     ],
+     "product_type": [
+      "HUMAN OTC DRUG"
+     ],
+     "route": [
+      "ORAL"
+     ],
+     "substance_name": [
+      "LORATADINE",
+      "PSEUDOEPHEDRINE SULFATE"
+     ],
+     "rxcui": [
+      "1242399"
+     ],
+     "spl_id": [
+      "ae28fcd5-fbb2-487e-9981-e76fe978abcd"
+     ],
+     "spl_set_id": [
+      "f08ebf00-a1d7-4a6f-a84f-195d000de53d"
+     ],
+     "package_ndc": [
+      "11822-1055-0",
+      "11822-1055-2",
+      "11822-1055-1"
+     ],
+     "is_original_packager": [
+      true
+     ],
+     "unii": [
+      "7AJO3BO7QN",
+      "Y9DL7QPE6B"
+     ]
+    }
+   },
+   {
+    "set_id": "5a71de5c-a844-9dd4-e063-6294a90af015",
+    "id": "5a71de70-3333-abbb-e063-6394a90a1ea0",
+    "effective_time": "20260901",
+    "version": "1",
+    "openfda": {
+     "application_number": [
+      "ANDA208314"
+     ],
+     "brand_name": [
+      "Loratadine"
+     ],
+     "generic_name": [
+      "LORATADINE"
+     ],
+     "manufacturer_name": [
+      "YYBA CORP"
+     ],
+     "product_ndc": [
+      "73581-229"
+     ],
+     "product_type": [
+      "HUMAN OTC DRUG"
+     ],
+     "route": [
+      "ORAL"
+     ],
+     "substance_name": [
+      "LORATADINE"
+     ],
+     "rxcui": [
+      "311372"
+     ],
+     "spl_id": [
+      "5a71de70-3333-abbb-e063-6394a90a1ea0"
+     ],
+     "spl_set_id": [
+      "5a71de5c-a844-9dd4-e063-6294a90af015"
+     ],
+     "package_ndc": [
+      "73581-229-01",
+      "73581-229-03"
+     ],
+     "is_original_packager": [
+      true
+     ],
+     "unii": [
+      "7AJO3BO7QN"
+     ]
+    }
+   },
+   {
+    "set_id": "955c9f49-38af-4b48-b325-60fa94bfe60b",
+    "id": "86477abc-a2ce-4752-b802-9000e5835b8c",
+    "effective_time": "20260901",
+    "version": "2",
+    "openfda": {
+     "application_number": [
+      "ANDA076050"
+     ],
+     "brand_name": [
+      "perrigo allergy d"
+     ],
+     "generic_name": [
+      "LORATADINE, PSEUDOEPHEDRINE SULFATE"
+     ],
+     "manufacturer_name": [
+      "L. Perrigo Company"
+     ],
+     "product_ndc": [
+      "0113-7777"
+     ],
+     "product_type": [
+      "HUMAN OTC DRUG"
+     ],
+     "route": [
+      "ORAL"
+     ],
+     "substance_name": [
+      "LORATADINE",
+      "PSEUDOEPHEDRINE SULFATE"
+     ],
+     "rxcui": [
+      "1242399"
+     ],
+     "spl_id": [
+      "86477abc-a2ce-4752-b802-9000e5835b8c"
+     ],
+     "spl_set_id": [
+      "955c9f49-38af-4b48-b325-60fa94bfe60b"
+     ],
+     "package_ndc": [
+      "0113-7777-60",
+      "0113-7777-65"
+     ],
+     "is_original_packager": [
+      true
+     ],
+     "unii": [
+      "7AJO3BO7QN",
+      "Y9DL7QPE6B"
+     ]
+    }
+   }
+  ]
+ }
+}

@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     typesafe_api_key: SecretStr | None = None
     typesafe_model: str = "jev-latest"
     openfda_base_url: str = "https://api.fda.gov"
+    openfda_api_key: SecretStr | None = None
     dailymed_base_url: str = "https://dailymed.nlm.nih.gov/dailymed/services/v2"
     rxnorm_base_url: str = "https://rxnav.nlm.nih.gov/REST"
     cors_origins: list[str] = ["http://localhost:5173"]

@@ -1,0 +1,192 @@
+{
+ "status": 200,
+ "body": {
+  "meta": {
+   "disclaimer": "Do not rely on openFDA to make decisions regarding medical care. While we make every effort to ensure that data is accurate, you should assume all results are unvalidated. We may limit or otherwise restrict your access to the API in line with our Terms of Service.",
+   "terms": "https://open.fda.gov/terms/",
+   "license": "https://open.fda.gov/license/",
+   "last_updated": "2026-09-18",
+   "results": {
+    "skip": 0,
+    "limit": 5,
+    "total": 2
+   }
+  },
+  "results": [
+   {
+    "spl_product_data_elements": [
+     "Loratadine Loratadine LACTOSE MONOHYDRATE STARCH, CORN MAGNESIUM STEARATE SODIUM STARCH GLYCOLATE TYPE A POTATO LORATADINE LORATADINE White to off white G;10"
+    ],
+    "active_ingredient": [
+     "ACTIVE INGREDIENT(S) Loratadine 10 mg"
+    ],
+    "purpose": [
+     "PURPOSE Antihistamine"
+    ],
+    "indications_and_usage": [
+     "USE(S) temporarily relieves these symptoms due to hay fever or other upper respiratory allergies: \uf0a7 runny nose \uf0a7 sneezing \uf0a7 itchy, water eyes \uf0a7 itching of the nose or throat"
+    ],
+    "warnings": [
+     "WARNINGS DO NOT USE if you have ever had an allergic reaction to this product or any of its ingredients"
+    ],
+    "do_not_use": [
+     "DO NOT USE if you have ever had an allergic reaction to this product or any of its ingredients"
+    ],
+    "ask_doctor": [
+     "ASK A DOCTOR BEFORE USE IF you have liver or kidney disease. Your doctor should determine if you need a different dose."
+    ],
+    "when_using": [
+     "WHEN USING THIS PRODUCT do not take more than directed. Taking more than directed may cause drowsiness."
+    ],
+    "stop_use": [
+     "STOP USE AND ASK DOCTOR IF an allergic reaction to this product occurs. Seek medical help right away."
+    ],
+    "pregnancy_or_breast_feeding": [
+     "PREGNANCY/BREASTFEEDING ask a health professional before use"
+    ],
+    "keep_out_of_reach_of_children": [
+     "KEEP OUT OF REACH OF CHILDREN In case of overdose, get medical help or contact a Poison Control Center right away."
+    ],
+    "dosage_and_administration": [
+     "DIRECTIONS adults and children 6 years and over 1 tablet daily; not more than 1 tablet in 24 hours children under 6 years of age ask a doctor consumers with liver or kidney disease ask a doctor"
+    ],
+    "dosage_and_administration_table": [
+     "<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tbody><tr styleCode=\"Botrule\"><td styleCode=\"Lrule Rrule\" valign=\"top\">adults and children 6 years and over</td><td styleCode=\"Rrule\" valign=\"top\"> 1 tablet daily; not more than 1 tablet in 24 hours</td></tr><tr styleCode=\"Botrule\"><td styleCode=\"Lrule Rrule\" valign=\"top\"> children under 6 years of age</td><td styleCode=\"Rrule\" valign=\"top\"> ask a doctor</td></tr><tr><td styleCode=\"Lrule Rrule\" valign=\"top\"> consumers with liver or kidney disease</td><td styleCode=\"Rrule\" valign=\"top\"> ask a doctor</td></tr></tbody></table>"
+    ],
+    "spl_unclassified_section": [
+     "OTHER INFORMATION Tamper-evident: do not use if foil seal under cap, printed with \"SEALED for YOUR PROTECTION\" is missing, open or broken",
+     "QUESTIONS OR COMMENTS Contact 1-877-770-3183: Mon-Fri 8:00 AM EST to 5:00 PM PST."
+    ],
+    "storage_and_handling": [
+     "STORAGE store between 20\u00ba to 25\u00baC (68\u00ba to 77\u00baF)"
+    ],
+    "inactive_ingredient": [
+     "INACTIVE INGREDIENTS Lactose monohydrate, magnesium stearate, sodium starch glycolate and starch maize pregelatinized"
+    ],
+    "recent_major_changes": [
+     ""
+    ],
+    "how_supplied": [
+     "HOW SUPPLIED Loratadine 10 mg NDC 71335-2431-1: 20 Tablets in a BOTTLE NDC 71335-2431-2: 30 Tablets in a BOTTLE NDC 71335-2431-3: 60 Tablets in a BOTTLE NDC 71335-2431-4: 14 Tablets in a BOTTLE NDC 71335-2431-5: 10 Tablets in a BOTTLE NDC 71335-2431-6: 90 Tablets in a BOTTLE NDC 71335-2431-7: 28 Tablets in a BOTTLE NDC 71335-2431-8: 15 Tablets in a BOTTLE NDC 71335-2431-9: 100 Tablets in a BOTTLE Store between 20\u00ba to 25\u00baC (68\u00ba to 77\u00baF). Repackaged/Relabeled by: Bryant Ranch Prepack, Inc. Burbank, CA 91504"
+    ],
+    "package_label_principal_display_panel": [
+     "Loratadine 10mg Tablet Label"
+    ],
+    "set_id": "0d74af21-3ef7-418b-a2ef-78737b0af288",
+    "id": "0d74af21-3ef7-418b-a2ef-78737b0af288",
+    "effective_time": "20250613",
+    "version": "2",
+    "openfda": {
+     "application_number": [
+      "ANDA210722"
+     ],
+     "brand_name": [
+      "Loratadine"
+     ],
+     "generic_name": [
+      "LORATADINE"
+     ],
+     "manufacturer_name": [
+      "Bryant Ranch Prepack"
+     ],
+     "product_ndc": [
+      "71335-2431"
+     ],
+     "product_type": [
+      "HUMAN PRESCRIPTION DRUG"
+     ],
+     "route": [
+      "ORAL"
+     ],
+     "substance_name": [
+      "LORATADINE"
+     ],
+     "rxcui": [
+      "311372"
+     ],
+     "spl_id": [
+      "0d74af21-3ef7-418b-a2ef-78737b0af288"
+     ],
+     "spl_set_id": [
+      "0d74af21-3ef7-418b-a2ef-78737b0af288"
+     ],
+     "package_ndc": [
+      "71335-2431-1",
+      "71335-2431-2",
+      "71335-2431-3",
+      "71335-2431-4",
+      "71335-2431-5",
+      "71335-2431-6",
+      "71335-2431-7",
+      "71335-2431-8",
+      "71335-2431-9"
+     ],
+     "original_packager_product_ndc": [
+      "70010-162"
+     ],
+     "unii": [
+      "7AJO3BO7QN"
+     ]
+    }
+   },
+   {
+    "set_id": "7f97595b-9df7-4834-82f0-5e4ce329c118",
+    "id": "99fa3280-671d-46b4-8b66-94b9171c9ad7",
+    "effective_time": "20250121",
+    "version": "1",
+    "openfda": {
+     "application_number": [
+      "ANDA211718"
+     ],
+     "brand_name": [
+      "Loratadine"
+     ],
+     "generic_name": [
+      "LORATADINE"
+     ],
+     "manufacturer_name": [
+      "Bryant Ranch Prepack"
+     ],
+     "product_ndc": [
+      "71335-2551"
+     ],
+     "product_type": [
+      "HUMAN PRESCRIPTION DRUG"
+     ],
+     "route": [
+      "ORAL"
+     ],
+     "substance_name": [
+      "LORATADINE"
+     ],
+     "rxcui": [
+      "311372"
+     ],
+     "spl_id": [
+      "99fa3280-671d-46b4-8b66-94b9171c9ad7"
+     ],
+     "spl_set_id": [
+      "7f97595b-9df7-4834-82f0-5e4ce329c118"
+     ],
+     "package_ndc": [
+      "71335-2551-1",
+      "71335-2551-2",
+      "71335-2551-3",
+      "71335-2551-4",
+      "71335-2551-5",
+      "71335-2551-6",
+      "71335-2551-7",
+      "71335-2551-8",
+      "71335-2551-9"
+     ],
+     "original_packager_product_ndc": [
+      "69230-323"
+     ],
+     "unii": [
+      "7AJO3BO7QN"
+     ]
+    }
+   }
+  ]
+ }
+}

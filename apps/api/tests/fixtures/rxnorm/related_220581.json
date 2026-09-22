@@ -1,0 +1,44 @@
+{
+  "relatedGroup": {
+    "conceptGroup": [
+      {
+        "conceptProperties": [
+          {
+            "language": "ENG",
+            "name": "acetaminophen",
+            "rxcui": "161",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "IN",
+            "umlscui": ""
+          },
+          {
+            "language": "ENG",
+            "name": "diphenhydramine",
+            "rxcui": "3498",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "IN",
+            "umlscui": ""
+          }
+        ],
+        "tty": "IN"
+      },
+      {
+        "conceptProperties": [
+          {
+            "language": "ENG",
+            "name": "acetaminophen / diphenhydramine",
+            "rxcui": "214181",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "MIN",
+            "umlscui": ""
+          }
+        ],
+        "tty": "MIN"
+      }
+    ],
+    "rxcui": null
+  }
+}

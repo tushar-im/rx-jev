@@ -1,0 +1,24 @@
+{
+  "relatedGroup": {
+    "conceptGroup": [
+      {
+        "conceptProperties": [
+          {
+            "language": "ENG",
+            "name": "ibuprofen",
+            "rxcui": "5640",
+            "suppress": "N",
+            "synonym": "",
+            "tty": "IN",
+            "umlscui": ""
+          }
+        ],
+        "tty": "IN"
+      },
+      {
+        "tty": "MIN"
+      }
+    ],
+    "rxcui": null
+  }
+}

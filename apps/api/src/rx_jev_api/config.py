@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     dailymed_base_url: str = "https://dailymed.nlm.nih.gov/dailymed/services/v2"
     rxnorm_base_url: str = "https://rxnav.nlm.nih.gov/REST"
     cors_origins: list[str] = ["http://localhost:5173"]
+    database_url: str = "sqlite:///rx_jev.db"
 
 
 @lru_cache

@@ -234,6 +234,11 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
+# rx-jev judgment store and batch output
+*.db
+*.db-journal
+review_set_report.json
+
 # Flask stuff:
 instance/
 .webassets-cache

@@ -100,9 +100,14 @@ apps/api  (FastAPI)
 ```
 
 - **Storage.** SQLite through SQLModel for v1. Tables: `label` (set_id, version, raw JSON,
-  fetched_at), `judgment` (set_id, version, question_id, prompt_hash, model_version, full
-  distribution, latency, tokens). Verdicts are derived at read time so thresholds can change
-  without re-running inference.
+  fetched_at), `judge_run` (one Jev request: set_id, version, prompt_hash, requested model,
+  reported model_version, latency, tokens), `judgment` (run, question_id, kind `stance` or
+  `evidence`, full distribution, confidence, `reviewed`). Verdicts are derived at read time so
+  thresholds can change without re-running inference.
+- **Jev request shape.** The state holds only the sections some question uses, each
+  candidate keyed by its ID. Evidence options are those IDs plus `none`. A Choice holds at
+  most 255 options, so a question with more candidates, or with no candidate sections, is
+  skipped and served with a status saying why. It is never truncated.
 - **Keys.** `TYPESAFE_API_KEY` lives only in the backend environment. The browser never sees it.
 - **Model version.** Pin the Jev version per deployment. An upgrade invalidates calibrated
   thresholds, so re-run the review set before switching.
@@ -130,16 +135,19 @@ tests and lint green on both sides.
 Live lookups take 4 to 6 seconds, mostly openFDA search pages. The M2 store absorbs this for
 repeat lookups. A name search endpoint for the UI is left to M3.1.
 
-### M2 Jev judgments
+### M2 Jev judgments (built, not yet run against live Jev)
 
 - M2.1 Judge module: builds stance and evidence questions from the catalog.
 - M2.2 Store module: persist distributions keyed by label version.
 - M2.3 `GET /api/labels/{rxcui}/answers` serves stored judgments. On a miss it computes
   and stores all standard questions for that label version, with `reviewed: false`, as
   defined in step 7 above. A Jev failure returns 503 Problem Details.
-- M2.4 Batch script: precompute the review set of 100 common drugs.
+- M2.4 Batch script: precompute the review set of 100 common drugs
+  (`scripts/precompute_review_set.py`, draft list in `scripts/review_set.txt`).
 
-**Needs:** a TypeSafe API key, and Jev's maximum input size confirmed from the docs.
+All four stories are tested against a fake Jev. The first live run (74 of 100 drugs, all
+`jev-1.13.0`) took 0.4 to 1.5 s and 6K to 62K input tokens per label. Before Gate 1: pin
+`TYPESAFE_MODEL` to an exact version, finish the batch, and check the report.
 
 ### GATE 1 Pharmacist review
 
@@ -169,7 +177,14 @@ reference tool, not a device giving individual advice. **Do not launch publicly 
 
 - **Market.** If users are outside the US, local brands will not resolve and local labels
   may differ from US labels.
-- **Jev input limit.** Long prescription labels may need sections sent in several requests.
+- **Jev input limit.** Not documented. The first review-set run found it: 61,989 input
+  tokens was accepted and labels of about 67K tokens or more were rejected with
+  `400 max_tokens_exceeded` (fluoxetine, duloxetine, quetiapine, topiramate, tramadol,
+  oxycodone). Labels over a conservative 55K estimate are now split into several requests
+  by whole question. A single question too long for any request is skipped as `too_long`.
+- **Evidence by ID.** Evidence options are bare candidate IDs that point into the state.
+  Whether Jev resolves IDs as well as it would full sentence text is unmeasured; Gate 1
+  evidence accuracy answers it.
 - **openFDA rate limits.** Anonymous access is limited per IP. Register a free key before
   the M2.4 batch job.
 - **Canonical label rule.** Checked in M1.2 against ibuprofen, metformin, acetaminophen with

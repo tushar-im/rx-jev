@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from rx_jev_api.clients.errors import UpstreamError
+from rx_jev_api.judge import JudgeError
 
 PROBLEM_JSON = "application/problem+json"
 
@@ -42,6 +43,11 @@ async def _upstream_error(request: Request, exc: UpstreamError) -> JSONResponse:
     return problem(502, "A drug data source is unavailable. Try again later.")
 
 
+async def _judge_error(request: Request, exc: JudgeError) -> JSONResponse:
+    logger.warning("Jev failure on %s %s", request.method, request.url.path, exc_info=exc)
+    return problem(503, "Answers are unavailable right now. Try again later.")
+
+
 async def _unhandled_error(request: Request, exc: Exception) -> JSONResponse:
     # Log the real cause server-side; never send it to the client.
     logger.error("Unhandled exception on %s %s", request.method, request.url.path, exc_info=exc)
@@ -52,6 +58,7 @@ def register_problem_handlers(app: FastAPI) -> None:
     app.add_exception_handler(StarletteHTTPException, _http_error)  # type: ignore[arg-type]
     app.add_exception_handler(RequestValidationError, _validation_error)  # type: ignore[arg-type]
     app.add_exception_handler(UpstreamError, _upstream_error)  # type: ignore[arg-type]
+    app.add_exception_handler(JudgeError, _judge_error)  # type: ignore[arg-type]
     # Registered on Exception, Starlette routes this through ServerErrorMiddleware,
     # so it only runs for errors the handlers above did not catch.
     app.add_exception_handler(Exception, _unhandled_error)

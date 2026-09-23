@@ -12,8 +12,8 @@ from rx_jev_api.catalog import (
     candidate_sections,
     label_format,
 )
-from rx_jev_api.clients.openfda import Label, ProductType
-from rx_jev_api.clients.rxnorm import Ingredient
+from rx_jev_api.clients.openfda import Label, OpenFdaClient, ProductType
+from rx_jev_api.clients.rxnorm import Ingredient, RxNormClient
 from rx_jev_api.deps import OpenFdaDep, RxNormDep
 from rx_jev_api.sentences import split_section
 
@@ -55,12 +55,13 @@ class LabelsResponse(BaseModel):
     labels: list[LabelView]
 
 
-@router.get("/{rxcui}")
-def read_labels(
-    rxcui: Annotated[str, Path(pattern=r"^\d{1,12}$", description="RxNorm concept ID")],
-    rxnorm: RxNormDep,
-    openfda: OpenFdaDep,
-) -> LabelsResponse:
+RxCuiPath = Annotated[str, Path(pattern=r"^\d{1,12}$", description="RxNorm concept ID")]
+
+
+def canonical_labels(
+    rxcui: str, rxnorm: RxNormClient, openfda: OpenFdaClient
+) -> tuple[list[Ingredient], list[Label]]:
+    """The drug's ingredients and its canonical labels, OTC first. 404 when either is missing."""
     ingredients = rxnorm.ingredients_of(rxcui)
     if not ingredients:
         raise HTTPException(status_code=404, detail=f"No drug found for RxCUI {rxcui}.")
@@ -70,7 +71,12 @@ def read_labels(
     if not labels:
         names = " and ".join(i.name for i in ingredients)
         raise HTTPException(status_code=404, detail=f"No FDA label found for {names}.")
+    return ingredients, labels
 
+
+@router.get("/{rxcui}")
+def read_labels(rxcui: RxCuiPath, rxnorm: RxNormDep, openfda: OpenFdaDep) -> LabelsResponse:
+    ingredients, labels = canonical_labels(rxcui, rxnorm, openfda)
     return LabelsResponse(
         rxcui=rxcui, ingredients=ingredients, labels=[_view(label) for label in labels]
     )

@@ -1,0 +1,123 @@
+# Gate 1 review set, DRAFT: 100 common US drugs, to be confirmed by the reviewing pharmacist.
+# One name per line; RxNorm resolves brand and generic names. Mixes prescription and OTC,
+# single ingredients and combinations, and old (pre-PLR) and new label layouts.
+
+# Prescription: cardiovascular and metabolic
+atorvastatin
+simvastatin
+rosuvastatin
+pravastatin
+lisinopril
+losartan
+amlodipine
+metoprolol
+carvedilol
+hydrochlorothiazide
+furosemide
+spironolactone
+valsartan
+clopidogrel
+warfarin
+apixaban
+rivaroxaban
+metformin
+glipizide
+sitagliptin
+empagliflozin
+insulin glargine
+levothyroxine
+
+# Prescription: mental health, sleep and nervous system
+sertraline
+escitalopram
+citalopram
+fluoxetine
+bupropion
+trazodone
+duloxetine
+venlafaxine
+alprazolam
+lorazepam
+clonazepam
+zolpidem
+quetiapine
+aripiprazole
+lamotrigine
+gabapentin
+pregabalin
+topiramate
+methylphenidate
+sumatriptan
+
+# Prescription: pain, inflammation and muscle
+tramadol
+oxycodone
+hydrocodone / acetaminophen  # RxNorm needs "/" or a brand name for this combination
+meloxicam
+celecoxib
+cyclobenzaprine
+prednisone
+
+# Prescription: respiratory, allergy and GI
+albuterol
+montelukast
+fluticasone and salmeterol
+pantoprazole
+ondansetron
+
+# Prescription: anti-infectives
+amoxicillin
+amoxicillin / clavulanate
+azithromycin
+doxycycline
+cephalexin
+ciprofloxacin
+sulfamethoxazole and trimethoprim
+nitrofurantoin
+valacyclovir
+fluconazole
+
+# Prescription: urology and other
+tamsulosin
+finasteride
+sildenafil
+oxybutynin
+allopurinol
+alendronate
+estradiol
+potassium chloride
+
+# OTC: pain and fever
+ibuprofen
+acetaminophen
+naproxen
+aspirin
+Tylenol PM
+
+# OTC: allergy, cold and cough
+loratadine
+cetirizine
+fexofenadine
+diphenhydramine
+pseudoephedrine
+phenylephrine
+guaifenesin
+dextromethorphan
+guaifenesin and dextromethorphan
+doxylamine
+
+# OTC: stomach and bowel
+omeprazole
+esomeprazole
+famotidine
+loperamide
+bismuth subsalicylate
+calcium carbonate
+docusate
+polyethylene glycol 3350
+meclizine
+
+# OTC: skin and other
+hydrocortisone
+clotrimazole
+nicotine

@@ -1,14 +1,25 @@
 from collections.abc import Iterator
+from functools import lru_cache
 from typing import Annotated
 
 import httpx
 from fastapi import Depends
+from sqlalchemy import Engine
+from sqlmodel import Session
+from typesafe_sdk import RetryPolicy, TypeSafeClient
 
 from rx_jev_api.clients.openfda import OpenFdaClient
 from rx_jev_api.clients.rxnorm import RxNormClient
 from rx_jev_api.config import Settings, get_settings
+from rx_jev_api.db import make_engine
+from rx_jev_api.judge import Judge
+from rx_jev_api.store import Store
 
 UPSTREAM_TIMEOUT = httpx.Timeout(20.0)
+# One Jev request carries a whole label (roughly 30K tokens for long prescription labels).
+JEV_TIMEOUT = 60.0
+# The SDK retries 429, 529 and other 5xx with backoff by default; this caps the total wait.
+JEV_RETRY = RetryPolicy(timeout=120.0)
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 
@@ -24,5 +35,34 @@ def get_openfda_client(settings: SettingsDep) -> Iterator[OpenFdaClient]:
         yield OpenFdaClient(http, key)
 
 
+def get_judge(settings: SettingsDep) -> Iterator[Judge]:
+    # Without a key the judge still serves stored answers; only a store miss fails.
+    if settings.typesafe_api_key is None:
+        yield Judge(None, settings.typesafe_model)
+        return
+    with TypeSafeClient(
+        api_key=settings.typesafe_api_key.get_secret_value(),
+        timeout=JEV_TIMEOUT,
+        retry=JEV_RETRY,
+    ) as client:
+        yield Judge(client, settings.typesafe_model)
+
+
+@lru_cache
+def get_engine() -> Engine:
+    return make_engine(get_settings().database_url)
+
+
+def get_session() -> Iterator[Session]:
+    with Session(get_engine()) as session:
+        yield session
+
+
+def get_store(session: Annotated[Session, Depends(get_session)]) -> Store:
+    return Store(session)
+
+
 RxNormDep = Annotated[RxNormClient, Depends(get_rxnorm_client)]
 OpenFdaDep = Annotated[OpenFdaClient, Depends(get_openfda_client)]
+JudgeDep = Annotated[Judge, Depends(get_judge)]
+StoreDep = Annotated[Store, Depends(get_store)]

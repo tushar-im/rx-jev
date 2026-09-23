@@ -7,12 +7,16 @@ Each question gets two Choice judgments over the same state:
 
 Code decides the candidates (catalog sections, split into sentences). Jev only selects, and
 the quote people see is always the candidate's verbatim text. A question with no candidate
-sections, more candidates than a Choice can hold, or more text than fits in one request is
-skipped rather than truncated: the model cannot pick a sentence it was never shown.
+sections, or more text than fits in one request, is skipped rather than truncated: the
+model cannot pick a sentence it was never shown.
 
 All questions for a label go in one request when they fit. Jev rejects requests over its
 input limit (`max_tokens_exceeded`), so a longer label is split into parts: whole questions,
 in catalog order, each part carrying only the sections its own questions read.
+
+A Choice holds at most 255 options. Evidence with more candidates is asked as several chunk
+questions in the same request, then decided by one more request over a shortlist of each
+chunk's most probable sentences. Only that final evidence distribution is returned.
 """
 
 import hashlib
@@ -31,8 +35,10 @@ from rx_jev_api.sentences import Candidate, label_candidates
 __all__ = [
     "MAX_CHOICE_OPTIONS",
     "NONE",
+    "SHORTLIST_PER_CHUNK",
     "STANCES",
     "Distribution",
+    "EvidenceChunks",
     "Judge",
     "JudgeError",
     "JudgePart",
@@ -42,8 +48,10 @@ __all__ = [
     "SkipReason",
     "Stance",
     "build_request",
+    "chunk_key",
     "estimate_tokens",
     "question_key",
+    "shortlist_part",
 ]
 
 Stance = Literal["warns_against", "caution", "dose_change", "no_known_issue", "not_mentioned"]
@@ -55,11 +63,13 @@ STANCES: tuple[Stance, ...] = (
     "not_mentioned",
 )
 Kind = Literal["stance", "evidence"]
-SkipReason = Literal["no_sections", "too_many_candidates", "too_long"]
+SkipReason = Literal["no_sections", "too_long"]
 
 NONE = "none"
 # A Choice question accepts at most this many options, `none` included.
 MAX_CHOICE_OPTIONS = 255
+# Sentences each evidence chunk passes on to the final shortlist question.
+SHORTLIST_PER_CHUNK = 5
 # Jev's input limit is undocumented. The largest request accepted in the first review-set
 # run was 61,989 input tokens; about 67K and up was rejected. With the conservative estimate
 # below, a part at this budget stays under 55K real tokens.
@@ -104,8 +114,17 @@ class JudgePart(BaseModel, frozen=True):
     questions: dict[str, Choice]
 
 
+class EvidenceChunks(BaseModel, frozen=True):
+    """Evidence asked as several chunk questions, because it has too many candidates."""
+
+    subject: str
+    sections: list[str]
+    # Candidate IDs per chunk, in label order.
+    chunks: list[list[str]]
+
+
 class JudgeRequest(BaseModel, frozen=True):
-    # Everything asked about the label, as if it were one request.
+    # Everything asked about the label in the first round, as if it were one request.
     state: dict[str, Any]
     questions: dict[str, Choice]
     # How it is actually sent: one part unless the label is over the token budget.
@@ -113,7 +132,10 @@ class JudgeRequest(BaseModel, frozen=True):
     # Questions sent to Jev, with the candidates their evidence question offers.
     asked: dict[QuestionId, list[Candidate]]
     skipped: dict[QuestionId, SkipReason]
-    # Identifies exactly what Jev sees, so stored judgments are reused only for identical input.
+    # Questions whose evidence is chunked and decided by a shortlist request.
+    evidence_chunks: dict[QuestionId, EvidenceChunks]
+    # Identifies exactly what Jev sees in the first round, so stored judgments are reused
+    # only for identical input. The shortlist request follows from it and Jev's answers.
     prompt_hash: str
 
 
@@ -136,21 +158,32 @@ def question_key(question_id: str, kind: Kind) -> str:
     return f"{question_id}.{kind}"
 
 
+def chunk_key(question_id: str, n: int) -> str:
+    """The key of chunk `n` of a question's chunked evidence."""
+    return f"{question_key(question_id, 'evidence')}.{n}"
+
+
 def build_request(label: Label, max_tokens: int = MAX_REQUEST_TOKENS) -> JudgeRequest:
     asked: dict[QuestionId, list[Candidate]] = {}
     skipped: dict[QuestionId, SkipReason] = {}
     pairs: dict[QuestionId, dict[str, Choice]] = {}
+    evidence_chunks: dict[QuestionId, EvidenceChunks] = {}
 
     for question in CATALOG:
         sections = candidate_sections(question.id, label)
         candidates = label_candidates(label, sections)
         if not candidates:
             skipped[question.id] = "no_sections"
-        elif len(candidates) + 1 > MAX_CHOICE_OPTIONS:
-            skipped[question.id] = "too_many_candidates"
-        else:
-            asked[question.id] = candidates
-            pairs[question.id] = _pair(question.id, question.subject, sections, candidates)
+            continue
+        asked[question.id] = candidates
+        chunks = _chunks(candidates)
+        pairs[question.id] = _pair(question.id, question.subject, sections, chunks)
+        if len(chunks) > 1:
+            evidence_chunks[question.id] = EvidenceChunks(
+                subject=question.subject,
+                sections=sections,
+                chunks=[[c.id for c in chunk] for chunk in chunks],
+            )
 
     parts: list[JudgePart] = []
     current: list[QuestionId] = []
@@ -163,6 +196,7 @@ def build_request(label: Label, max_tokens: int = MAX_REQUEST_TOKENS) -> JudgeRe
         if estimate_tokens(alone.state, alone.questions) > max_tokens:
             skipped[question_id] = "too_long"
             del asked[question_id]
+            evidence_chunks.pop(question_id, None)
             continue
         parts.append(_part(label, asked, pairs, current))
         current = [question_id]
@@ -176,7 +210,48 @@ def build_request(label: Label, max_tokens: int = MAX_REQUEST_TOKENS) -> JudgeRe
         parts=parts,
         asked=asked,
         skipped=dict(sorted(skipped.items(), key=lambda item: _ORDER[item[0]])),
+        evidence_chunks=evidence_chunks,
         prompt_hash=_hash(parts),
+    )
+
+
+def shortlist_part(request: JudgeRequest, first_round: dict[str, Distribution]) -> JudgePart:
+    """The request deciding every chunked evidence question from its chunks' answers.
+
+    Each chunk passes on its most probable sentences, `none` aside, so the final question
+    always has real options even when every chunk answered `none`.
+    """
+    by_id = {c.id: c for candidates in request.asked.values() for c in candidates}
+    shortlists: dict[QuestionId, list[Candidate]] = {}
+    for question_id, spec in request.evidence_chunks.items():
+        picked: set[str] = set()
+        for n, chunk in enumerate(spec.chunks):
+            probabilities = first_round[chunk_key(question_id, n)].probabilities
+            ranked = sorted(chunk, key=lambda cid: -probabilities.get(cid, 0.0))
+            picked.update(ranked[:SHORTLIST_PER_CHUNK])
+        shortlists[question_id] = [
+            by_id[cid] for chunk in spec.chunks for cid in chunk if cid in picked
+        ]
+
+    questions: dict[str, Choice] = {}
+    for question_id, shortlist in shortlists.items():
+        spec = request.evidence_chunks[question_id]
+        used = {c.section for c in shortlist}
+        sections = [s for s in spec.sections if s in used]
+        questions[question_key(question_id, "evidence")] = _evidence(
+            spec.subject, sections, shortlist
+        )
+
+    drug_label = request.state["drug_label"]
+    return JudgePart(
+        state={
+            "drug_label": {
+                "product_type": drug_label["product_type"],
+                "ingredients": drug_label["ingredients"],
+                "sections": _sections_state(list(shortlists.values())),
+            }
+        },
+        questions=questions,
     )
 
 
@@ -209,33 +284,63 @@ def _part(
     return JudgePart(state=state, questions=questions)
 
 
+def _chunks(candidates: list[Candidate]) -> list[list[Candidate]]:
+    """Candidates in as few near-equal chunks as fit a Choice alongside `none`."""
+    per_chunk = MAX_CHOICE_OPTIONS - 1
+    count = math.ceil(len(candidates) / per_chunk)
+    size = math.ceil(len(candidates) / count)
+    return [candidates[i : i + size] for i in range(0, len(candidates), size)]
+
+
 def _pair(
-    question_id: QuestionId, subject: str, sections: list[str], candidates: list[Candidate]
+    question_id: QuestionId, subject: str, sections: list[str], chunks: list[list[Candidate]]
 ) -> dict[str, Choice]:
-    paths = [f"`drug_label.sections.{name}`" for name in sections]
-    return {
-        question_key(question_id, "stance"): Choice(
-            instructions={
-                "question": f"What does this drug label say about {subject}?",
-                "read_only": paths,
-                "rules": _READING_RULES,
-            },
-            criteria=_STANCE_CRITERIA,
-        ),
-        question_key(question_id, "evidence"): Choice(
-            instructions={
-                "question": f"Which sentence best shows what this drug label says about {subject}?",
-                "read_only": paths,
-                "options": (
-                    "Each option is the id of one sentence in the listed sections. Choose "
-                    f"`{NONE}` if no listed sentence addresses the subject."
-                ),
-                "rules": _READING_RULES,
-            },
-            criteria={c.id: None for c in candidates}
-            | {NONE: f"No sentence in the listed sections addresses {subject}."},
-        ),
-    }
+    stance = Choice(
+        instructions={
+            "question": f"What does this drug label say about {subject}?",
+            "read_only": _paths(sections),
+            "rules": _READING_RULES,
+        },
+        criteria=_STANCE_CRITERIA,
+    )
+    if len(chunks) == 1:
+        evidence = {question_key(question_id, "evidence"): _evidence(subject, sections, chunks[0])}
+    else:
+        evidence = {
+            chunk_key(question_id, n): _evidence(subject, sections, chunk, partial=True)
+            for n, chunk in enumerate(chunks)
+        }
+    return {question_key(question_id, "stance"): stance} | evidence
+
+
+def _paths(sections: list[str]) -> list[str]:
+    return [f"`drug_label.sections.{name}`" for name in sections]
+
+
+def _evidence(
+    subject: str, sections: list[str], candidates: list[Candidate], partial: bool = False
+) -> Choice:
+    if partial:
+        options = (
+            "Each option is the id of one sentence in the listed sections; only some of their "
+            f"sentences are options here. Choose `{NONE}` if no option addresses the subject."
+        )
+        no_match = f"None of these sentences addresses {subject}."
+    else:
+        options = (
+            "Each option is the id of one sentence in the listed sections. Choose "
+            f"`{NONE}` if no listed sentence addresses the subject."
+        )
+        no_match = f"No sentence in the listed sections addresses {subject}."
+    return Choice(
+        instructions={
+            "question": f"Which sentence best shows what this drug label says about {subject}?",
+            "read_only": _paths(sections),
+            "options": options,
+            "rules": _READING_RULES,
+        },
+        criteria={c.id: None for c in candidates} | {NONE: no_match},
+    )
 
 
 class Judge:
@@ -260,14 +365,16 @@ class Judge:
         if self._client is None:
             raise JudgeError("TYPESAFE_API_KEY is not configured.")
 
+        client = self._client
         started = perf_counter()
         distributions: dict[str, Distribution] = {}
         model_versions: set[str] = set()
         input_tokens: list[int | None] = []
         output_tokens: list[int | None] = []
-        for part in request.parts:
+
+        def ask(part: JudgePart) -> dict[str, Distribution]:
             try:
-                response = self._client.system_one(
+                response = client.system_one(
                     state=part.state, questions=part.questions, model=self._model
                 )
             except TypeSafeError as exc:
@@ -275,8 +382,18 @@ class Judge:
             model_versions.add(response.model)
             input_tokens.append(response.usage.input_tokens)
             output_tokens.append(response.usage.output_tokens)
-            for key, question in part.questions.items():
-                distributions[key] = _distribution(key, question, response.answers.get(key))
+            return {
+                key: _distribution(key, question, response.answers.get(key))
+                for key, question in part.questions.items()
+            }
+
+        for part in request.parts:
+            distributions |= ask(part)
+        if request.evidence_chunks:
+            distributions |= ask(shortlist_part(request, distributions))
+            for question_id, spec in request.evidence_chunks.items():
+                for n in range(len(spec.chunks)):
+                    del distributions[chunk_key(question_id, n)]
 
         # Parts of one label must come from one model version, or the run mixes models.
         if len(model_versions) != 1:

@@ -107,8 +107,11 @@ apps/api  (FastAPI)
   thresholds can change without re-running inference.
 - **Jev request shape.** The state holds only the sections some question uses, each
   candidate keyed by its ID. Evidence options are those IDs plus `none`. A Choice holds at
-  most 255 options, so a question with more candidates, or with no candidate sections, is
-  skipped and served with a status saying why. It is never truncated.
+  most 255 options, so evidence with more candidates is asked as several chunk questions in
+  the same request, then decided by one more request over the top five sentences of each
+  chunk plus `none` (3 of 121 review-set labels, such as aripiprazole's 343 condition
+  sentences). A question with no candidate sections is skipped and served with a status
+  saying why. Nothing is ever truncated.
 - **Keys.** `TYPESAFE_API_KEY` lives only in the backend environment. The browser never sees it.
 - **Model version.** Request `jev-latest`. Every run records the version Jev reports, so a
   new version shows up in the stored runs; re-check the thresholds when one appears.

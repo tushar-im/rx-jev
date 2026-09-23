@@ -102,11 +102,7 @@ class Store:
         if existing:
             return existing
 
-        self._session.merge(
-            LabelRecord(
-                set_id=label.set_id, version=label.version, raw=label.model_dump(mode="json")
-            )
-        )
+        self._ensure_label(label)
         run = JudgeRun(
             set_id=label.set_id,
             version=label.version,
@@ -121,7 +117,8 @@ class Store:
         try:
             self._session.flush()
         except IntegrityError:
-            # Another request stored the same run first; serve that one.
+            # The label row is already committed, so this can only be the run key: another
+            # writer stored the same run first. Serve that one.
             self._session.rollback()
             stored = self.find(label, request.prompt_hash, model)
             if stored is None:
@@ -143,6 +140,25 @@ class Store:
             )
         self._session.commit()
         return self._load(run)
+
+    def _ensure_label(self, label: Label) -> None:
+        """Commit the label row on its own, so a conflict on it never fails a run's save.
+
+        Writers judging one label version under different prompt hashes or models share
+        this row. Whoever inserts it second hits the primary key; the row is there either
+        way, so that conflict is resolved here before the run is written.
+        """
+        if self._session.get(LabelRecord, (label.set_id, label.version)) is not None:
+            return
+        self._session.add(
+            LabelRecord(
+                set_id=label.set_id, version=label.version, raw=label.model_dump(mode="json")
+            )
+        )
+        try:
+            self._session.commit()
+        except IntegrityError:
+            self._session.rollback()
 
     def label(self, set_id: str, version: str) -> Label | None:
         record = self._session.get(LabelRecord, (set_id, version))

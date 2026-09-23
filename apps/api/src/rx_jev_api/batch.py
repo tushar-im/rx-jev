@@ -27,10 +27,11 @@ class LabelReport(BaseModel):
     version: str
     product_type: ProductType
     fresh: bool
-    model_version: str | None
-    latency_ms: int | None
-    input_tokens: int | None
-    output_tokens: int | None
+    # None when no question had candidates, so the label has no stored run.
+    model_version: str | None = None
+    latency_ms: int | None = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
     skipped: dict[QuestionId, SkipReason]
 
 

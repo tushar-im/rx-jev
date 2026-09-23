@@ -1,12 +1,14 @@
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
+from sqlalchemy import event
 from sqlmodel import Session, select
 
 from rx_jev_api.clients.openfda import Label
 from rx_jev_api.db import make_engine
 from rx_jev_api.judge import Judge, JudgeRequest, JudgeResult, build_request
-from rx_jev_api.store import JudgmentRecord, Store
+from rx_jev_api.store import JudgmentRecord, LabelRecord, Store
 from tests.jev import MODEL_VERSION, FakeJev
 
 MODEL = "jev-latest"
@@ -97,9 +99,69 @@ def test_saving_the_same_key_twice_keeps_the_first_run(
 ) -> None:
     request, result = judged
     first = Store(session).save(metformin_rx, request, MODEL, result)
-    second = Store(session).save(metformin_rx, request, MODEL, result)
-    assert second.id == first.id
+    later = result.model_copy(
+        update={
+            "model_version": "jev-9.9.9",
+            "latency_ms": result.latency_ms + 999,
+            "distributions": {
+                key: d.model_copy(update={"confidence": 0.01})
+                for key, d in result.distributions.items()
+            },
+        }
+    )
+    second = Store(session).save(metformin_rx, request, MODEL, later)
+
+    assert second == first
+    assert Store(session).find(metformin_rx, request.prompt_hash, MODEL) == first
+    assert first.model_version == MODEL_VERSION
     assert len(session.exec(select(JudgmentRecord)).all()) == len(result.distributions)
+
+
+def test_a_rival_writer_storing_the_label_row_does_not_lose_a_distinct_run(
+    tmp_path: Path, metformin_rx: Label, judged: tuple[JudgeRequest, JudgeResult]
+) -> None:
+    # Two deployments judge the same label version under different prompt hashes. The rival
+    # commits the shared label row after this writer checked for it, before it flushes.
+    engine = make_engine(f"sqlite:///{tmp_path / 'race.db'}")
+    request, result = judged
+    fired = False
+
+    with Session(engine) as session:
+
+        @event.listens_for(session, "before_flush")
+        def rival(*_: object) -> None:
+            nonlocal fired
+            if fired:
+                return
+            fired = True
+            with Session(engine) as other:
+                other.add(
+                    LabelRecord(
+                        set_id=metformin_rx.set_id,
+                        version=metformin_rx.version,
+                        raw=metformin_rx.model_dump(mode="json"),
+                    )
+                )
+                other.commit()
+
+        stored = Store(session).save(metformin_rx, request, MODEL, result)
+
+    assert fired
+    assert stored.prompt_hash == request.prompt_hash
+    with Session(engine) as check:
+        assert Store(check).find(metformin_rx, request.prompt_hash, MODEL) == stored
+        assert len(check.exec(select(JudgmentRecord)).all()) == len(result.distributions)
+
+
+def test_one_label_row_serves_runs_under_different_keys(
+    session: Session, metformin_rx: Label, judged: tuple[JudgeRequest, JudgeResult]
+) -> None:
+    request, result = judged
+    first = Store(session).save(metformin_rx, request, MODEL, result)
+    other = request.model_copy(update={"prompt_hash": "other-prompt"})
+    second = Store(session).save(metformin_rx, other, MODEL, result)
+    assert second.id != first.id
+    assert len(session.exec(select(LabelRecord)).all()) == 1
 
 
 def test_label_json_is_kept_for_review(

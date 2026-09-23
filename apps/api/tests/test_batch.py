@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy import Engine
 from sqlmodel import Session
 
-from rx_jev_api.batch import precompute, read_names
+from rx_jev_api.batch import LabelReport, precompute, read_names
 from rx_jev_api.clients.openfda import OpenFdaClient
 from rx_jev_api.clients.rxnorm import RxNormClient
 from rx_jev_api.db import make_engine
@@ -99,6 +99,12 @@ def test_upstream_failure_is_reported(session: Session) -> None:
         Store(session),
     )
     assert report.status == "upstream_failed"
+
+
+def test_a_label_report_without_run_metadata_is_valid() -> None:
+    report = LabelReport(set_id="s", version="1", product_type="otc", fresh=False, skipped={})
+    assert report.model_version is None
+    assert (report.latency_ms, report.input_tokens, report.output_tokens) == (None, None, None)
 
 
 def test_read_names_skips_blanks_comments_and_duplicates() -> None:

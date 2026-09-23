@@ -1,8 +1,8 @@
 """What each canonical label says about every catalog question, served from the store.
 
 A store miss judges every standard question for that label version in one Jev request and
-stores the result before serving it. All misses are judged before any is stored, so a Jev
-failure returns 503 and stores nothing. Answers are never partial or guessed.
+stores the result before serving it (see `answering.judge_labels`). A Jev failure returns
+503 and stores nothing. Answers are never partial or guessed.
 
 The response carries raw judgments: the stance and evidence choices with their confidence.
 Display thresholds come from the Gate 1 pharmacist review and are applied at read time.
@@ -14,18 +14,12 @@ from typing import Literal
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from rx_jev_api.answering import JudgedLabel, judge_labels
 from rx_jev_api.catalog import CATALOG, Group, LabelFormat, Question, QuestionId, label_format
-from rx_jev_api.clients.openfda import Label, ProductType
+from rx_jev_api.clients.openfda import ProductType
 from rx_jev_api.clients.rxnorm import Ingredient
 from rx_jev_api.deps import JudgeDep, OpenFdaDep, RxNormDep, StoreDep
-from rx_jev_api.judge import (
-    NONE,
-    Distribution,
-    JudgeRequest,
-    Stance,
-    build_request,
-    question_key,
-)
+from rx_jev_api.judge import NONE, Distribution, JudgeRequest, Stance, question_key
 from rx_jev_api.routers.labels import RxCuiPath, canonical_labels
 from rx_jev_api.sentences import Candidate
 from rx_jev_api.store import StoredRun
@@ -98,32 +92,14 @@ def read_answers(
     store: StoreDep,
 ) -> AnswersResponse:
     ingredients, labels = canonical_labels(rxcui, rxnorm, openfda)
-    requests = [build_request(label) for label in labels]
-    runs = [
-        store.find(label, request.prompt_hash, judge.model)
-        for label, request in zip(labels, requests, strict=True)
-    ]
-
-    # Judge every miss before storing any, so a Jev failure stores nothing.
-    results = {
-        i: judge.judge(requests[i])
-        for i, run in enumerate(runs)
-        if run is None and requests[i].questions
-    }
-    for i, result in results.items():
-        runs[i] = store.save(labels[i], requests[i], judge.model, result)
-
+    judged = judge_labels(labels, judge, store)
     return AnswersResponse(
-        rxcui=rxcui,
-        ingredients=ingredients,
-        labels=[
-            _label_answers(label, request, run)
-            for label, request, run in zip(labels, requests, runs, strict=True)
-        ],
+        rxcui=rxcui, ingredients=ingredients, labels=[_label_answers(j) for j in judged]
     )
 
 
-def _label_answers(label: Label, request: JudgeRequest, run: StoredRun | None) -> LabelAnswers:
+def _label_answers(judged: JudgedLabel) -> LabelAnswers:
+    label, request, run = judged.label, judged.request, judged.run
     return LabelAnswers(
         set_id=label.set_id,
         version=label.version,

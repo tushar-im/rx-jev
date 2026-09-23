@@ -103,7 +103,7 @@ pseudoephedrine
 phenylephrine
 guaifenesin
 dextromethorphan
-guaifenesin and dextromethorphan
+guaifenesin / dextromethorphan
 doxylamine
 
 # OTC: stomach and bowel

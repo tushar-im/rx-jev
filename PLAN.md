@@ -200,6 +200,10 @@ cases flagged in Gate 1 and a sample of the rest. **Do not launch publicly befor
   `400 max_tokens_exceeded` (fluoxetine, duloxetine, quetiapine, topiramate, tramadol,
   oxycodone). Labels over a conservative 55K estimate are now split into several requests
   by whole question. A single question too long for any request is skipped as `too_long`.
+  Open: aripiprazole still fails with `max_tokens_exceeded`. Its five parts are each
+  estimated at 52K to 55K tokens but carry about 1,000 sentence-ID options, so the
+  estimate undercounts option-heavy requests. Aripiprazole is left out of the Gate 1
+  review; fix by counting options in the estimate or lowering the budget for such parts.
 - **Evidence by ID.** Evidence options are bare candidate IDs that point into the state.
   Whether Jev resolves IDs as well as it would full sentence text is unmeasured; Gate 1
   evidence accuracy answers it.

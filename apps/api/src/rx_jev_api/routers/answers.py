@@ -101,11 +101,11 @@ def read_answers(
     ingredients, labels = canonical_labels(rxcui, rxnorm, openfda)
     judged = judge_labels(labels, judge, store)
     return AnswersResponse(
-        rxcui=rxcui, ingredients=ingredients, labels=[_label_answers(j) for j in judged]
+        rxcui=rxcui, ingredients=ingredients, labels=[label_answers(j) for j in judged]
     )
 
 
-def _label_answers(judged: JudgedLabel) -> LabelAnswers:
+def label_answers(judged: JudgedLabel) -> LabelAnswers:
     label, request, run = judged.label, judged.request, judged.run
     return LabelAnswers(
         set_id=label.set_id,

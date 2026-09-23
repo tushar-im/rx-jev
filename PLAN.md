@@ -162,9 +162,10 @@ for the label's text, and is the quoted sentence the one that shows it. Work hap
 
 - G1.1 Review rules: when each category is correct, and when a quote is correct, written
   from the answer categories above so every row is judged the same way.
-- G1.2 Review sheet: every row that is flagged, plus a random sample of the rest. Flagged
-  means low confidence, `no_known_issue`, a stance that disagrees with its evidence, or
-  `not_mentioned` while the label has candidate sections for the question.
+- G1.2 Review sheet (`scripts/build_review_sheet.py`): every `no_known_issue` answer and
+  every stance that disagrees with its evidence, plus up to 60 other answers from each
+  confidence band (below 0.5, 0.5 to 0.7, 0.7 to 0.9, 0.9 and up, by the weaker of the
+  two confidences). The first build picked 351 of 2,000 judged answers.
 - G1.3 Second reader: Claude grades the same rows blind to Jev's answer. The owner resolves
   every row where the two disagree.
 - G1.4 Thresholds: per question, stance accuracy, evidence accuracy, and every case where

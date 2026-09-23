@@ -174,6 +174,11 @@ class Judge:
         self._client = client
         self._model = model
 
+    @property
+    def model(self) -> str:
+        """The model as requested, which keys stored runs."""
+        return self._model
+
     def judge(self, request: JudgeRequest) -> JudgeResult:
         if not request.questions:
             return JudgeResult(

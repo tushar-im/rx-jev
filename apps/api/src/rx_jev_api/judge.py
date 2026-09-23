@@ -308,8 +308,15 @@ def _hash(parts: list[JudgePart]) -> str:
         for part in parts
     ]
     # A single part hashes exactly as unsplit requests always have, so runs stored before
-    # splitting existed stay valid.
-    body: object = bodies[0] if len(bodies) == 1 else bodies
+    # splitting existed stay valid. No parts (every question skipped) hashes the empty list,
+    # a fixed value, so such a label still has a well-defined prompt hash.
+    body: object
+    if not bodies:
+        body = []
+    elif len(bodies) == 1:
+        body = bodies[0]
+    else:
+        body = bodies
     encoded = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(encoded.encode()).hexdigest()
 

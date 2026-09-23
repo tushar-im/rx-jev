@@ -1,6 +1,8 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
+from typing import get_args
 
+import httpx
 import httpx2
 import pytest
 from fastapi.testclient import TestClient
@@ -8,11 +10,11 @@ from sqlalchemy import Engine
 from sqlmodel import Session, select
 
 from rx_jev_api.catalog import CATALOG
-from rx_jev_api.clients.openfda import Label, OpenFdaClient
+from rx_jev_api.clients.openfda import CanonicalLabels, Label, OpenFdaClient
 from rx_jev_api.clients.rxnorm import RxNormClient
 from rx_jev_api.db import make_engine
 from rx_jev_api.deps import get_judge, get_openfda_client, get_rxnorm_client, get_session
-from rx_jev_api.judge import NONE, STANCES, Judge, build_request
+from rx_jev_api.judge import NONE, STANCES, Judge, SkipReason, build_request
 from rx_jev_api.main import app
 from rx_jev_api.problems import PROBLEM_JSON
 from rx_jev_api.store import JudgeRun
@@ -173,6 +175,48 @@ def test_missing_api_key_is_503(engine: Engine) -> None:
         response = client.get(f"/api/labels/{METFORMIN}/answers")
     assert response.status_code == 503
     assert response.headers["content-type"] == PROBLEM_JSON
+
+
+class OneLabel(OpenFdaClient):
+    """openFDA returning a fixed canonical prescription label, without any HTTP."""
+
+    def __init__(self, label: Label) -> None:
+        def unexpected(request: httpx.Request) -> httpx.Response:
+            raise AssertionError(f"Unexpected openFDA request: {request.url}")
+
+        super().__init__(httpx.Client(transport=httpx.MockTransport(unexpected)))
+        self._label = label
+
+    def canonical_labels(self, ingredients: list[str]) -> CanonicalLabels:
+        return CanonicalLabels(otc=None, prescription=self._label)
+
+
+def test_label_with_every_question_skipped_is_served_without_jev(
+    engine: Engine, jev: FakeJev, metformin_rx: Label
+) -> None:
+    # A canonical label that has none of the sections any catalog question reads.
+    label = metformin_rx.model_copy(
+        update={
+            "sections": {"indications_and_usage": metformin_rx.sections["indications_and_usage"]}
+        }
+    )
+    with serve(engine, jev) as client:
+        app.dependency_overrides[get_openfda_client] = lambda: OneLabel(label)
+        response = client.get(f"/api/labels/{METFORMIN}/answers")
+
+    assert response.status_code == 200
+    [served] = response.json()["labels"]
+    assert served["set_id"] == label.set_id
+    assert served["model_version"] is None
+    assert served["judged_at"] is None
+    assert [a["question_id"] for a in served["answers"]] == [q.id for q in CATALOG]
+    for answer in served["answers"]:
+        assert answer["status"] in get_args(SkipReason)
+        assert answer["stance"] is None
+        assert answer["evidence"] is None
+        assert answer["reviewed"] is False
+    assert jev.requests == []
+    assert runs(engine) == 0
 
 
 def test_unknown_rxcui_is_404_problem(client: TestClient, jev: FakeJev) -> None:

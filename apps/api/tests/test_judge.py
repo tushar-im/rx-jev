@@ -1,3 +1,4 @@
+import hashlib
 from datetime import date
 
 import pytest
@@ -30,6 +31,13 @@ def long_label(sentences: int) -> Label:
         substance_names=["X"],
         is_original_packager=True,
         sections={"pregnancy": "Pregnancy is discussed here.", "contraindications": text},
+    )
+
+
+def unanswerable_label() -> Label:
+    # A real label layout, but none of the sections any catalog question reads.
+    return long_label(0).model_copy(
+        update={"sections": {"indications_and_usage": "Used to treat X in adults."}}
     )
 
 
@@ -211,6 +219,16 @@ def test_judge_sends_one_call_per_part_and_merges_the_answers(metformin_rx: Labe
     assert set(result.distributions) == set(request.questions)
     assert result.input_tokens == 1234 * len(request.parts)
     assert result.output_tokens == 56 * len(request.parts)
+
+
+def test_a_label_with_every_question_skipped_has_no_parts_and_a_stable_hash() -> None:
+    label = unanswerable_label()
+    request = build_request(label)
+    assert request.parts == []
+    assert request.questions == {}
+    assert set(request.skipped) == {q.id for q in CATALOG}
+    assert build_request(label).prompt_hash == request.prompt_hash
+    assert request.prompt_hash == hashlib.sha256(b"[]").hexdigest()
 
 
 def test_judge_rejects_a_missing_answer(metformin_rx: Label) -> None:

@@ -40,6 +40,13 @@ Rules:
 4. **Partial matches count.** A sentence about "severe hepatic impairment" addresses
    liver disease. A sentence about a different condition that merely sounds close does not.
 
+5. **Taking with food.** The categories fit this question loosely, so: an instruction to
+   take it with food (or on an empty stomach) is `caution`; "with or without food" is
+   `no_known_issue`; no food instruction is `not_mentioned`. `dose_change` is not used.
+   Disagreements here may mean the question needs its own categories, not that Jev erred.
+6. **Boxed warning.** Any boxed warning text is at least `caution`; `warns_against` when
+   it says not to use the drug for some group.
+
 Mark `stance_ok` as `yes` or `no`. When `no`, fill `correct_stance`.
 
 ## 2. Is the evidence right?

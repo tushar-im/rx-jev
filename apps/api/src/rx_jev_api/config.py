@@ -3,6 +3,10 @@ from functools import lru_cache
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Agreed at Gate 1: a category is shown only when both its stance and evidence confidence
+# reach this. At 0.9 the blind second read agreed with Jev's stance on 81 of 83 rows.
+GATE_1_MIN_CONFIDENCE = 0.9
+
 
 class Settings(BaseSettings):
     """Runtime configuration, read from the environment or apps/api/.env."""
@@ -17,6 +21,7 @@ class Settings(BaseSettings):
     rxnorm_base_url: str = "https://rxnav.nlm.nih.gov/REST"
     cors_origins: list[str] = ["http://localhost:5173"]
     database_url: str = "sqlite:///rx_jev.db"
+    display_min_confidence: float = GATE_1_MIN_CONFIDENCE
 
 
 @lru_cache

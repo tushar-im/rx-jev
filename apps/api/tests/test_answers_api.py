@@ -12,6 +12,7 @@ from sqlmodel import Session, select
 from rx_jev_api.catalog import CATALOG
 from rx_jev_api.clients.openfda import CanonicalLabels, Label, OpenFdaClient
 from rx_jev_api.clients.rxnorm import RxNormClient
+from rx_jev_api.config import Settings, get_settings
 from rx_jev_api.db import make_engine
 from rx_jev_api.deps import get_judge, get_openfda_client, get_rxnorm_client, get_session
 from rx_jev_api.judge import MAX_CHOICE_OPTIONS, NONE, STANCES, Judge, SkipReason, build_request
@@ -241,6 +242,29 @@ def test_question_with_more_sentences_than_one_choice_holds_is_judged(
     quote = answer["evidence"]["quote"]
     assert quote["text"] in label.sections[quote["section"]]
     assert len(jev.requests) == len(request.parts) + 1
+
+
+def test_answers_below_the_display_threshold_are_not_confident(client: TestClient) -> None:
+    # FakeJev answers with confidence 0.8, under the 0.9 set at Gate 1.
+    label = client.get(f"/api/labels/{METFORMIN}/answers").json()["labels"][0]
+    assert label["answers"]
+    assert all(a["confident"] is False for a in label["answers"])
+
+
+def test_confident_needs_both_confidences_at_the_threshold(engine: Engine, jev: FakeJev) -> None:
+    with serve(engine, jev) as client:
+        app.dependency_overrides[get_settings] = lambda: Settings(
+            _env_file=None, display_min_confidence=0.8
+        )
+        label = client.get(f"/api/labels/{METFORMIN}/answers").json()["labels"][0]
+    judged = [a for a in label["answers"] if a["status"] == "judged"]
+    skipped = [a for a in label["answers"] if a["status"] != "judged"]
+    assert judged and all(a["confident"] is True for a in judged)
+    assert all(a["confident"] is False for a in skipped)
+
+
+def test_gate_1_display_threshold_is_the_default() -> None:
+    assert Settings(_env_file=None).display_min_confidence == 0.9
 
 
 def test_unknown_rxcui_is_404_problem(client: TestClient, jev: FakeJev) -> None:

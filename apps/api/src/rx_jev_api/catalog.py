@@ -57,6 +57,8 @@ class Question(BaseModel, frozen=True):
     # fallbacks sit next to their PLR equivalents; absent sections are skipped.
     otc_sections: tuple[str, ...]
     prescription_sections: tuple[str, ...]
+    # Extra rules for this question's stance, added to the shared reading rules.
+    stance_rules: tuple[str, ...] = ()
 
 
 # Sections that only appear in the OTC Drug Facts layout.
@@ -108,6 +110,11 @@ CATALOG: tuple[Question, ...] = (
         title="Children",
         otc_sections=("do_not_use", "dosage_and_administration"),
         prescription_sections=("pediatric_use",),
+        # Agreed at Gate 1: unestablished safety tells parents something, so it is not silence.
+        stance_rules=(
+            "A statement that safety or effectiveness in children or pediatric patients has "
+            "not been established is `caution`, not `not_mentioned`.",
+        ),
     ),
     Question(
         id="older_adults",

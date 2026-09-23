@@ -111,6 +111,14 @@ def test_instructions_name_the_subject_and_the_sections_to_read(metformin_rx: La
             assert f"`drug_label.sections.{section}`" in text
 
 
+def test_children_stance_counts_unestablished_safety_as_caution(metformin_rx: Label) -> None:
+    request = build_request(metformin_rx)
+    children = str(request.questions[question_key("children", "stance")].instructions)
+    assert "not been established" in children and "`caution`" in children
+    pregnancy = str(request.questions[question_key("pregnancy", "stance")].instructions)
+    assert "not been established" not in pregnancy
+
+
 def test_question_without_sections_is_skipped(ibuprofen_otc: Label) -> None:
     request = build_request(ibuprofen_otc)
     assert request.skipped["boxed_warning"] == "no_sections"

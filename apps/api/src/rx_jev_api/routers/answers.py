@@ -5,7 +5,8 @@ stores the result before serving it (see `answering.judge_labels`). A Jev failur
 503 and stores nothing. Answers are never partial or guessed.
 
 The response carries raw judgments: the stance and evidence choices with their confidence.
-Display thresholds come from the Gate 1 pharmacist review and are applied at read time.
+The display threshold agreed at Gate 1 is applied at read time as `confident`, so it can
+change without re-running inference.
 """
 
 from datetime import date, datetime
@@ -18,7 +19,8 @@ from rx_jev_api.answering import JudgedLabel, judge_labels
 from rx_jev_api.catalog import CATALOG, Group, LabelFormat, Question, QuestionId, label_format
 from rx_jev_api.clients.openfda import ProductType
 from rx_jev_api.clients.rxnorm import Ingredient
-from rx_jev_api.deps import JudgeDep, OpenFdaDep, RxNormDep, StoreDep
+from rx_jev_api.config import GATE_1_MIN_CONFIDENCE
+from rx_jev_api.deps import JudgeDep, OpenFdaDep, RxNormDep, SettingsDep, StoreDep
 from rx_jev_api.judge import (
     NONE,
     Distribution,
@@ -65,6 +67,9 @@ class Answer(BaseModel):
     status: AnswerStatus
     # True only once a pharmacist has checked both judgments.
     reviewed: bool
+    # True when both confidences reach the display threshold, so the category may be shown.
+    # Otherwise show the quote and point to the full label. Always False when skipped.
+    confident: bool
     stance: StanceView | None
     evidence: EvidenceView | None
 
@@ -97,15 +102,20 @@ def read_answers(
     openfda: OpenFdaDep,
     judge: JudgeDep,
     store: StoreDep,
+    settings: SettingsDep,
 ) -> AnswersResponse:
     ingredients, labels = canonical_labels(rxcui, rxnorm, openfda)
     judged = judge_labels(labels, judge, store)
     return AnswersResponse(
-        rxcui=rxcui, ingredients=ingredients, labels=[label_answers(j) for j in judged]
+        rxcui=rxcui,
+        ingredients=ingredients,
+        labels=[label_answers(j, settings.display_min_confidence) for j in judged],
     )
 
 
-def label_answers(judged: JudgedLabel) -> LabelAnswers:
+def label_answers(
+    judged: JudgedLabel, min_confidence: float = GATE_1_MIN_CONFIDENCE
+) -> LabelAnswers:
     label, request, run = judged.label, judged.request, judged.run
     return LabelAnswers(
         set_id=label.set_id,
@@ -118,11 +128,13 @@ def label_answers(judged: JudgedLabel) -> LabelAnswers:
         dailymed_url=label.dailymed_url,
         model_version=run.model_version if run else None,
         judged_at=run.created_at if run else None,
-        answers=[_answer(q, request, run) for q in CATALOG],
+        answers=[_answer(q, request, run, min_confidence) for q in CATALOG],
     )
 
 
-def _answer(question: Question, request: JudgeRequest, run: StoredRun | None) -> Answer:
+def _answer(
+    question: Question, request: JudgeRequest, run: StoredRun | None, min_confidence: float
+) -> Answer:
     skipped = request.skipped.get(question.id)
     if skipped is not None:
         return Answer(
@@ -131,6 +143,7 @@ def _answer(question: Question, request: JudgeRequest, run: StoredRun | None) ->
             title=question.title,
             status=skipped,
             reviewed=False,
+            confident=False,
             stance=None,
             evidence=None,
         )
@@ -145,6 +158,8 @@ def _answer(question: Question, request: JudgeRequest, run: StoredRun | None) ->
         title=question.title,
         status="judged",
         reviewed=stance.reviewed and evidence.reviewed,
+        confident=min(stance.distribution.confidence, evidence.distribution.confidence)
+        >= min_confidence,
         stance=StanceView.model_validate(stance.distribution.model_dump()),
         evidence=_evidence(request.asked[question.id], evidence.distribution),
     )

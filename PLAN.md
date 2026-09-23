@@ -61,8 +61,10 @@ Fixed for every question:
 - Headings read "What the label says about pregnancy", never "Is it safe in pregnancy".
 - No green ticks or red crosses. Neutral icons plus the quoted sentence.
 - Every answer shows the label version and date, and links to the DailyMed page.
-- Low-confidence stance or evidence `none` shows "We couldn't find a clear answer. Read the
-  full label or ask a pharmacist." It never shows a guess.
+- An answer shows its category only when the API marks it `confident`: stance and
+  evidence confidence both at least 0.9 (`display_min_confidence` in config, agreed at
+  Gate 1). Otherwise, or when evidence is `none`, it shows "We couldn't find a clear
+  answer. Read the full label or ask a pharmacist." It never shows a guess.
 - A persistent "Ask your pharmacist" link on every result.
 
 ### Question catalog, v1
@@ -166,20 +168,46 @@ for the label's text, and is the quoted sentence the one that shows it. Work hap
   every stance that disagrees with its evidence, plus up to 60 other answers from each
   confidence band (below 0.5, 0.5 to 0.7, 0.7 to 0.9, 0.9 and up, by the weaker of the
   two confidences). The first build picked 351 of 2,000 judged answers.
-- G1.3 Second reader: Claude grades the same rows blind to Jev's answer. The owner resolves
-  every row where the two disagree.
-- G1.4 Thresholds: per question, stance accuracy, evidence accuracy, and every case where
-  `not_mentioned` and `no_known_issue` were confused. Set confidence thresholds from this
-  data, not from cookbook defaults, and leaning towards showing low confidence when unsure.
+- G1.3 Second reader (`scripts/second_read.py`): Claude graded all 351 rows blind to Jev's
+  answer. The stances agreed on 285 (81%); 83 rows disagreed on stance or on `none`.
+- G1.4 Thresholds, from the second read (done, 2026-09-23):
 
-**Do not start M3 until thresholds are agreed.**
+  | Weaker confidence | Stance agreement | Share of 2,000 answers |
+  |---|---|---|
+  | 0.9 and up | 81/83 (98%) | 53% |
+  | 0.7 to 0.9 | 74/85 (87%) | 17% |
+  | 0.5 to 0.7 | 77/90 (86%) | 16% |
+  | below 0.5 | 53/93 (57%) | 15% |
+
+  No `not_mentioned` / `no_known_issue` swaps. Decisions agreed with the owner:
+  1. **Display threshold 0.9** on both confidences, applied at read time as `confident`.
+     Lower it only after the Gate 2 pharmacist spot-check.
+  2. **Children**: "safety or effectiveness not established" is `caution`. Added to the
+     children stance instructions, which changes their prompt hash: 107 stored labels are
+     re-judged on the next batch run (about 3.3M input tokens).
+  3. **Taking with food** is hidden in the UI. Its 14 disagreements were mostly the same
+     sentence put in different categories: the five categories do not fit food
+     instructions. It gets its own options (with food, empty stomach, either, not
+     mentioned) after M3.
+
+  Follow-ups found by the review, none blocking M3:
+  - Finasteride breastfeeding: `no_known_issue` at 0.73 from a fetal-study sentence, while
+    the label says it is not for use in women. Below the threshold, so not shown as a
+    category; re-check after the re-run.
+  - OTC sentence lead-ins: some "Ask a doctor" items carry a "Do not use" lead-in
+    (diphenhydramine, doxylamine), which can push a stance towards `warns_against`.
+  - Section headings are merged into sentences, such as "2 DOSAGE AND ADMINISTRATION ...".
+  - Aripiprazole still exceeds Jev's input limit (see Open questions).
+
+Thresholds are agreed, so Gate 1 is passed and M3 may start.
 
 ### M3 User interface
 
 - M3.1 Drug search with RxNorm suggestions.
-- M3.2 Question chips grouped as in the catalog.
+- M3.2 Question chips grouped as in the catalog. `take_with_food` is hidden until it has
+  its own options.
 - M3.3 Answer card: category, quoted sentence, label version and date, DailyMed link.
-- M3.4 Low-confidence and not-found states.
+- M3.4 Low-confidence and not-found states, driven by the API's `confident` flag.
 
 ### M4 Custom questions
 

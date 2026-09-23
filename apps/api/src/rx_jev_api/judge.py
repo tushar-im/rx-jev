@@ -177,7 +177,9 @@ def build_request(label: Label, max_tokens: int = MAX_REQUEST_TOKENS) -> JudgeRe
             continue
         asked[question.id] = candidates
         chunks = _chunks(candidates)
-        pairs[question.id] = _pair(question.id, question.subject, sections, chunks)
+        pairs[question.id] = _pair(
+            question.id, question.subject, question.stance_rules, sections, chunks
+        )
         if len(chunks) > 1:
             evidence_chunks[question.id] = EvidenceChunks(
                 subject=question.subject,
@@ -293,13 +295,17 @@ def _chunks(candidates: list[Candidate]) -> list[list[Candidate]]:
 
 
 def _pair(
-    question_id: QuestionId, subject: str, sections: list[str], chunks: list[list[Candidate]]
+    question_id: QuestionId,
+    subject: str,
+    stance_rules: tuple[str, ...],
+    sections: list[str],
+    chunks: list[list[Candidate]],
 ) -> dict[str, Choice]:
     stance = Choice(
         instructions={
             "question": f"What does this drug label say about {subject}?",
             "read_only": _paths(sections),
-            "rules": _READING_RULES,
+            "rules": [*_READING_RULES, *stance_rules],
         },
         criteria=_STANCE_CRITERIA,
     )

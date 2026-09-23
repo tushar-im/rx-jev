@@ -23,7 +23,8 @@ safe, allowed, or right for anyone.
    ingredient, one per repackager: 907 OTC ibuprofen labels, 338 prescription metformin
    labels at time of writing. Some drugs, such as ibuprofen, have both an OTC and a
    prescription label; the API returns one of each and the UI lets the person switch. For
-   each type: the label's ingredient list must match exactly (salt forms allowed), prefer
+   each type: the label's ingredient list must match exactly (salt forms allowed), the
+   label must have an application number (which excludes homeopathic products), prefer
    the original packager and fall back to repackagers, then take the latest
    `effective_time`. openFDA stores only product-level RxCUIs, so the search uses
    ingredient names, not the ingredient RxCUI.
@@ -205,7 +206,11 @@ cases flagged in Gate 1 and a sample of the rest. **Do not launch publicly befor
   diphenhydramine, loratadine, atorvastatin and sertraline. Preferring the brand's NDA was
   rejected: for prescription ibuprofen it picks IV hospital products. Open: the rule does
   not yet consider route or dosage form, so a rare injectable could win for a drug that is
-  usually oral. Revisit at Gate 1.
+  usually oral. Revisit at Gate 1. The review-set run showed homeopathic products winning
+  the OTC slot for five prescription-only drugs (insulin glargine, levothyroxine,
+  citalopram, estradiol, potassium chloride). They have no `application_number`, while all
+  116 other review-set labels have an NDA, ANDA, BLA or OTC monograph number, so labels
+  without one are now skipped.
 - **Mislabelled product types.** Some repackager labels marked prescription use OTC
   sections, and older prescription labels use `warnings` and `precautions` instead of
   `warnings_and_cautions`. The M1.3 mapper must select by the sections actually present.

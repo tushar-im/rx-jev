@@ -2,8 +2,10 @@
 
 openFDA holds hundreds of labels per ingredient, one per repackager. The canonical rule:
 1. The label's ingredient list matches the requested ingredients exactly (salts allowed).
-2. Original packager preferred; repackagers only when no original packager label exists.
-3. Latest `effective_time` wins.
+2. The label has an application number (NDA, ANDA, BLA or OTC monograph). Homeopathic
+   products named after a drug, such as "Citalopram 30C", have none and are not that drug.
+3. Original packager preferred; repackagers only when no original packager label exists.
+4. Latest `effective_time` wins.
 Run separately for OTC and prescription labels.
 """
 
@@ -77,6 +79,7 @@ class _OpenFdaMeta(BaseModel):
     brand_name: list[str] = []
     manufacturer_name: list[str] = []
     is_original_packager: list[bool] = []
+    application_number: list[str] = []
 
 
 class _RawLabel(BaseModel, extra="allow"):
@@ -145,7 +148,9 @@ class OpenFdaClient:
                 raise UpstreamError("openFDA result set too large to search for a canonical label")
             results = self._search(search, skip=skip, limit=limit)
             for raw in results:
-                if matches_ingredients(raw.openfda.substance_name, ingredients):
+                if raw.openfda.application_number and matches_ingredients(
+                    raw.openfda.substance_name, ingredients
+                ):
                     return raw
             if len(results) < limit:
                 return None

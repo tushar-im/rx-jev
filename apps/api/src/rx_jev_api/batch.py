@@ -5,6 +5,10 @@ label the store lacks is judged. A failing drug is reported and the batch moves 
 the batch only calls Jev for labels whose version, prompt or model changed.
 """
 
+import json
+import os
+import tempfile
+from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel
@@ -17,7 +21,7 @@ from rx_jev_api.clients.rxnorm import RxNormClient
 from rx_jev_api.judge import Judge, JudgeError, SkipReason
 from rx_jev_api.store import Store
 
-__all__ = ["DrugReport", "LabelReport", "precompute", "read_names"]
+__all__ = ["DrugReport", "LabelReport", "precompute", "read_names", "write_report"]
 
 DrugStatus = Literal["ok", "not_found", "no_label", "upstream_failed", "jev_failed"]
 
@@ -41,6 +45,26 @@ class DrugReport(BaseModel):
     rxcui: str | None = None
     labels: list[LabelReport] = []
     error: str | None = None
+
+
+def write_report(path: Path, reports: list[DrugReport]) -> None:
+    """Replace the report atomically, so an interrupted run never leaves partial JSON.
+
+    The JSON goes to a temporary file in the same directory, which is then renamed over the
+    report. A rename within one filesystem is atomic, so readers see the old report or the
+    new one, never a mix.
+    """
+    body = json.dumps([r.model_dump() for r in reports], indent=2) + "\n"
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(body)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
 
 
 def read_names(text: str) -> list[str]:

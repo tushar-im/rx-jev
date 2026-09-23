@@ -8,7 +8,6 @@ Judgments go to DATABASE_URL. Re-running only calls Jev for labels the store lac
 report lists every drug's status, labels, tokens, latency and skipped questions.
 """
 
-import json
 import sys
 from pathlib import Path
 
@@ -16,7 +15,7 @@ import httpx
 from sqlmodel import Session
 from typesafe_sdk import TypeSafeClient
 
-from rx_jev_api.batch import precompute, read_names
+from rx_jev_api.batch import precompute, read_names, write_report
 from rx_jev_api.clients.openfda import OpenFdaClient
 from rx_jev_api.clients.rxnorm import RxNormClient
 from rx_jev_api.config import get_settings
@@ -60,8 +59,8 @@ def main() -> None:
                 Store(session),
             )
             reports.append(report)
-            # Rewrite after every drug so an interrupted run still leaves a report.
-            report_path.write_text(json.dumps([r.model_dump() for r in reports], indent=2) + "\n")
+            # Rewrite after every drug so an interrupted run still leaves a complete report.
+            write_report(report_path, reports)
             tokens = sum(label.input_tokens or 0 for label in report.labels if label.fresh)
             line = f"{report.status:16} {name}  labels={len(report.labels)}  new_tokens={tokens}"
             print(line + (f"  error={report.error}" if report.error else ""), flush=True)

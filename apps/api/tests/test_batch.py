@@ -1,4 +1,7 @@
+import json
+import os
 from collections.abc import Iterator
+from pathlib import Path
 
 import httpx
 import httpx2
@@ -6,7 +9,7 @@ import pytest
 from sqlalchemy import Engine
 from sqlmodel import Session
 
-from rx_jev_api.batch import LabelReport, precompute, read_names
+from rx_jev_api.batch import DrugReport, LabelReport, precompute, read_names, write_report
 from rx_jev_api.clients.openfda import OpenFdaClient
 from rx_jev_api.clients.rxnorm import RxNormClient
 from rx_jev_api.db import make_engine
@@ -105,6 +108,32 @@ def test_a_label_report_without_run_metadata_is_valid() -> None:
     report = LabelReport(set_id="s", version="1", product_type="otc", fresh=False, skipped={})
     assert report.model_version is None
     assert (report.latency_ms, report.input_tokens, report.output_tokens) == (None, None, None)
+
+
+def test_write_report_writes_complete_json_and_leaves_no_temp_files(tmp_path: Path) -> None:
+    path = tmp_path / "report.json"
+    reports = [DrugReport(name="metformin", status="not_found")]
+    write_report(path, reports)
+    assert json.loads(path.read_text()) == [r.model_dump() for r in reports]
+    assert list(tmp_path.iterdir()) == [path]
+
+
+def test_an_interrupted_report_write_keeps_the_previous_report(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "report.json"
+    write_report(path, [DrugReport(name="first", status="ok")])
+    before = path.read_text()
+
+    def interrupted(src: object, dst: object) -> None:
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(os, "replace", interrupted)
+    with pytest.raises(KeyboardInterrupt):
+        write_report(path, [DrugReport(name="first", status="ok")] * 2)
+
+    assert path.read_text() == before
+    assert list(tmp_path.iterdir()) == [path]
 
 
 def test_read_names_skips_blanks_comments_and_duplicates() -> None:

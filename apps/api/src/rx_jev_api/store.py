@@ -1,7 +1,7 @@
 """Stores Jev's full distributions per label version, so each label is judged once.
 
 A run is keyed by label `set_id` and `version`, the request's prompt hash, and the requested
-model. Any change to the label text, the questions, or the pinned model misses the store and
+model. Any change to the label text, the questions, or the requested model misses the store and
 triggers a fresh run. Verdicts are not stored: they are derived at read time, so thresholds
 can change after the Gate 1 review without re-running inference.
 """

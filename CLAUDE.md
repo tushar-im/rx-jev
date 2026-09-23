@@ -42,8 +42,8 @@ make lint          # ruff check/format + oxlint + tsc
   limit. Then split by whole questions (`judge.build_request`), never by truncating text.
 - Store full probability distributions, plus prompt hash and model version. Derive verdicts
   at read time.
-- Thresholds come from the Gate 1 pharmacist review, never from cookbook defaults.
-- `TYPESAFE_API_KEY` stays server-side. Pin the model version in config per deployment.
+- Thresholds come from the Gate 1 review, never from cookbook defaults.
+- `TYPESAFE_API_KEY` stays server-side. Request `jev-latest`; runs record the reported version.
 
 ## Code conventions
 
@@ -65,7 +65,7 @@ make lint          # ruff check/format + oxlint + tsc
 
 ## Workflow
 
-- Work on `task/<slug>` or `milestone/<slug>` branches. Never commit to `main`.
+- Work on `task/<slug>`, `milestone/<slug>` or `gate/<slug>` branches. Never commit to `main`.
 - Commit after each passing story with its ID, for example `M1.2: canonical label selection`.
 - Max three fix cycles per story, then write the blocker to `blocked.md` and stop.
 - Stop at every GATE in PLAN.md and wait for a human.

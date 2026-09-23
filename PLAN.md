@@ -37,7 +37,7 @@ safe, allowed, or right for anyone.
 7. **Serve from the store, compute on a miss.** A miss means no stored judgments exist for
    this label `set_id`, `version`, prompt hash and model version. On a miss, the API runs
    step 5 for all standard questions in one request, stores the result, then serves it.
-   Answers not yet checked by a pharmacist carry `reviewed: false`. If Jev fails, the API
+   Answers not yet checked by a human reviewer carry `reviewed: false`. If Jev fails, the API
    returns a 503 Problem Details response and stores nothing. It never serves a partial or
    guessed answer. Custom questions always call Jev live and are never stored as reviewed.
 
@@ -109,8 +109,8 @@ apps/api  (FastAPI)
   most 255 options, so a question with more candidates, or with no candidate sections, is
   skipped and served with a status saying why. It is never truncated.
 - **Keys.** `TYPESAFE_API_KEY` lives only in the backend environment. The browser never sees it.
-- **Model version.** Pin the Jev version per deployment. An upgrade invalidates calibrated
-  thresholds, so re-run the review set before switching.
+- **Model version.** Request `jev-latest`. Every run records the version Jev reports, so a
+  new version shows up in the stored runs; re-check the thresholds when one appears.
 - **External data.** Every openFDA, RxNorm and Jev response is parsed with Pydantic on the
   way in. Every API response is parsed with zod in the browser.
 - **Errors.** RFC 7807 Problem Details everywhere.
@@ -135,7 +135,7 @@ tests and lint green on both sides.
 Live lookups take 4 to 6 seconds, mostly openFDA search pages. The M2 store absorbs this for
 repeat lookups. A name search endpoint for the UI is left to M3.1.
 
-### M2 Jev judgments (built, not yet run against live Jev)
+### M2 Jev judgments (done)
 
 - M2.1 Judge module: builds stance and evidence questions from the catalog.
 - M2.2 Store module: persist distributions keyed by label version.
@@ -146,15 +146,28 @@ repeat lookups. A name search endpoint for the UI is left to M3.1.
   (`scripts/precompute_review_set.py`, draft list in `scripts/review_set.txt`).
 
 All four stories are tested against a fake Jev. The first live run (74 of 100 drugs, all
-`jev-1.13.0`) took 0.4 to 1.5 s and 6K to 62K input tokens per label. Before Gate 1: pin
-`TYPESAFE_MODEL` to an exact version, finish the batch, and check the report.
+`jev-1.13.0`) took 0.4 to 1.5 s and 6K to 62K input tokens per label. Before Gate 1: finish
+the batch with `TYPESAFE_MODEL=jev-latest` and check the report.
 
-### GATE 1 Pharmacist review
+### GATE 1 Label-reading review
 
-A pharmacist reviews the stored answers for 100 drugs against the 19 v1 questions. Record,
-per question, stance accuracy, evidence accuracy, and every case where `not_mentioned` and
-`no_known_issue` were confused. Set confidence thresholds from this data, not from cookbook
-defaults. **Do not start M3 until thresholds are agreed.**
+No pharmacist is available yet, so the project owner reviews the stored answers for the 100
+drugs. The review checks what the label says, not clinical judgment: is the category right
+for the label's text, and is the quoted sentence the one that shows it. Work happens on
+`gate/1-label-review`.
+
+- G1.1 Review rules: when each category is correct, and when a quote is correct, written
+  from the answer categories above so every row is judged the same way.
+- G1.2 Review sheet: every row that is flagged, plus a random sample of the rest. Flagged
+  means low confidence, `no_known_issue`, a stance that disagrees with its evidence, or
+  `not_mentioned` while the label has candidate sections for the question.
+- G1.3 Second reader: Claude grades the same rows blind to Jev's answer. The owner resolves
+  every row where the two disagree.
+- G1.4 Thresholds: per question, stance accuracy, evidence accuracy, and every case where
+  `not_mentioned` and `no_known_issue` were confused. Set confidence thresholds from this
+  data, not from cookbook defaults, and leaning towards showing low confidence when unsure.
+
+**Do not start M3 until thresholds are agreed.**
 
 ### M3 User interface
 
@@ -171,7 +184,8 @@ defaults. **Do not start M3 until thresholds are agreed.**
 ### GATE 2 Regulatory and wording review
 
 Confirm with a regulatory advisor that the wording and display rules keep this a label
-reference tool, not a device giving individual advice. **Do not launch publicly before this.**
+reference tool, not a device giving individual advice. A pharmacist spot-checks the hard
+cases flagged in Gate 1 and a sample of the rest. **Do not launch publicly before this.**
 
 ## Open questions
 

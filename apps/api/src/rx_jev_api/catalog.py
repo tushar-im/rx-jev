@@ -50,6 +50,9 @@ class Question(BaseModel, frozen=True):
     id: QuestionId
     group: Group
     title: str
+    # What Jev is asked about, phrased to fit "what does this label say about <subject>".
+    # Question IDs are never sent to the model, so this carries the full meaning.
+    subject: str
     # Candidate sections in priority order, per label layout. Old-layout prescription
     # fallbacks sit next to their PLR equivalents; absent sections are skipped.
     otc_sections: tuple[str, ...]
@@ -70,11 +73,12 @@ _CONDITION_RX = (
 )
 
 
-def _condition(id_: QuestionId, title: str) -> Question:
+def _condition(id_: QuestionId, title: str, subject: str) -> Question:
     return Question(
         id=id_,
         group="conditions",
         title=title,
+        subject=subject,
         otc_sections=_CONDITION_OTC,
         prescription_sections=_CONDITION_RX,
     )
@@ -83,6 +87,7 @@ def _condition(id_: QuestionId, title: str) -> Question:
 CATALOG: tuple[Question, ...] = (
     Question(
         id="pregnancy",
+        subject="use during pregnancy",
         group="who",
         title="Pregnancy",
         otc_sections=("pregnancy_or_breast_feeding",),
@@ -90,6 +95,7 @@ CATALOG: tuple[Question, ...] = (
     ),
     Question(
         id="breastfeeding",
+        subject="use while breastfeeding",
         group="who",
         title="Breastfeeding",
         otc_sections=("pregnancy_or_breast_feeding",),
@@ -97,6 +103,7 @@ CATALOG: tuple[Question, ...] = (
     ),
     Question(
         id="children",
+        subject="use in children",
         group="who",
         title="Children",
         otc_sections=("do_not_use", "dosage_and_administration"),
@@ -104,22 +111,34 @@ CATALOG: tuple[Question, ...] = (
     ),
     Question(
         id="older_adults",
+        subject="use in older adults",
         group="who",
         title="Older adults",
         otc_sections=("ask_doctor", "dosage_and_administration"),
         prescription_sections=("geriatric_use",),
     ),
-    _condition("diabetes", "Diabetes"),
-    _condition("high_blood_pressure", "High blood pressure"),
-    _condition("kidney", "Kidney disease"),
-    _condition("liver", "Liver disease"),
-    _condition("heart", "Heart disease"),
-    _condition("asthma", "Asthma"),
-    _condition("glaucoma", "Glaucoma"),
-    _condition("enlarged_prostate", "Enlarged prostate"),
-    _condition("stomach_ulcers", "Stomach ulcers or bleeding"),
+    _condition("diabetes", "Diabetes", "people who have diabetes"),
+    _condition("high_blood_pressure", "High blood pressure", "people who have high blood pressure"),
+    _condition(
+        "kidney", "Kidney disease", "people who have kidney disease or reduced kidney function"
+    ),
+    _condition("liver", "Liver disease", "people who have liver disease"),
+    _condition("heart", "Heart disease", "people who have heart disease, including heart failure"),
+    _condition("asthma", "Asthma", "people who have asthma"),
+    _condition("glaucoma", "Glaucoma", "people who have glaucoma"),
+    _condition(
+        "enlarged_prostate",
+        "Enlarged prostate",
+        "people who have an enlarged prostate or trouble urinating",
+    ),
+    _condition(
+        "stomach_ulcers",
+        "Stomach ulcers or bleeding",
+        "people who have stomach ulcers or stomach bleeding",
+    ),
     Question(
         id="alcohol",
+        subject="drinking alcohol while using this drug",
         group="combinations",
         title="Alcohol",
         otc_sections=("warnings", "when_using"),
@@ -132,6 +151,7 @@ CATALOG: tuple[Question, ...] = (
     ),
     Question(
         id="blood_thinners",
+        subject="using this drug together with blood thinners (anticoagulants such as warfarin)",
         group="combinations",
         title="Blood thinners",
         otc_sections=("ask_doctor_or_pharmacist",),
@@ -139,6 +159,7 @@ CATALOG: tuple[Question, ...] = (
     ),
     Question(
         id="drowsiness_driving",
+        subject="drowsiness, or driving and operating machinery, while using this drug",
         group="daily_life",
         title="Drowsiness and driving",
         otc_sections=("when_using",),
@@ -151,6 +172,7 @@ CATALOG: tuple[Question, ...] = (
     ),
     Question(
         id="take_with_food",
+        subject="taking this drug with or without food",
         group="daily_life",
         title="Taking with food",
         otc_sections=("dosage_and_administration",),
@@ -158,6 +180,7 @@ CATALOG: tuple[Question, ...] = (
     ),
     Question(
         id="boxed_warning",
+        subject="serious risks highlighted in a boxed warning",
         group="serious",
         title="Boxed warning",
         otc_sections=(),
@@ -165,6 +188,7 @@ CATALOG: tuple[Question, ...] = (
     ),
     Question(
         id="allergy",
+        subject="people who have had an allergic reaction to this drug or its ingredients",
         group="serious",
         title="Allergy warnings",
         otc_sections=("do_not_use", "warnings"),

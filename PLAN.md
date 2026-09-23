@@ -145,10 +145,9 @@ repeat lookups. A name search endpoint for the UI is left to M3.1.
 - M2.4 Batch script: precompute the review set of 100 common drugs
   (`scripts/precompute_review_set.py`, draft list in `scripts/review_set.txt`).
 
-All four stories are tested against a fake Jev. Before Gate 1: set `TYPESAFE_API_KEY`, pin
-`TYPESAFE_MODEL` to an exact version, run the batch, and check the report for failures and
-token counts. The docs give no maximum input size; long prescription labels come to about
-30K tokens per request by character count.
+All four stories are tested against a fake Jev. The first live run (74 of 100 drugs, all
+`jev-1.13.0`) took 0.4 to 1.5 s and 6K to 62K input tokens per label. Before Gate 1: pin
+`TYPESAFE_MODEL` to an exact version, finish the batch, and check the report.
 
 ### GATE 1 Pharmacist review
 
@@ -178,9 +177,11 @@ reference tool, not a device giving individual advice. **Do not launch publicly 
 
 - **Market.** If users are outside the US, local brands will not resolve and local labels
   may differ from US labels.
-- **Jev input limit.** Not documented. Long prescription labels are about 30K tokens per
-  request (ibuprofen Rx 33K, metformin 29K by character estimate). If Jev rejects them,
-  send sections in several requests. The M2.4 report records real token counts.
+- **Jev input limit.** Not documented. The first review-set run found it: 61,989 input
+  tokens was accepted and labels of about 67K tokens or more were rejected with
+  `400 max_tokens_exceeded` (fluoxetine, duloxetine, quetiapine, topiramate, tramadol,
+  oxycodone). Labels over a conservative 55K estimate are now split into several requests
+  by whole question. A single question too long for any request is skipped as `too_long`.
 - **Evidence by ID.** Evidence options are bare candidate IDs that point into the state.
   Whether Jev resolves IDs as well as it would full sentence text is unmeasured; Gate 1
   evidence accuracy answers it.

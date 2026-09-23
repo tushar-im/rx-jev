@@ -60,10 +60,12 @@ def main() -> None:
                 Store(session),
             )
             reports.append(report)
+            # Rewrite after every drug so an interrupted run still leaves a report.
+            report_path.write_text(json.dumps([r.model_dump() for r in reports], indent=2) + "\n")
             tokens = sum(label.input_tokens or 0 for label in report.labels if label.fresh)
-            print(f"{report.status:16} {name}  labels={len(report.labels)}  new_tokens={tokens}")
+            line = f"{report.status:16} {name}  labels={len(report.labels)}  new_tokens={tokens}"
+            print(line + (f"  error={report.error}" if report.error else ""), flush=True)
 
-    report_path.write_text(json.dumps([r.model_dump() for r in reports], indent=2) + "\n")
     failed = [r.name for r in reports if r.status != "ok"]
     print(f"\n{len(reports) - len(failed)}/{len(reports)} ok. Report: {report_path}")
     if failed:

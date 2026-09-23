@@ -11,6 +11,7 @@ from rx_jev_api.judge import (
     Judge,
     JudgeError,
     build_request,
+    estimate_tokens,
     question_key,
 )
 from rx_jev_api.sentences import label_candidates
@@ -159,6 +160,57 @@ def test_judge_rejects_a_choice_outside_the_options(metformin_rx: Label) -> None
     jev = FakeJev(pick=lambda key, options: "made_up")
     with pytest.raises(JudgeError):
         Judge(jev.client(), "jev-latest").judge(build_request(metformin_rx))
+
+
+def test_a_label_that_fits_is_sent_as_one_part(metformin_rx: Label) -> None:
+    request = build_request(metformin_rx)
+    [part] = request.parts
+    assert part.state == request.state
+    assert part.questions == request.questions
+
+
+def test_an_oversized_label_splits_by_question_under_the_budget(metformin_rx: Label) -> None:
+    budget = 12_000
+    request = build_request(metformin_rx, max_tokens=budget)
+    assert len(request.parts) > 1
+
+    keys = [key for part in request.parts for key in part.questions]
+    assert sorted(keys) == sorted(request.questions)
+    for part in request.parts:
+        assert estimate_tokens(part.state, part.questions) <= budget
+        question_ids = {key.rsplit(".", 1)[0] for key in part.questions}
+        for question_id in question_ids:
+            assert question_key(question_id, "stance") in part.questions
+            assert question_key(question_id, "evidence") in part.questions
+        used = {c.section for q in question_ids for c in request.asked[q]}
+        assert set(part.state["drug_label"]["sections"]) == used
+
+
+def test_a_question_too_long_for_any_part_is_skipped(metformin_rx: Label) -> None:
+    request = build_request(metformin_rx, max_tokens=3_000)
+    assert request.skipped["kidney"] == "too_long"
+    assert "kidney" not in request.asked
+    assert question_key("kidney", "stance") not in request.questions
+    assert "older_adults" in request.asked
+    assert all(estimate_tokens(p.state, p.questions) <= 3_000 for p in request.parts)
+
+
+def test_prompt_hash_covers_how_the_label_was_split(metformin_rx: Label) -> None:
+    whole = build_request(metformin_rx).prompt_hash
+    assert build_request(metformin_rx, max_tokens=12_000).prompt_hash != whole
+
+
+def test_judge_sends_one_call_per_part_and_merges_the_answers(metformin_rx: Label) -> None:
+    jev = FakeJev()
+    request = build_request(metformin_rx, max_tokens=12_000)
+    result = Judge(jev.client(), "jev-latest").judge(request)
+    assert len(jev.requests) == len(request.parts)
+    assert [set(body["questions"]) for body in jev.requests] == [
+        set(part.questions) for part in request.parts
+    ]
+    assert set(result.distributions) == set(request.questions)
+    assert result.input_tokens == 1234 * len(request.parts)
+    assert result.output_tokens == 56 * len(request.parts)
 
 
 def test_judge_rejects_a_missing_answer(metformin_rx: Label) -> None:

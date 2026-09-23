@@ -19,7 +19,14 @@ from rx_jev_api.catalog import CATALOG, Group, LabelFormat, Question, QuestionId
 from rx_jev_api.clients.openfda import ProductType
 from rx_jev_api.clients.rxnorm import Ingredient
 from rx_jev_api.deps import JudgeDep, OpenFdaDep, RxNormDep, StoreDep
-from rx_jev_api.judge import NONE, Distribution, JudgeRequest, Stance, question_key
+from rx_jev_api.judge import (
+    NONE,
+    Distribution,
+    JudgeRequest,
+    SkipReason,
+    Stance,
+    question_key,
+)
 from rx_jev_api.routers.labels import RxCuiPath, canonical_labels
 from rx_jev_api.sentences import Candidate
 from rx_jev_api.store import StoredRun
@@ -27,7 +34,7 @@ from rx_jev_api.store import StoredRun
 router = APIRouter(prefix="/api/labels", tags=["answers"])
 
 # `judged`, or why the question was not sent to Jev.
-AnswerStatus = Literal["judged", "no_sections", "too_many_candidates"]
+AnswerStatus = Literal["judged", SkipReason]
 
 
 class Quote(BaseModel):

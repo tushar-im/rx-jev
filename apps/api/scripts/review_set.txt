@@ -52,7 +52,7 @@ sumatriptan
 # Prescription: pain, inflammation and muscle
 tramadol
 oxycodone
-hydrocodone and acetaminophen
+hydrocodone / acetaminophen  # RxNorm needs "/" or a brand name for this combination
 meloxicam
 celecoxib
 cyclobenzaprine
@@ -67,7 +67,7 @@ ondansetron
 
 # Prescription: anti-infectives
 amoxicillin
-amoxicillin and clavulanate
+amoxicillin / clavulanate
 azithromycin
 doxycycline
 cephalexin

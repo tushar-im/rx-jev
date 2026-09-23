@@ -38,7 +38,8 @@ make lint          # ruff check/format + oxlint + tsc
 
 - Load the `typesafe-ai` skill and read the live docs before changing any judgment code.
 - Code decides which label sections are candidates. Jev only judges what it is given.
-- All questions for one label go in one request.
+- All questions for one label go in one request, unless that request is over Jev's input
+  limit. Then split by whole questions (`judge.build_request`), never by truncating text.
 - Store full probability distributions, plus prompt hash and model version. Derive verdicts
   at read time.
 - Thresholds come from the Gate 1 pharmacist review, never from cookbook defaults.

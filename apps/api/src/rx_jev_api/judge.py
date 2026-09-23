@@ -1,4 +1,4 @@
-"""Asks Jev what one label says about every catalog question, in a single request.
+"""Asks Jev what one label says about every catalog question.
 
 Each question gets two Choice judgments over the same state:
 
@@ -7,12 +7,17 @@ Each question gets two Choice judgments over the same state:
 
 Code decides the candidates (catalog sections, split into sentences). Jev only selects, and
 the quote people see is always the candidate's verbatim text. A question with no candidate
-sections, or more candidates than a Choice can hold, is skipped rather than truncated: the
-model cannot pick a sentence it was never shown.
+sections, more candidates than a Choice can hold, or more text than fits in one request is
+skipped rather than truncated: the model cannot pick a sentence it was never shown.
+
+All questions for a label go in one request when they fit. Jev rejects requests over its
+input limit (`max_tokens_exceeded`), so a longer label is split into parts: whole questions,
+in catalog order, each part carrying only the sections its own questions read.
 """
 
 import hashlib
 import json
+import math
 from time import perf_counter
 from typing import Any, Literal
 
@@ -30,12 +35,14 @@ __all__ = [
     "Distribution",
     "Judge",
     "JudgeError",
+    "JudgePart",
     "JudgeRequest",
     "JudgeResult",
     "Kind",
     "SkipReason",
     "Stance",
     "build_request",
+    "estimate_tokens",
     "question_key",
 ]
 
@@ -48,11 +55,18 @@ STANCES: tuple[Stance, ...] = (
     "not_mentioned",
 )
 Kind = Literal["stance", "evidence"]
-SkipReason = Literal["no_sections", "too_many_candidates"]
+SkipReason = Literal["no_sections", "too_many_candidates", "too_long"]
 
 NONE = "none"
 # A Choice question accepts at most this many options, `none` included.
 MAX_CHOICE_OPTIONS = 255
+# Jev's input limit is undocumented. The largest request accepted in the first review-set
+# run was 61,989 input tokens; about 67K and up was rejected. With the conservative estimate
+# below, a part at this budget stays under 55K real tokens.
+MAX_REQUEST_TOKENS = 55_000
+# Measured over 72 review-set requests: 2.77 to 3.48 characters of request JSON per input
+# token. The low end keeps the estimate conservative.
+CHARS_PER_TOKEN = 2.75
 
 _STANCE_CRITERIA: dict[str, str] = {
     "warns_against": (
@@ -83,13 +97,23 @@ class JudgeError(Exception):
     """Jev is not configured, failed, or answered outside a question's options."""
 
 
-class JudgeRequest(BaseModel, frozen=True):
+class JudgePart(BaseModel, frozen=True):
+    """One Jev API call: some whole questions and only the sections they read."""
+
     state: dict[str, Any]
     questions: dict[str, Choice]
+
+
+class JudgeRequest(BaseModel, frozen=True):
+    # Everything asked about the label, as if it were one request.
+    state: dict[str, Any]
+    questions: dict[str, Choice]
+    # How it is actually sent: one part unless the label is over the token budget.
+    parts: list[JudgePart]
     # Questions sent to Jev, with the candidates their evidence question offers.
     asked: dict[QuestionId, list[Candidate]]
     skipped: dict[QuestionId, SkipReason]
-    # Identifies the exact request, so stored judgments are reused only for identical input.
+    # Identifies exactly what Jev sees, so stored judgments are reused only for identical input.
     prompt_hash: str
 
 
@@ -112,36 +136,95 @@ def question_key(question_id: str, kind: Kind) -> str:
     return f"{question_id}.{kind}"
 
 
-def build_request(label: Label) -> JudgeRequest:
+def build_request(label: Label, max_tokens: int = MAX_REQUEST_TOKENS) -> JudgeRequest:
     asked: dict[QuestionId, list[Candidate]] = {}
     skipped: dict[QuestionId, SkipReason] = {}
-    questions: dict[str, Choice] = {}
+    pairs: dict[QuestionId, dict[str, Choice]] = {}
 
     for question in CATALOG:
         sections = candidate_sections(question.id, label)
         candidates = label_candidates(label, sections)
         if not candidates:
             skipped[question.id] = "no_sections"
-            continue
-        if len(candidates) + 1 > MAX_CHOICE_OPTIONS:
+        elif len(candidates) + 1 > MAX_CHOICE_OPTIONS:
             skipped[question.id] = "too_many_candidates"
-            continue
+        else:
+            asked[question.id] = candidates
+            pairs[question.id] = _pair(question.id, question.subject, sections, candidates)
 
-        asked[question.id] = candidates
-        paths = [f"`drug_label.sections.{name}`" for name in sections]
-        questions[question_key(question.id, "stance")] = Choice(
+    parts: list[JudgePart] = []
+    current: list[QuestionId] = []
+    for question_id in list(asked):
+        trial = _part(label, asked, pairs, [*current, question_id])
+        if estimate_tokens(trial.state, trial.questions) <= max_tokens:
+            current.append(question_id)
+            continue
+        alone = _part(label, asked, pairs, [question_id])
+        if estimate_tokens(alone.state, alone.questions) > max_tokens:
+            skipped[question_id] = "too_long"
+            del asked[question_id]
+            continue
+        parts.append(_part(label, asked, pairs, current))
+        current = [question_id]
+    if current:
+        parts.append(_part(label, asked, pairs, current))
+
+    whole = _part(label, asked, pairs, list(asked))
+    return JudgeRequest(
+        state=whole.state,
+        questions=whole.questions,
+        parts=parts,
+        asked=asked,
+        skipped=dict(sorted(skipped.items(), key=lambda item: _ORDER[item[0]])),
+        prompt_hash=_hash(parts),
+    )
+
+
+def estimate_tokens(state: dict[str, Any], questions: dict[str, Choice]) -> int:
+    """A conservative estimate of the input tokens Jev counts for one request."""
+    body = {
+        "state": state,
+        "questions": {k: q.model_dump(mode="json") for k, q in questions.items()},
+    }
+    return math.ceil(len(json.dumps(body, ensure_ascii=False)) / CHARS_PER_TOKEN)
+
+
+_ORDER: dict[str, int] = {q.id: n for n, q in enumerate(CATALOG)}
+
+
+def _part(
+    label: Label,
+    asked: dict[QuestionId, list[Candidate]],
+    pairs: dict[QuestionId, dict[str, Choice]],
+    question_ids: list[QuestionId],
+) -> JudgePart:
+    state = {
+        "drug_label": {
+            "product_type": label.product_type,
+            "ingredients": label.substance_names,
+            "sections": _sections_state([asked[q] for q in question_ids]),
+        }
+    }
+    questions = {key: choice for q in question_ids for key, choice in pairs[q].items()}
+    return JudgePart(state=state, questions=questions)
+
+
+def _pair(
+    question_id: QuestionId, subject: str, sections: list[str], candidates: list[Candidate]
+) -> dict[str, Choice]:
+    paths = [f"`drug_label.sections.{name}`" for name in sections]
+    return {
+        question_key(question_id, "stance"): Choice(
             instructions={
-                "question": f"What does this drug label say about {question.subject}?",
+                "question": f"What does this drug label say about {subject}?",
                 "read_only": paths,
                 "rules": _READING_RULES,
             },
             criteria=_STANCE_CRITERIA,
-        )
-        questions[question_key(question.id, "evidence")] = Choice(
+        ),
+        question_key(question_id, "evidence"): Choice(
             instructions={
-                "question": (
-                    f"Which sentence best shows what this drug label says about {question.subject}?"
-                ),
+                "question": f"Which sentence best shows what this drug label says about {subject}?",
                 "read_only": paths,
                 "options": (
                     "Each option is the id of one sentence in the listed sections. Choose "
@@ -150,23 +233,9 @@ def build_request(label: Label) -> JudgeRequest:
                 "rules": _READING_RULES,
             },
             criteria={c.id: None for c in candidates}
-            | {NONE: f"No sentence in the listed sections addresses {question.subject}."},
-        )
-
-    state = {
-        "drug_label": {
-            "product_type": label.product_type,
-            "ingredients": label.substance_names,
-            "sections": _sections_state(asked),
-        }
+            | {NONE: f"No sentence in the listed sections addresses {subject}."},
+        ),
     }
-    return JudgeRequest(
-        state=state,
-        questions=questions,
-        asked=asked,
-        skipped=skipped,
-        prompt_hash=_hash(state, questions),
-    )
 
 
 class Judge:
@@ -192,43 +261,61 @@ class Judge:
             raise JudgeError("TYPESAFE_API_KEY is not configured.")
 
         started = perf_counter()
-        try:
-            response = self._client.system_one(
-                state=request.state, questions=request.questions, model=self._model
-            )
-        except TypeSafeError as exc:
-            raise JudgeError("The Jev request failed.") from exc
-        latency_ms = round((perf_counter() - started) * 1000)
+        distributions: dict[str, Distribution] = {}
+        model_versions: set[str] = set()
+        input_tokens: list[int | None] = []
+        output_tokens: list[int | None] = []
+        for part in request.parts:
+            try:
+                response = self._client.system_one(
+                    state=part.state, questions=part.questions, model=self._model
+                )
+            except TypeSafeError as exc:
+                raise JudgeError("The Jev request failed.") from exc
+            model_versions.add(response.model)
+            input_tokens.append(response.usage.input_tokens)
+            output_tokens.append(response.usage.output_tokens)
+            for key, question in part.questions.items():
+                distributions[key] = _distribution(key, question, response.answers.get(key))
 
-        distributions = {
-            key: _distribution(key, question, response.answers.get(key))
-            for key, question in request.questions.items()
-        }
+        # Parts of one label must come from one model version, or the run mixes models.
+        if len(model_versions) != 1:
+            raise JudgeError(f"Jev answered one label with several models: {model_versions}.")
         return JudgeResult(
-            model_version=response.model,
-            latency_ms=latency_ms,
-            input_tokens=response.usage.input_tokens,
-            output_tokens=response.usage.output_tokens,
+            model_version=model_versions.pop(),
+            latency_ms=round((perf_counter() - started) * 1000),
+            input_tokens=_total(input_tokens),
+            output_tokens=_total(output_tokens),
             distributions=distributions,
         )
 
 
-def _sections_state(asked: dict[QuestionId, list[Candidate]]) -> dict[str, dict[str, Any]]:
+def _sections_state(groups: list[list[Candidate]]) -> dict[str, dict[str, Any]]:
     sections: dict[str, dict[str, Any]] = {}
-    for candidates in asked.values():
+    for candidates in groups:
         for c in candidates:
             entry = c.text if c.lead_in is None else {"lead_in": c.lead_in.text, "text": c.text}
             sections.setdefault(c.section, {})[c.id] = entry
     return sections
 
 
-def _hash(state: dict[str, Any], questions: dict[str, Choice]) -> str:
-    body = {
-        "state": state,
-        "questions": {k: q.model_dump(mode="json") for k, q in questions.items()},
-    }
+def _hash(parts: list[JudgePart]) -> str:
+    bodies = [
+        {
+            "state": part.state,
+            "questions": {k: q.model_dump(mode="json") for k, q in part.questions.items()},
+        }
+        for part in parts
+    ]
+    # A single part hashes exactly as unsplit requests always have, so runs stored before
+    # splitting existed stay valid.
+    body: object = bodies[0] if len(bodies) == 1 else bodies
     encoded = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(encoded.encode()).hexdigest()
+
+
+def _total(counts: list[int | None]) -> int | None:
+    return None if any(c is None for c in counts) else sum(c for c in counts if c is not None)
 
 
 def _distribution(key: str, question: Choice, answer: object) -> Distribution:

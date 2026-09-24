@@ -130,6 +130,8 @@ def test_evidence_over_the_option_limit_is_split_into_chunks_not_truncated() -> 
     candidates = [c.id for c in request.asked["allergy"]]
     assert len(candidates) >= MAX_CHOICE_OPTIONS
     assert "allergy" not in request.skipped
+    # Chunking one question never drops an unrelated one.
+    assert "pregnancy" in request.asked
 
     chunks = request.evidence_chunks["allergy"].chunks
     assert len(chunks) == 2

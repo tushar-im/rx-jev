@@ -85,6 +85,10 @@ def test_one_row_per_judged_question_with_its_quote(metformin_rx: Label, store: 
     assert first.stance == "warns_against"
     assert first.quote_text is not None
     assert first.quote_text in metformin_rx.sections[first.quote_section or ""]
+    # The whole candidate sentence, verbatim: not truncated or altered.
+    [chosen] = [c for c in j.request.asked[first.question_id] if c.id == first.evidence]
+    assert (first.quote_section, first.quote_text) == (chosen.section, chosen.text)
+    assert first.quote_lead_in == (chosen.lead_in.text if chosen.lead_in else None)
 
 
 def test_skipped_questions_have_no_rows(ibuprofen_otc: Label, store: Store) -> None:

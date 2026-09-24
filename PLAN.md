@@ -273,6 +273,100 @@ Done before Gate 2, so the reviewers see the layout that will launch.
   other label answers a question clearly, the card points to it without saying what it says.
   OTC and prescription labels are never merged: they are different products.
 
+### M6 Cloudflare deployment: TypeScript port
+
+The backend is ported from Python to TypeScript and deployed as Cloudflare Workers. The app
+waits on the network (openFDA 4 to 8 s, Jev 1 to 60 s per label), so what the move buys is
+not speed of code. It buys:
+- millisecond cold starts;
+- Cloudflare's most mature path (Drizzle on D1, and tests in the Workers runtime);
+- one language with the web app, so one set of zod schemas defines the API contract for
+  both.
+
+Python on Workers was the cheaper step, but it keeps the slowest cold starts and a young
+third-party D1 library. The codebase is small today (about 3,000 lines of app code and 228
+tests), so this is the cheapest time to port.
+
+- **Two Workers.**
+  - **API Worker:** Hono, TypeScript strict, zod for every external payload, Drizzle ORM on
+    D1, and the TypeSafe JS SDK.
+  - **Web Worker:** serves the Vite build as static assets. `/api/*` reaches the API
+    Worker on the same origin, through a route on a custom domain or a service binding on
+    `workers.dev`, so the web app keeps its relative `/api` calls and needs no CORS.
+- **One contract.** A shared `packages/contract` holds the zod schemas for every API
+  request and response. The Worker builds its responses from them and the web app parses
+  with them. The hand-kept mirror of the Pydantic models in `apps/web/src/api.ts` goes
+  away.
+- **Same API.** The same paths, JSON shapes, Problem Details, trace fields and guardrails.
+  The web app's behaviour does not change.
+- **Storage.**
+  - D1 holds `label`, `judge_run` and `judgment` as today. The largest stored label is
+    265 KB, under D1's 2 MB row limit, so labels stay in D1.
+  - The existing `rx_jev.db` is imported, so no stored judgment is lost.
+- **Prompt-hash parity is the hard requirement.** The Worker must build byte-identical Jev
+  requests, or every stored label is re-judged (about 4,900 judgments, 4.4M input tokens).
+  JavaScript differs from Python in the details that matter:
+  - regex semantics in the sentence splitter;
+  - string length (UTF-16 units against code points) in the token estimate, which decides
+    how a long label is split;
+  - JSON serialization (sorted keys, no spaces, non-ASCII kept) in the prompt hash.
+
+  So before any port code, Python writes golden files for every stored label: its
+  candidates, request parts and prompt hash. The TypeScript code must match all of them.
+- **Tests.** Vitest in the Workers runtime (`@cloudflare/vitest-pool-workers`), with a local
+  D1. The 228 Python tests are ported. The recorded RxNorm and openFDA fixtures move to a
+  shared `fixtures/` folder that both implementations replay.
+- **Private until Gate 2.** Both Workers sit behind Cloudflare Access, and open to the
+  public only after Gate 2.
+- **Python stays until cutover.** `apps/api` remains the reference until every port test and
+  golden file passes and the deployed Worker has passed its smoke test. Then it is removed.
+
+Stories:
+
+- M6.1 Monorepo and contract:
+  - npm workspaces for `apps/worker`, `apps/web` and `packages/contract`;
+  - the web app's zod schemas moved into the contract and imported from there;
+  - Biome, oxlint and `tsc` across all three.
+- M6.2 Golden files from Python. A script writes, for every label in `rx_jev.db` and the
+  test fixtures, its candidates per section, the Jev request parts and the prompt hash,
+  together with the pinned hashes. It runs before any port code.
+- M6.3 Worker scaffold:
+  - Hono with `/api/health`;
+  - Problem Details for every error;
+  - Wrangler config with D1, KV and a Durable Object;
+  - Vitest in the Workers runtime;
+  - `make` targets for the Worker.
+- M6.4 The RxNorm and openFDA clients, with zod on every response, the same canonical label
+  rule, the source trace (matches, requests, timings), and the Python client tests ported
+  onto the shared fixtures. Includes the suggestions and resolve endpoints.
+- M6.5 The catalog, sentence splitter, Jev request builder and judge (chunked evidence, the
+  shortlist request, splitting by token budget) on the TypeSafe JS SDK. Every golden file
+  matches byte for byte.
+- M6.6 The store on D1 through Drizzle, and the answers endpoint with its trace fields. An
+  import script moves `rx_jev.db` into D1, and a check confirms every stored run is found
+  for its label after import.
+- M6.7 The ask endpoint: length limits, and the rate limiter on a Durable Object keyed by
+  `CF-Connecting-IP`, with the same windows and slot release.
+- M6.8 Caching:
+  - openFDA canonical lookups cached in D1 for 24 hours; the panel says when a lookup came
+    from the cache;
+  - the RxNorm name list in KV, refreshed by a daily Cron Trigger;
+  - an `ETag` on answers, from the label version and run.
+- M6.9 The offline tools ported: the review-set batch, the review sheet and the second read,
+  run with Node against D1 through Drizzle's D1 HTTP driver.
+- M6.10 The web Worker: the static build and `/api/*` on the same origin. Autocomplete
+  moves to the browser: the RxNorm name list is cached in IndexedDB and matched locally.
+  Nothing personal is stored in the browser: no looked-up drugs, answers or questions.
+- M6.11 Deploy and cutover:
+  - D1, KV and the Durable Object created;
+  - `TYPESAFE_API_KEY` and `OPENFDA_API_KEY` set as Worker secrets;
+  - data imported;
+  - Cloudflare Access in front;
+  - a smoke test on Tylenol PM, Wellbutrin and Benadryl, whose stored answers must load
+    without calling Jev;
+  - then `apps/api` removed, and CLAUDE.md and the Makefile updated for the TypeScript
+    stack.
+
 ### GATE 2 Regulatory and wording review
 
 Confirm with a regulatory advisor that the wording and display rules keep this a label

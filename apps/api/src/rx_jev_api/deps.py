@@ -13,6 +13,7 @@ from rx_jev_api.clients.rxnorm import RxNormClient
 from rx_jev_api.config import Settings, get_settings
 from rx_jev_api.db import make_engine
 from rx_jev_api.judge import Judge
+from rx_jev_api.ratelimit import Limit, RateLimiter
 from rx_jev_api.store import Store
 
 UPSTREAM_TIMEOUT = httpx.Timeout(20.0)
@@ -60,6 +61,16 @@ def get_judge(settings: SettingsDep) -> Iterator[Judge]:
 
 
 @lru_cache
+def _ask_limiter(per_minute: int, per_day: int) -> RateLimiter:
+    # One limiter per process, shared by every request.
+    return RateLimiter([Limit(count=per_minute, seconds=60), Limit(count=per_day, seconds=86_400)])
+
+
+def get_ask_limiter(settings: SettingsDep) -> RateLimiter:
+    return _ask_limiter(settings.ask_per_minute, settings.ask_per_day)
+
+
+@lru_cache
 def get_engine() -> Engine:
     return make_engine(get_settings().database_url)
 
@@ -78,3 +89,4 @@ DrugNamesDep = Annotated[Sequence[str], Depends(get_drug_names)]
 OpenFdaDep = Annotated[OpenFdaClient, Depends(get_openfda_client)]
 JudgeDep = Annotated[Judge, Depends(get_judge)]
 StoreDep = Annotated[Store, Depends(get_store)]
+AskLimiterDep = Annotated[RateLimiter, Depends(get_ask_limiter)]

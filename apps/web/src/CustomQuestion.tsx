@@ -3,6 +3,9 @@ import { AnswerCard } from './AnswerCard.tsx'
 import { ApiError, askLabel, type AskResponse, type LabelInfo } from './api.ts'
 
 const UNAVAILABLE = 'Answers are unavailable right now. Try again later.'
+// The API's limits on a question's length, after trimming.
+const MIN_CHARS = 3
+const MAX_CHARS = 200
 
 type State =
   | { kind: 'idle' }
@@ -28,7 +31,7 @@ export function CustomQuestion({ rxcui, label }: Props): React.JSX.Element {
   function submit(event: React.SubmitEvent<HTMLFormElement>): void {
     event.preventDefault()
     const question = text.trim()
-    if (!question) return
+    if (question.length < MIN_CHARS) return
     inFlight.current?.abort()
     const controller = new AbortController()
     inFlight.current = controller
@@ -57,8 +60,12 @@ export function CustomQuestion({ rxcui, label }: Props): React.JSX.Element {
             onChange={(e) => setText(e.target.value)}
             placeholder="For example: grapefruit juice"
             autoComplete="off"
+            maxLength={MAX_CHARS}
           />
-          <button type="submit" disabled={!text.trim() || state.kind === 'asking'}>
+          <button
+            type="submit"
+            disabled={text.trim().length < MIN_CHARS || state.kind === 'asking'}
+          >
             Ask
           </button>
         </div>

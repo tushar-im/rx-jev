@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from typing import Any
 
 import pytest
@@ -7,9 +8,12 @@ from sqlalchemy import Engine
 from rx_jev_api.clients.openfda import Label
 from rx_jev_api.config import Settings, get_settings
 from rx_jev_api.db import make_engine
+from rx_jev_api.deps import get_ask_limiter
 from rx_jev_api.judge import CUSTOM, NONE, STANCES, build_custom_request
 from rx_jev_api.main import app
 from rx_jev_api.problems import PROBLEM_JSON
+from rx_jev_api.ratelimit import Limit, RateLimiter
+from rx_jev_api.routers.ask import MAX_QUESTION_CHARS, MIN_QUESTION_CHARS
 from tests.jev import MODEL_VERSION, FakeJev
 from tests.test_answers_api import IBUPROFEN, METFORMIN, runs, serve
 
@@ -19,6 +23,14 @@ GRAPEFRUIT = "Can I drink grapefruit juice while taking this?"
 @pytest.fixture
 def engine() -> Engine:
     return make_engine("sqlite://")
+
+
+@pytest.fixture(autouse=True)
+def unlimited() -> Iterator[None]:
+    # The app's limiter lives for the whole process; each test starts with no limit.
+    app.dependency_overrides[get_ask_limiter] = lambda: RateLimiter([])
+    yield
+    app.dependency_overrides.pop(get_ask_limiter, None)
 
 
 def ask(client: TestClient, rxcui: str, set_id: str, question: str = GRAPEFRUIT) -> Any:
@@ -127,3 +139,56 @@ def test_a_blank_question_is_422(engine: Engine, ibuprofen_otc: Label) -> None:
     assert response.status_code == 422
     assert response.headers["content-type"] == PROBLEM_JSON
     assert jev.requests == []
+
+
+@pytest.mark.parametrize(
+    "question", ["ab", "x" * (MAX_QUESTION_CHARS + 1)], ids=["too short", "too long"]
+)
+def test_question_length_is_limited(engine: Engine, ibuprofen_otc: Label, question: str) -> None:
+    jev = FakeJev()
+    with serve(engine, jev) as client:
+        response = ask(client, IBUPROFEN, ibuprofen_otc.set_id, question=question)
+    assert response.status_code == 422
+    assert response.headers["content-type"] == PROBLEM_JSON
+    assert jev.requests == []
+
+
+def test_question_length_limits() -> None:
+    assert (MIN_QUESTION_CHARS, MAX_QUESTION_CHARS) == (3, 200)
+
+
+def test_a_question_at_the_length_limit_is_asked(engine: Engine, ibuprofen_otc: Label) -> None:
+    with serve(engine, FakeJev()) as client:
+        response = ask(client, IBUPROFEN, ibuprofen_otc.set_id, question="x" * MAX_QUESTION_CHARS)
+    assert response.status_code == 200
+
+
+def test_asks_over_the_rate_limit_are_429_without_calling_jev(
+    engine: Engine, ibuprofen_otc: Label
+) -> None:
+    jev = FakeJev()
+    limiter = RateLimiter([Limit(count=2, seconds=60)])
+    with serve(engine, jev) as client:
+        app.dependency_overrides[get_ask_limiter] = lambda: limiter
+        statuses = [ask(client, IBUPROFEN, ibuprofen_otc.set_id).status_code for _ in range(2)]
+        response = ask(client, IBUPROFEN, ibuprofen_otc.set_id)
+    assert statuses == [200, 200]
+    assert response.status_code == 429
+    assert response.headers["content-type"] == PROBLEM_JSON
+    assert 1 <= int(response.headers["retry-after"]) <= 60
+    assert "Try again" in response.json()["detail"]
+    assert len(jev.requests) == 2
+
+
+def test_invalid_asks_do_not_use_up_the_limit(engine: Engine, ibuprofen_otc: Label) -> None:
+    limiter = RateLimiter([Limit(count=1, seconds=60)])
+    with serve(engine, FakeJev()) as client:
+        app.dependency_overrides[get_ask_limiter] = lambda: limiter
+        ask(client, IBUPROFEN, ibuprofen_otc.set_id, question="ab")
+        response = ask(client, IBUPROFEN, ibuprofen_otc.set_id)
+    assert response.status_code == 200
+
+
+def test_default_ask_limits() -> None:
+    settings = Settings(_env_file=None)
+    assert (settings.ask_per_minute, settings.ask_per_day) == (5, 50)

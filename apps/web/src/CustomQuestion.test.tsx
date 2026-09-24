@@ -107,4 +107,32 @@ describe('CustomQuestion', () => {
       expect(screen.queryByText('first question', { exact: false })).not.toBeInTheDocument(),
     )
   })
+
+  it('keeps the question within the length the API accepts', () => {
+    const fetchMock = mockAsk(200, askResponse())
+    render(<CustomQuestion rxcui="5640" label={label} />)
+
+    expect(screen.getByRole('textbox', { name: /your own question/i })).toHaveAttribute(
+      'maxLength',
+      '200',
+    )
+    askAbout(' ab ')
+    expect(screen.getByRole('button', { name: 'Ask' })).toBeDisabled()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('says when to try again after too many questions', async () => {
+    mockAsk(429, {
+      type: 'about:blank',
+      title: 'Too Many Requests',
+      status: 429,
+      detail: 'Too many questions. Try again in 40 seconds.',
+    })
+    render(<CustomQuestion rxcui="5640" label={label} />)
+    askAbout(GRAPEFRUIT)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Too many questions. Try again in 40 seconds.',
+    )
+  })
 })

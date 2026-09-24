@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///rx_jev.db"
     display_min_confidence: float = GATE_1_MIN_CONFIDENCE
     validated_model_version: str = GATE_1_MODEL_VERSION
+    # Custom questions call Jev live, so each client may ask this many per minute and per day.
+    ask_per_minute: int = 5
+    ask_per_day: int = 50
 
 
 @lru_cache

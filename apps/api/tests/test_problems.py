@@ -20,6 +20,10 @@ def client() -> TestClient:
     def teapot() -> None:
         raise HTTPException(status_code=418, detail="short and stout")
 
+    @app.get("/slow-down")
+    def slow_down() -> None:
+        raise HTTPException(status_code=429, detail="Too many.", headers={"Retry-After": "30"})
+
     @app.get("/needs-int")
     def needs_int(n: Annotated[int, Query()]) -> int:
         return n
@@ -54,6 +58,14 @@ def test_http_exception_handler_is_preserved(client: TestClient) -> None:
     assert response.status_code == 418
     assert response.headers["content-type"].startswith(PROBLEM_JSON)
     assert response.json()["detail"] == "short and stout"
+
+
+def test_http_exception_headers_are_kept(client: TestClient) -> None:
+    response = client.get("/slow-down")
+
+    assert response.status_code == 429
+    assert response.headers["retry-after"] == "30"
+    assert response.headers["content-type"].startswith(PROBLEM_JSON)
 
 
 def test_validation_handler_is_preserved(client: TestClient) -> None:

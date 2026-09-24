@@ -7,6 +7,11 @@ const UNAVAILABLE = 'Answers are unavailable right now. Try again later.'
 const MIN_CHARS = 3
 const MAX_CHARS = 200
 
+// Characters as the API counts them: code points, not UTF-16 units.
+function charCount(text: string): number {
+  return [...text.trim()].length
+}
+
 type State =
   | { kind: 'idle' }
   | { kind: 'asking' }
@@ -31,7 +36,7 @@ export function CustomQuestion({ rxcui, label }: Props): React.JSX.Element {
   function submit(event: React.SubmitEvent<HTMLFormElement>): void {
     event.preventDefault()
     const question = text.trim()
-    if (question.length < MIN_CHARS) return
+    if (charCount(question) < MIN_CHARS) return
     inFlight.current?.abort()
     const controller = new AbortController()
     inFlight.current = controller
@@ -57,15 +62,17 @@ export function CustomQuestion({ rxcui, label }: Props): React.JSX.Element {
             id="custom-question-text"
             type="text"
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value)
+              // An answer stays only while it matches the question in the box.
+              inFlight.current?.abort()
+              setState({ kind: 'idle' })
+            }}
             placeholder="For example: grapefruit juice"
             autoComplete="off"
             maxLength={MAX_CHARS}
           />
-          <button
-            type="submit"
-            disabled={text.trim().length < MIN_CHARS || state.kind === 'asking'}
-          >
+          <button type="submit" disabled={charCount(text) < MIN_CHARS || state.kind === 'asking'}>
             Ask
           </button>
         </div>

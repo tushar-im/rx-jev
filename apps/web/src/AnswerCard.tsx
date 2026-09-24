@@ -29,11 +29,9 @@ export function AnswerCard({ label, answer }: Props): React.JSX.Element {
 
   return (
     <article className="answer-card" aria-live="polite">
+      {/* A reader's wording is never repeated: "Is it safe for me?" must not look answered. */}
       {'question' in answer ? (
-        <>
-          <h3>What the label says about your question</h3>
-          <p className="asked">Your question: {answer.question}</p>
-        </>
+        <h3>What the label says about your question</h3>
       ) : (
         <h3>What the label says about {answer.title.toLowerCase()}</h3>
       )}

@@ -73,16 +73,10 @@ def ask(
     settings: SettingsDep,
     limiter: AskLimiterDep,
 ) -> AskResponse:
-    # Counted only once the request is valid, and before any upstream call.
+    # A spent limit is refused before any upstream call, but an ask is counted only once
+    # its label is found, so a request that fails validation or finds no label costs nothing.
     client = request.client.host if request.client else "unknown"
-    wait = limiter.hit(client)
-    if wait is not None:
-        seconds = max(1, math.ceil(wait))
-        raise HTTPException(
-            status_code=429,
-            detail=f"Too many questions. Try again in {_duration(seconds)}.",
-            headers={"Retry-After": str(seconds)},
-        )
+    _refuse_if_waiting(limiter.wait(client))
 
     _, labels = canonical_labels(rxcui, rxnorm, openfda)
     label = next((lb for lb in labels if lb.set_id == body.set_id), None)
@@ -90,6 +84,7 @@ def ask(
         raise HTTPException(
             status_code=404, detail=f"Label {body.set_id} is not a current label of this drug."
         )
+    _refuse_if_waiting(limiter.hit(client))
 
     judge_request = build_custom_request(label, body.question)
     skipped = judge_request.skipped.get(CUSTOM)
@@ -115,6 +110,17 @@ def ask(
     )
     return AskResponse(
         rxcui=rxcui, label=label_info(label), model_version=result.model_version, answer=answer
+    )
+
+
+def _refuse_if_waiting(wait: float | None) -> None:
+    if wait is None:
+        return
+    seconds = max(1, math.ceil(wait))
+    raise HTTPException(
+        status_code=429,
+        detail=f"Too many questions. Try again in {_duration(seconds)}.",
+        headers={"Retry-After": str(seconds)},
     )
 
 

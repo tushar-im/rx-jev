@@ -253,8 +253,3 @@ p {
   display: flex;
   gap: 0.5rem;
 }
-
-.answer-card .asked {
-  margin-top: 0;
-  color: var(--muted);
-}

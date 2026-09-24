@@ -31,6 +31,13 @@ class RateLimiter:
         self._hits: dict[str, deque[float]] = {}
         self._lock = Lock()
 
+    def wait(self, key: str) -> float | None:
+        """Seconds until `key` may hit again, or None if it may now. Counts nothing."""
+        with self._lock:
+            now = self._clock()
+            self._forget(now)
+            return self._wait(self._hits.get(key, deque()), now)
+
     def hit(self, key: str) -> float | None:
         """Counts a hit for `key`, or, if a limit is spent, returns the seconds until it
         frees up and counts nothing."""
@@ -38,13 +45,9 @@ class RateLimiter:
             now = self._clock()
             self._forget(now)
             hits = self._hits.get(key, deque())
-            waits = [
-                hits[-limit.count] + limit.seconds - now
-                for limit in self._limits
-                if _recent(hits, now, limit.seconds) >= limit.count
-            ]
-            if waits:
-                return max(waits)
+            wait = self._wait(hits, now)
+            if wait is not None:
+                return wait
             hits.append(now)
             self._hits[key] = hits
             return None
@@ -54,6 +57,14 @@ class RateLimiter:
         with self._lock:
             self._forget(self._clock())
             return len(self._hits)
+
+    def _wait(self, hits: deque[float], now: float) -> float | None:
+        waits = [
+            hits[-limit.count] + limit.seconds - now
+            for limit in self._limits
+            if _recent(hits, now, limit.seconds) >= limit.count
+        ]
+        return max(waits, default=None)
 
     def _forget(self, now: float) -> None:
         for key in list(self._hits):

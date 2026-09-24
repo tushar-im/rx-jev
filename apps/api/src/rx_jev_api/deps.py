@@ -1,5 +1,6 @@
 from collections.abc import Iterator, Sequence
 from functools import lru_cache
+from threading import Lock
 from typing import Annotated
 
 import httpx
@@ -60,14 +61,20 @@ def get_judge(settings: SettingsDep) -> Iterator[Judge]:
         yield Judge(client, settings.typesafe_model)
 
 
-@lru_cache
-def _ask_limiter(per_minute: int, per_day: int) -> RateLimiter:
-    # One limiter per process, shared by every request.
-    return RateLimiter([Limit(count=per_minute, seconds=60), Limit(count=per_day, seconds=86_400)])
+_ask_limiters: dict[tuple[int, int], RateLimiter] = {}
+_ask_limiters_lock = Lock()
 
 
 def get_ask_limiter(settings: SettingsDep) -> RateLimiter:
-    return _ask_limiter(settings.ask_per_minute, settings.ask_per_day)
+    # One limiter per process, shared by every request. Created under a lock so concurrent
+    # first asks never count their hits in two separate limiters.
+    key = (settings.ask_per_minute, settings.ask_per_day)
+    with _ask_limiters_lock:
+        if key not in _ask_limiters:
+            _ask_limiters[key] = RateLimiter(
+                [Limit(count=key[0], seconds=60), Limit(count=key[1], seconds=86_400)]
+            )
+        return _ask_limiters[key]
 
 
 @lru_cache

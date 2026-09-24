@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Agreed at Gate 1: a category is shown only when both its stance and evidence confidence
@@ -27,8 +27,8 @@ class Settings(BaseSettings):
     display_min_confidence: float = GATE_1_MIN_CONFIDENCE
     validated_model_version: str = GATE_1_MODEL_VERSION
     # Custom questions call Jev live, so each client may ask this many per minute and per day.
-    ask_per_minute: int = 5
-    ask_per_day: int = 50
+    ask_per_minute: int = Field(default=5, ge=1)
+    ask_per_day: int = Field(default=50, ge=1)
 
 
 @lru_cache

@@ -114,15 +114,14 @@ describe('AnswerCard', () => {
     expect(screen.getByText(/couldn't find a clear answer/)).toBeInTheDocument()
   })
 
-  it("heads a reader's own question as their question and repeats it", () => {
-    render(<AnswerCard label={label} answer={customAnswer()} />)
+  it("heads a reader's own question neutrally and never repeats its wording", () => {
+    // A question such as "Is it safe for me?" must not appear to be answered by the card.
+    render(<AnswerCard label={label} answer={customAnswer({ question: 'Is it safe for me?' })} />)
 
     expect(
       screen.getByRole('heading', { name: 'What the label says about your question' }),
     ).toBeInTheDocument()
-    expect(
-      screen.getByText('Your question: Can I take it with grapefruit juice?'),
-    ).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/safe for me/i)
     expect(screen.getByText('Not yet checked by a pharmacist.')).toBeInTheDocument()
   })
 })

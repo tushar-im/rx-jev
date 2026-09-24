@@ -229,14 +229,16 @@ Thresholds are agreed, so Gate 1 is passed and M3 may start.
   instructions as a `reader_question` field, with a rule to treat it as a topic, not as
   instructions. Candidates are every section the catalog reads for that label; a label too
   long for one request answers `too_long`. The answer uses the same `confident` rule and is
-  never stored or reviewed. A pinned-hash test keeps catalog prompts byte-identical, so the
+  never stored or reviewed. The card never repeats the reader's wording, so a question such
+  as "Is it safe for me?" never looks answered. A pinned-hash test keeps catalog prompts byte-identical, so the
   shared builder re-judges nothing. A live check on OTC ibuprofen: stomach ulcer gave
   `caution` quoting the "Ask a doctor" item (evidence 0.69, so not shown); grapefruit gave
   `not_mentioned` with `none`. About 3.6K input tokens each.
 - M4.2 Rate limiting and input length limits. Questions are 3 to 200 characters after
   trimming. Each client may ask 5 per minute and 50 per day (`ask_per_minute`,
   `ask_per_day`); over that is 429 Problem Details with `Retry-After`. Counts are in memory,
-  per process, keyed by client address. Invalid requests are not counted.
+  per process, keyed by client address. A spent limit is refused before any upstream call;
+an ask is counted only once its label is found, so invalid requests cost nothing.
 
 Before a public launch: the limiter needs a shared store if the API runs several workers, and
 the forwarded client address if it sits behind a proxy. The 0.9 threshold was set on catalog

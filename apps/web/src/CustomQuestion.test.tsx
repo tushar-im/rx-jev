@@ -32,7 +32,6 @@ describe('CustomQuestion', () => {
     expect(
       await screen.findByRole('heading', { name: 'What the label says about your question' }),
     ).toBeInTheDocument()
-    expect(screen.getByText(GRAPEFRUIT, { exact: false })).toBeInTheDocument()
     expect(screen.getByRole('blockquote')).toHaveTextContent(
       'If pregnant or breast-feeding, ask a health professional before use.',
     )
@@ -94,18 +93,53 @@ describe('CustomQuestion', () => {
       'fetch',
       vi.fn(() => new Promise<Response>((resolve) => pending.push(resolve))),
     )
+    const quoted = (text: string): Response =>
+      new Response(
+        JSON.stringify(
+          askResponse({
+            evidence: {
+              choice: 's1',
+              confidence: 0.95,
+              probability: 0.95,
+              quote: { section: 'warnings', text, lead_in: null },
+            },
+          }),
+        ),
+      )
     render(<CustomQuestion rxcui="5640" label={label} />)
     askAbout('first question')
     askAbout('second question')
 
-    pending[1]?.(new Response(JSON.stringify(askResponse({ question: 'second question' }))))
-    await screen.findByText('second question', { exact: false })
-    pending[0]?.(new Response(JSON.stringify(askResponse({ question: 'first question' }))))
+    pending[1]?.(quoted('Second answer.'))
+    expect(await screen.findByRole('blockquote')).toHaveTextContent('Second answer.')
+    pending[0]?.(quoted('First answer.'))
     await new Promise((resolve) => setTimeout(resolve, 10))
 
-    await waitFor(() =>
-      expect(screen.queryByText('first question', { exact: false })).not.toBeInTheDocument(),
-    )
+    await waitFor(() => expect(screen.getByRole('blockquote')).toHaveTextContent('Second answer.'))
+  })
+
+  it('clears the answer once the question is edited', async () => {
+    mockAsk(200, askResponse())
+    render(<CustomQuestion rxcui="5640" label={label} />)
+    askAbout(GRAPEFRUIT)
+    await screen.findByRole('blockquote')
+
+    fireEvent.change(screen.getByRole('textbox', { name: /your own question/i }), {
+      target: { value: 'Can I take it with milk?' },
+    })
+
+    expect(
+      screen.queryByRole('heading', { name: 'What the label says about your question' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('counts characters, not UTF-16 units, as the API does', () => {
+    const fetchMock = mockAsk(200, askResponse())
+    render(<CustomQuestion rxcui="5640" label={label} />)
+    askAbout('\u{1F600}\u{1F600}')
+
+    expect(screen.getByRole('button', { name: 'Ask' })).toBeDisabled()
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it('keeps the question within the length the API accepts', () => {

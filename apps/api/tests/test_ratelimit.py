@@ -43,6 +43,15 @@ def test_rejected_hits_do_not_count(clock: Clock) -> None:
     assert limiter.hit("a") is None
 
 
+def test_wait_checks_without_counting(clock: Clock) -> None:
+    limiter = RateLimiter([Limit(count=1, seconds=60)], clock=clock)
+    assert limiter.wait("a") is None
+    assert limiter.wait("a") is None
+    assert limiter.hit("a") is None
+    clock.now += 20
+    assert limiter.wait("a") == pytest.approx(40)
+
+
 def test_clients_are_counted_apart(clock: Clock) -> None:
     limiter = RateLimiter([Limit(count=1, seconds=60)], clock=clock)
     assert limiter.hit("a") is None

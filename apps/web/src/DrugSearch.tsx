@@ -1,64 +1,80 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { ApiError, fetchSuggestions, resolveDrug, type ResolvedDrug } from './api.ts'
 
 const MIN_QUERY = 2
 const UNAVAILABLE = 'Search is unavailable right now. Try again later.'
 
+type Suggested = { query: string; names: string[] }
+
 type Props = {
   onResolved: (drug: ResolvedDrug) => void
+  // Called as each lookup starts, so a failed lookup never leaves an old drug shown.
+  onLookupStart?: () => void
   debounceMs?: number
 }
 
 // A combobox over RxNorm names. Choosing a suggestion, or submitting typed text, resolves
 // the name to the ingredient-set RxCUI the answers route takes.
-export function DrugSearch({ onResolved, debounceMs = 200 }: Props): React.JSX.Element {
+export function DrugSearch({
+  onResolved,
+  onLookupStart,
+  debounceMs = 200,
+}: Props): React.JSX.Element {
   const id = useId()
   const listId = `${id}-list`
   const [text, setText] = useState('')
   // The name last chosen, so filling the box with it does not reopen the list.
   const [chosen, setChosen] = useState<string | null>(null)
-  const [names, setNames] = useState<string[]>([])
+  // Suggestions with the query that produced them, so an older list is never offered.
+  const [result, setResult] = useState<Suggested | null>(null)
   const [active, setActive] = useState(-1)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // Only the latest lookup may report its result.
+  const lookup = useRef(0)
+  const query = text.trim()
+  const names = result?.query === query ? result.names : []
 
   useEffect(() => {
-    const query = text.trim()
     if (query.length < MIN_QUERY || text === chosen) return
     const controller = new AbortController()
     const timer = setTimeout(() => {
       fetchSuggestions(query, controller.signal)
-        .then((result) => {
-          setNames(result.names)
-          setActive(-1)
-        })
+        .then((found) => setResult({ query, names: found.names }))
         // Suggestions are a convenience; typed text can still be submitted.
-        .catch(() => setNames([]))
+        .catch(() => setResult(null))
     }, debounceMs)
     return () => {
       clearTimeout(timer)
       controller.abort()
     }
-  }, [text, chosen, debounceMs])
+  }, [query, text, chosen, debounceMs])
 
   function onType(value: string): void {
     setText(value)
-    if (value.trim().length < MIN_QUERY) setNames([])
+    setActive(-1)
   }
 
   function choose(name: string): void {
     setText(name)
     setChosen(name)
-    setNames([])
+    setResult(null)
     setActive(-1)
     setError(null)
     setBusy(true)
+    onLookupStart?.()
+    const id = ++lookup.current
     resolveDrug(name)
-      .then(onResolved)
+      .then((drug) => {
+        if (id === lookup.current) onResolved(drug)
+      })
       .catch((e: unknown) => {
+        if (id !== lookup.current) return
         setError(e instanceof ApiError && e.problem.status === 404 ? e.problem.detail : UNAVAILABLE)
       })
-      .finally(() => setBusy(false))
+      .finally(() => {
+        if (id === lookup.current) setBusy(false)
+      })
   }
 
   function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>): void {
@@ -73,7 +89,7 @@ export function DrugSearch({ onResolved, debounceMs = 200 }: Props): React.JSX.E
       event.preventDefault()
       choose(names[active])
     } else if (event.key === 'Escape') {
-      setNames([])
+      setResult(null)
     }
   }
 
@@ -102,29 +118,29 @@ export function DrugSearch({ onResolved, debounceMs = 200 }: Props): React.JSX.E
           maxLength={100}
           onChange={(e) => onType(e.target.value)}
           onKeyDown={onKeyDown}
-          onBlur={() => setNames([])}
+          onBlur={() => setResult(null)}
         />
         <button type="submit" disabled={busy}>
           {busy ? 'Searching' : 'Search'}
         </button>
+        {open && (
+          <ul id={listId} role="listbox" aria-label="Suggestions">
+            {names.map((name, i) => (
+              <li
+                key={name}
+                id={`${listId}-${i}`}
+                role="option"
+                aria-selected={i === active}
+                // Keep focus in the input so its blur does not close the list first.
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => choose(name)}
+              >
+                {name}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-      {open && (
-        <ul id={listId} role="listbox" aria-label="Suggestions">
-          {names.map((name, i) => (
-            <li
-              key={name}
-              id={`${listId}-${i}`}
-              role="option"
-              aria-selected={i === active}
-              // Keep focus in the input so its blur does not close the list first.
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => choose(name)}
-            >
-              {name}
-            </li>
-          ))}
-        </ul>
-      )}
       {error && (
         <p role="alert" className="search-error">
           {error}

@@ -6,12 +6,14 @@ import type { ResolvedDrug } from './api.ts'
 type Reply = [status: number, body: unknown]
 
 // Answers each request by its path; unknown paths fail the test.
-function mockApi(routes: Record<string, (url: URL) => Reply>): ReturnType<typeof vi.fn> {
+function mockApi(
+  routes: Record<string, (url: URL) => Reply | Promise<Reply>>,
+): ReturnType<typeof vi.fn> {
   const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
     const url = new URL(String(input), 'http://localhost')
     const route = routes[url.pathname]
     if (!route) throw new Error(`Unexpected request: ${url.pathname}`)
-    const [status, body] = route(url)
+    const [status, body] = await route(url)
     return new Response(JSON.stringify(body), { status })
   })
   vi.stubGlobal('fetch', fetchMock)
@@ -19,7 +21,8 @@ function mockApi(routes: Record<string, (url: URL) => Reply>): ReturnType<typeof
 }
 
 const suggestions = (url: URL): Reply => {
-  const q = url.searchParams.get('q') ?? ''
+  const q = url.searchParams.get('q')
+  if (q === null) throw new Error('Suggestions requested without a query')
   const names = ['advil', 'advil pm', 'advair'].filter((n) => n.startsWith(q.toLowerCase()))
   return [200, { query: q, names }]
 }
@@ -48,12 +51,14 @@ describe('DrugSearch', () => {
   })
 
   it('lists RxNorm suggestions as the person types', async () => {
-    mockApi({ '/api/drugs/suggestions': suggestions })
+    const fetchMock = mockApi({ '/api/drugs/suggestions': suggestions })
     renderSearch()
     type('adv')
 
     const options = await screen.findAllByRole('option')
     expect(options.map((o) => o.textContent)).toEqual(['advil', 'advil pm', 'advair'])
+    const url = new URL(String(fetchMock.mock.calls[0]?.[0]), 'http://localhost')
+    expect(url.searchParams.get('q')).toBe('adv')
     expect(screen.getByRole('combobox')).toHaveAttribute('aria-expanded', 'true')
   })
 
@@ -144,5 +149,69 @@ describe('DrugSearch', () => {
     const alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent('Search is unavailable right now. Try again later.')
     expect(alert).not.toHaveTextContent('secret')
+  })
+
+  it('never selects a suggestion left over from an earlier query', async () => {
+    const fetchMock = mockApi({
+      '/api/drugs/suggestions': (url) =>
+        url.searchParams.get('q') === 'adv' ? suggestions(url) : new Promise<Reply>(() => {}),
+    })
+    renderSearch()
+    type('adv')
+    await screen.findAllByRole('option')
+    type('tyl')
+
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    const input = screen.getByRole('combobox')
+    fireEvent.keyDown(input, { key: 'ArrowDown' })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    const paths = fetchMock.mock.calls.map(
+      (c) => new URL(String(c[0]), 'http://localhost').pathname,
+    )
+    expect(paths).not.toContain('/api/drugs/resolve')
+  })
+
+  it('clears the shown drug when a new lookup starts', async () => {
+    mockApi({
+      '/api/drugs/suggestions': () => [200, { query: 'advil', names: [] }],
+      '/api/drugs/resolve': () => new Promise<Reply>(() => {}),
+    })
+    const onLookupStart = vi.fn()
+    render(<DrugSearch onResolved={vi.fn()} onLookupStart={onLookupStart} debounceMs={0} />)
+    type('advil')
+    fireEvent.submit(screen.getByRole('search'))
+
+    expect(onLookupStart).toHaveBeenCalledOnce()
+  })
+
+  it('lets only the latest lookup report its result', async () => {
+    const pending = new Map<string, (reply: Reply) => void>()
+    mockApi({
+      '/api/drugs/suggestions': () => [200, { query: '', names: [] }],
+      '/api/drugs/resolve': (url) =>
+        new Promise<Reply>((resolve) => pending.set(url.searchParams.get('name') ?? '', resolve)),
+    })
+    const onResolved = renderSearch()
+    type('advil')
+    fireEvent.submit(screen.getByRole('search'))
+    type('xyzzy')
+    fireEvent.submit(screen.getByRole('search'))
+
+    pending.get('xyzzy')?.([
+      404,
+      {
+        type: 'about:blank',
+        title: 'Not Found',
+        status: 404,
+        detail: "No drug found named 'xyzzy'.",
+      },
+    ])
+    expect(await screen.findByRole('alert')).toHaveTextContent('xyzzy')
+    pending.get('advil')?.([200, advil])
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
+    expect(onResolved).not.toHaveBeenCalledWith(advil)
+    expect(screen.getByRole('alert')).toHaveTextContent('xyzzy')
+    expect(screen.getByRole('button', { name: 'Search' })).toBeEnabled()
   })
 })

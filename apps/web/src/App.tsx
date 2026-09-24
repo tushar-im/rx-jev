@@ -19,7 +19,7 @@ export function App(): React.JSX.Element {
     <main>
       <h1>rx-jev</h1>
       <p>Find what a drug label says, without reading all of it.</p>
-      <DrugSearch onResolved={setDrug} />
+      <DrugSearch onResolved={setDrug} onLookupStart={() => setDrug(null)} />
       {drug && (
         <section aria-live="polite">
           <h2>{drug.ingredients.map((i) => i.name).join(' and ')}</h2>

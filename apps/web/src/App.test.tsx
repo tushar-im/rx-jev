@@ -63,4 +63,44 @@ describe('App', () => {
       await screen.findByRole('heading', { name: 'acetaminophen and diphenhydramine' }),
     ).toBeInTheDocument()
   })
+
+  it('drops the previous drug when a new lookup fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input), 'http://localhost')
+        if (url.pathname === '/api/drugs/resolve') {
+          return url.searchParams.get('name') === 'Advil'
+            ? new Response(
+                JSON.stringify({
+                  query: 'Advil',
+                  rxcui: '5640',
+                  ingredients: [{ rxcui: '5640', name: 'ibuprofen' }],
+                }),
+              )
+            : new Response(
+                JSON.stringify({
+                  type: 'about:blank',
+                  title: 'Not Found',
+                  status: 404,
+                  detail: "No drug found named 'xyzzy'.",
+                }),
+                { status: 404 },
+              )
+        }
+        return new Response(JSON.stringify({ status: 'ok' }))
+      }),
+    )
+    render(<App />)
+    const input = screen.getByRole('combobox', { name: /drug name/i })
+    fireEvent.change(input, { target: { value: 'Advil' } })
+    fireEvent.submit(screen.getByRole('search'))
+    expect(await screen.findByRole('heading', { name: 'ibuprofen' })).toBeInTheDocument()
+
+    fireEvent.change(input, { target: { value: 'xyzzy' } })
+    fireEvent.submit(screen.getByRole('search'))
+
+    expect(await screen.findByText("No drug found named 'xyzzy'.")).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'ibuprofen' })).not.toBeInTheDocument()
+  })
 })

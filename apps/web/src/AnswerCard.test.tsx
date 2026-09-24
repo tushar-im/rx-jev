@@ -61,7 +61,7 @@ describe('AnswerCard', () => {
     expect(
       screen.getByText("We couldn't find a clear answer. Read the full label or ask a pharmacist."),
     ).toBeInTheDocument()
-    expect(screen.queryByText('The label advises caution')).not.toBeInTheDocument()
+    expect(screen.queryByText(/^The label /)).not.toBeInTheDocument()
     expect(screen.queryByRole('blockquote')).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Read the full label on DailyMed' })).toBeInTheDocument()
   })
@@ -102,7 +102,7 @@ describe('AnswerCard', () => {
     const evidence = base.evidence && { ...base.evidence, choice: 'none', quote: null }
     render(<AnswerCard label={label} answer={{ ...base, evidence }} />)
 
-    expect(screen.queryByText('The label advises caution')).not.toBeInTheDocument()
+    expect(screen.queryByText(/^The label /)).not.toBeInTheDocument()
     expect(screen.getByText(/couldn't find a clear answer/)).toBeInTheDocument()
   })
 })

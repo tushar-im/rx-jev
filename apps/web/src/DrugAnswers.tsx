@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnswerCard } from './AnswerCard.tsx'
 import { CustomQuestion } from './CustomQuestion.tsx'
@@ -11,6 +11,7 @@ import {
 } from './api.ts'
 import { PRODUCT_TYPE_TEXT } from './format.ts'
 import { QuestionChips } from './QuestionChips.tsx'
+import { hasClearAnswer, visibleAnswers } from './questions.ts'
 import { type Focus, type Session, TraceDetails } from './TracePanel.tsx'
 
 const UNAVAILABLE = 'Answers are unavailable right now. Try again later.'
@@ -39,6 +40,7 @@ export function DrugAnswers({ drug, chipsSlot, panelSlot, onUsage }: Props): Rea
   // The latest answer to the reader's own question, and whether the panel describes it.
   const [custom, setCustom] = useState<AskResponse | null>(null)
   const [customFocus, setCustomFocus] = useState(false)
+  const switchId = useId()
   // The latest onUsage, so a new callback from the parent never refetches the answers.
   const usage = useRef(onUsage)
   useEffect(() => {
@@ -95,28 +97,69 @@ export function DrugAnswers({ drug, chipsSlot, panelSlot, onUsage }: Props): Rea
         : null
   const trace = <TraceDetails sources={state.data.sources} label={label} focus={focus} />
 
+  function showLabel(i: number): void {
+    setLabelIndex(i)
+    setCustom(null)
+  }
+
+  // When this label has no clear answer but another label does, point to it. The pointer
+  // says an answer exists there, never what it is.
+  const otherIndex =
+    answer && !hasClearAnswer(answer)
+      ? labels.findIndex(
+          (l) =>
+            l !== label &&
+            l.answers.some((a) => a.question_id === answer.question_id && hasClearAnswer(a)),
+        )
+      : -1
+  const other = labels[otherIndex]
+
   return (
     <div className="drug-answers">
       {labels.length > 1 && (
-        <div role="group" aria-label="Label" className="label-switch">
-          {labels.map((l, i) => (
-            <button
-              key={l.set_id}
-              type="button"
-              aria-pressed={l === label}
-              onClick={() => {
-                setLabelIndex(i)
-                setCustom(null)
-              }}
-            >
-              {PRODUCT_TYPE_TEXT[l.product_type]}
-            </button>
-          ))}
+        <div className="label-switch-wrap">
+          <span id={switchId} className="switch-caption">
+            Which label
+          </span>
+          <div role="group" aria-labelledby={switchId} className="label-switch">
+            {labels.map((l, i) => {
+              const clear = visibleAnswers(l.answers).filter(hasClearAnswer).length
+              return (
+                <button
+                  key={l.set_id}
+                  type="button"
+                  aria-pressed={l === label}
+                  aria-describedby={`${switchId}-${i}`}
+                  onClick={() => showLabel(i)}
+                >
+                  {PRODUCT_TYPE_TEXT[l.product_type]}
+                  <span className="switch-count" aria-hidden="true">
+                    {clear} clear
+                  </span>
+                  <span id={`${switchId}-${i}`} hidden>
+                    {clear} {clear === 1 ? 'question' : 'questions'} with a clear answer
+                  </span>
+                </button>
+              )
+            })}
+          </div>
         </div>
       )}
       {chipsSlot ? createPortal(chips, chipsSlot) : chips}
       {answer ? (
-        <AnswerCard label={label} answer={answer} />
+        <div className="answer-stack">
+          <AnswerCard label={label} answer={answer} />
+          {other && (
+            <p className="other-label">
+              <span>
+                The {PRODUCT_TYPE_TEXT[other.product_type].toLowerCase()} label answers this.
+              </span>{' '}
+              <button type="button" className="link-button" onClick={() => showLabel(otherIndex)}>
+                Show the {PRODUCT_TYPE_TEXT[other.product_type].toLowerCase()} label
+              </button>
+            </p>
+          )}
+        </div>
       ) : (
         <p className="hint">Pick a question to see what the label says.</p>
       )}

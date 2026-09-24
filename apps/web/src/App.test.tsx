@@ -13,7 +13,6 @@ function mockFetch(status: number, body: unknown): void {
 describe('App', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
-    localStorage.clear()
   })
 
   it('shows the API as online when health check passes', async () => {
@@ -179,20 +178,13 @@ describe('App', () => {
     expect(caution.textContent).not.toMatch(/\bsafe\b|allowed|ok to take/i)
   })
 
-  it('shows how it works in a panel that can be hidden', () => {
+  it('always shows how it works, with no way to hide the panel', () => {
     mockFetch(200, { status: 'ok' })
     render(<App />)
     const panel = screen.getByRole('complementary', { name: 'How this answer was made' })
-    const explainer = within(panel).getByText(/never writes/i)
-    expect(explainer).toBeVisible()
 
-    fireEvent.click(within(panel).getByRole('button', { name: 'Hide' }))
-
-    expect(explainer).not.toBeVisible()
-    expect(within(panel).getByRole('button', { name: 'Show' })).toHaveAttribute(
-      'aria-expanded',
-      'false',
-    )
+    expect(within(panel).getByText(/never writes/i)).toBeVisible()
+    expect(within(panel).queryByRole('button')).not.toBeInTheDocument()
   })
 
   it('shows the API status at the foot of the panel', async () => {
@@ -203,16 +195,6 @@ describe('App', () => {
     expect(await within(panel).findByText('API: online')).toBeInTheDocument()
     const sidebar = screen.getByRole('complementary', { name: 'Search and questions' })
     expect(within(sidebar).queryByText(/API:/)).not.toBeInTheDocument()
-  })
-
-  it('remembers that the panel was hidden', () => {
-    mockFetch(200, { status: 'ok' })
-    const { unmount } = render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Hide' }))
-    unmount()
-
-    render(<App />)
-    expect(screen.getByRole('button', { name: 'Show' })).toBeInTheDocument()
   })
 
   it("adds this session's Jev tokens to the panel", async () => {

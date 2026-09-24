@@ -173,4 +173,89 @@ describe('DrugAnswers', () => {
     await waitFor(() => expect(onUsage).toHaveBeenCalledOnce())
     expect(onUsage).toHaveBeenCalledWith({ tokens: 0, live: 0, stored: 2 })
   })
+
+  it("names the switch as a choice of label and counts each label's clear answers", async () => {
+    const unclear = (id: string) => answer(id, { confident: false })
+    const mixed: AnswersResponse = {
+      ...both,
+      labels: [
+        {
+          ...otc,
+          answers: otc.answers.map((a) => (a.question_id === 'kidney' ? unclear('kidney') : a)),
+        },
+        {
+          ...prescription,
+          answers: prescription.answers.map((a) =>
+            a.question_id === 'pregnancy' ? a : unclear(a.question_id),
+          ),
+        },
+      ],
+    }
+    mockAnswers(200, mixed)
+    render(<DrugAnswers drug={ibuprofen} />)
+
+    const group = await screen.findByRole('group', { name: 'Which label' })
+    expect(group).toHaveTextContent('Over-the-counter10 clear')
+    expect(screen.getByRole('button', { name: 'Over-the-counter' })).toHaveAccessibleDescription(
+      '10 questions with a clear answer',
+    )
+    expect(screen.getByRole('button', { name: 'Prescription' })).toHaveAccessibleDescription(
+      '1 question with a clear answer',
+    )
+  })
+
+  it('points to the other label when only it answers the question clearly', async () => {
+    const mixed: AnswersResponse = {
+      ...both,
+      labels: [
+        {
+          ...otc,
+          answers: otc.answers.map((a) =>
+            a.question_id === 'pregnancy' ? answer('pregnancy', { confident: false }) : a,
+          ),
+        },
+        prescription,
+      ],
+    }
+    mockAnswers(200, mixed)
+    render(<DrugAnswers drug={ibuprofen} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Pregnancy' }))
+
+    expect(screen.getByText(/couldn't find a clear answer/)).toBeInTheDocument()
+    expect(screen.getByText('The prescription label answers this.')).toBeInTheDocument()
+    // The pointer says an answer exists, never what it is.
+    expect(screen.queryByText(/Avoid use of NSAIDs/)).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show the prescription label' }))
+
+    expect(screen.getByRole('button', { name: 'Prescription' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByRole('blockquote')).toHaveTextContent(/Avoid use of NSAIDs/)
+  })
+
+  it('points only from an unclear answer to a clear one on the other label', async () => {
+    const mixed: AnswersResponse = {
+      ...both,
+      labels: [
+        otc,
+        {
+          ...prescription,
+          answers: prescription.answers.map((a) =>
+            a.question_id === 'kidney' ? answer('kidney', { confident: false }) : a,
+          ),
+        },
+      ],
+    }
+    mockAnswers(200, mixed)
+    render(<DrugAnswers drug={ibuprofen} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Pregnancy' }))
+    expect(screen.queryByText(/label answers this/)).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Prescription' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Kidney disease' }))
+    // Over-the-counter answers kidney clearly, so the prescription card points back to it.
+    expect(screen.getByText('The over-the-counter label answers this.')).toBeInTheDocument()
+  })
 })

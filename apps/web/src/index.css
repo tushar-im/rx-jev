@@ -88,10 +88,6 @@ body {
   font-size: 0.8rem;
 }
 
-.panel-closed .panel .status {
-  display: none;
-}
-
 .search-button {
   display: grid;
   place-items: center;
@@ -270,6 +266,49 @@ p {
   gap: 1.25rem;
 }
 
+.label-switch-wrap {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.switch-caption {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.switch-count {
+  margin-left: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.answer-stack {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.other-label {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.link-button {
+  font: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .label-switch {
   display: inline-flex;
   width: fit-content;
@@ -391,10 +430,6 @@ p {
   gap: 0.5rem;
 }
 
-.app.panel-closed {
-  grid-template-columns: 17rem minmax(0, 1fr) auto;
-}
-
 .panel {
   display: flex;
   flex-direction: column;
@@ -405,46 +440,15 @@ p {
   font-size: 0.9rem;
 }
 
-.panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.panel-head h2 {
+.panel-title {
   margin: 0;
   font-size: 1rem;
-}
-
-.panel-closed .panel-head h2 {
-  display: none;
-}
-
-.panel-head button {
-  font: inherit;
-  font-size: 0.85rem;
-  padding: 0.3rem 0.7rem;
-  border: 1px solid var(--line);
-  border-radius: 0.4rem;
-  color: var(--fg);
-  background: var(--bg);
-  cursor: pointer;
-}
-
-.panel-head button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
 }
 
 .panel-body {
   display: grid;
   gap: 1.25rem;
   margin-top: 1rem;
-}
-
-.panel-body[hidden] {
-  display: none;
 }
 
 .trace {
@@ -503,8 +507,7 @@ p {
     font-size: 1.15rem;
   }
 
-  .app,
-  .app.panel-closed {
+  .app {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto 1fr auto;
     height: auto;
@@ -520,10 +523,6 @@ p {
   .panel {
     border-left: 0;
     border-top: 1px solid var(--line);
-  }
-
-  .panel-closed .panel-head h2 {
-    display: block;
   }
 
   .sidebar {

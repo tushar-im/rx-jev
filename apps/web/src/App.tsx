@@ -60,17 +60,13 @@ export function App(): React.JSX.Element {
     <div className={panelOpen ? 'app' : 'app panel-closed'}>
       <div role="note" aria-label="Caution" className="demo-caution">
         <strong>Demo project, not medical advice.</strong> AI picks these quotes from FDA labels and
-        no pharmacist has checked them, so an answer can be incomplete or wrong. Talk to a
-        pharmacist or doctor before making any decision about a medicine.
+        no pharmacist has checked them, so an answer can be incomplete or wrong.
       </div>
       <aside className="sidebar" aria-label="Search and questions">
         <h1 className="brand">rx-jev</h1>
         <p className="tagline">What the drug label says, word for word.</p>
         <DrugSearch onResolved={setDrug} onLookupStart={() => setDrug(null)} />
         <div ref={setChipsSlot} className="chips-slot" />
-        <p className="status" data-status={status}>
-          API: {status}
-        </p>
       </aside>
       <main className="stage">
         {drug ? (
@@ -107,6 +103,9 @@ export function App(): React.JSX.Element {
           <div ref={setPanelSlot} />
           <SessionTotals session={session} />
         </div>
+        <p className="status" data-status={status}>
+          API: {status}
+        </p>
       </aside>
     </div>
   )

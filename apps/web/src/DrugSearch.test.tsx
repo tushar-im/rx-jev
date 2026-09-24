@@ -222,4 +222,13 @@ describe('DrugSearch', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('xyzzy')
     expect(screen.getByRole('button', { name: 'Search' })).toBeEnabled()
   })
+
+  it('searches from an icon button that still reads as Search', () => {
+    mockApi({ '/api/drugs/suggestions': suggestions })
+    renderSearch()
+    const button = screen.getByRole('button', { name: 'Search' })
+
+    expect(button.textContent).toBe('')
+    expect(button.querySelector('svg')).not.toBeNull()
+  })
 })

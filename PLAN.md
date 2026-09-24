@@ -251,9 +251,10 @@ Done before Gate 2, so the reviewers see the layout that will launch.
 
 - M5.1 Three-column layout: a sidebar with the brand, the search and the question chips; the
   answer card in the center; a panel on the right. Below about 1024 px the columns stack
-  and the chips become one scrolling row. A red strip across the top of every view says it is a demo
-  project, not medical advice, that AI picked the quotes with no pharmacist's check, and to
-  talk to a pharmacist or doctor before deciding anything about a medicine.
+  and the chips become one scrolling row. A one-line red strip across the top of every view says it is a demo
+  project, not medical advice, and that AI picked the quotes with no pharmacist's check; each
+  answer card carries the pharmacist note. The search button is an icon, and the API status sits at the
+  foot of the panel.
 - M5.2 API trace fields, so the panel shows real numbers:
   - For each label: its Jev run (tokens, latency, model) and whether it was judged now or
     served from the store.

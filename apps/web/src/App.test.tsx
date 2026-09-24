@@ -174,7 +174,8 @@ describe('App', () => {
     const caution = screen.getByRole('note', { name: 'Caution' })
     expect(caution).toHaveTextContent('Demo project, not medical advice.')
     expect(caution).toHaveTextContent('no pharmacist has checked them')
-    expect(caution).toHaveTextContent('Talk to a pharmacist or doctor')
+    // Kept to one line; each answer card carries the pharmacist note.
+    expect(caution).not.toHaveTextContent('Talk to a pharmacist')
     expect(caution.textContent).not.toMatch(/\bsafe\b|allowed|ok to take/i)
   })
 
@@ -192,6 +193,16 @@ describe('App', () => {
       'aria-expanded',
       'false',
     )
+  })
+
+  it('shows the API status at the foot of the panel', async () => {
+    mockFetch(200, { status: 'ok' })
+    render(<App />)
+    const panel = screen.getByRole('complementary', { name: 'How this answer was made' })
+
+    expect(await within(panel).findByText('API: online')).toBeInTheDocument()
+    const sidebar = screen.getByRole('complementary', { name: 'Search and questions' })
+    expect(within(sidebar).queryByText(/API:/)).not.toBeInTheDocument()
   })
 
   it('remembers that the panel was hidden', () => {

@@ -231,4 +231,16 @@ describe('DrugSearch', () => {
     expect(button.textContent).toBe('')
     expect(button.querySelector('svg')).not.toBeNull()
   })
+
+  it('resolves the typed name when the icon button is clicked', async () => {
+    mockApi({
+      '/api/drugs/suggestions': () => [200, { query: 'advil', names: [] }],
+      '/api/drugs/resolve': () => [200, advil],
+    })
+    const onResolved = renderSearch()
+    type('advil')
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }))
+
+    await waitFor(() => expect(onResolved).toHaveBeenCalledWith(advil))
+  })
 })

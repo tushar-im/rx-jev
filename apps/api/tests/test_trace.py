@@ -109,3 +109,13 @@ def test_a_custom_question_reports_its_live_run_and_sources(
     assert body["sources"]["openfda_requests"] == 2
     assert body["answer"]["candidates"] == len(candidates)
     assert body["answer"]["sections"] == list(dict.fromkeys(c.section for c in candidates))
+
+
+def test_judged_at_always_carries_a_utc_offset(engine: Engine) -> None:
+    # SQLite keeps no timezone; the API must still say the time is UTC, or browsers read it
+    # as local time and can show the wrong day.
+    with serve(engine, FakeJev()) as client:
+        fresh = client.get(f"/api/labels/{METFORMIN}/answers").json()["labels"][0]
+        stored = client.get(f"/api/labels/{METFORMIN}/answers").json()["labels"][0]
+    for label in (fresh, stored):
+        assert label["judged_at"].endswith(("Z", "+00:00"))

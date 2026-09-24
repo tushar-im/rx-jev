@@ -260,4 +260,64 @@ describe('DrugAnswers', () => {
     // Over-the-counter answers kidney clearly, so the prescription card points back to it.
     expect(screen.getByText('The over-the-counter label answers this.')).toBeInTheDocument()
   })
+
+  it('keeps the custom answer and its trace together when the shown label is clicked again', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const body = String(input).endsWith('/ask') ? askResponse() : both
+        return new Response(JSON.stringify(body), { status: 200 })
+      }),
+    )
+    const panel = document.createElement('div')
+    document.body.append(panel)
+    render(<DrugAnswers drug={ibuprofen} panelSlot={panel} />)
+    fireEvent.change(await screen.findByRole('textbox', { name: /your own question/i }), {
+      target: { value: 'Can I take it with grapefruit juice?' },
+    })
+    fireEvent.submit(screen.getByRole('form', { name: /your own question/i }))
+    await screen.findByRole('heading', { name: 'What the label says about your question' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Over-the-counter' }))
+
+    expect(
+      screen.getByRole('heading', { name: 'What the label says about your question' }),
+    ).toBeInTheDocument()
+    expect(panel).toHaveTextContent(/asked live/i)
+    panel.remove()
+  })
+
+  it('counts a stored run and a judged question even when tokens are unknown', async () => {
+    const noTokens = { input_tokens: null, output_tokens: null }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const body = String(input).endsWith('/ask')
+          ? { ...askResponse(), ...noTokens }
+          : {
+              ...both,
+              labels: [
+                labelAnswers(noTokens),
+                labelAnswers({
+                  ...noTokens,
+                  set_id: 'none',
+                  model_version: null,
+                  product_type: 'prescription',
+                }),
+              ],
+            }
+        return new Response(JSON.stringify(body), { status: 200 })
+      }),
+    )
+    const onUsage = vi.fn()
+    render(<DrugAnswers drug={ibuprofen} onUsage={onUsage} />)
+    await waitFor(() => expect(onUsage).toHaveBeenCalledWith({ tokens: 0, live: 0, stored: 1 }))
+
+    fireEvent.change(await screen.findByRole('textbox', { name: /your own question/i }), {
+      target: { value: 'Can I take it with grapefruit juice?' },
+    })
+    fireEvent.submit(screen.getByRole('form', { name: /your own question/i }))
+
+    await waitFor(() => expect(onUsage).toHaveBeenLastCalledWith({ tokens: 0, live: 1, stored: 0 }))
+  })
 })

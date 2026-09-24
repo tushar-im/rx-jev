@@ -37,20 +37,28 @@ type Props = {
   focus: Focus | null
 }
 
-export function TraceDetails({ sources, label, focus }: Props): React.JSX.Element {
+export function TraceDetails({ sources: labelSources, label, focus }: Props): React.JSX.Element {
+  // A custom question made its own lookup; describe that one.
+  const sources = focus?.kind === 'custom' ? focus.data.sources : labelSources
   const match = sources.matches[label.product_type]
   const type = PRODUCT_TYPE_TEXT[label.product_type].toLowerCase()
   return (
     <div className="trace">
       <section>
         <h3>The label</h3>
-        {match && (
-          <p>
-            openFDA matched {COUNT.format(match.total)}{' '}
-            {match.original_packager ? 'original-packager' : 'repackager'} {type} labels. This is
-            the newest exact match.
-          </p>
-        )}
+        {match &&
+          (match.original_packager ? (
+            <p>
+              openFDA matched {COUNT.format(match.total)} original-packager {type} labels. This is
+              the newest exact match.
+            </p>
+          ) : (
+            // The fallback search is not filtered by packager, so its total counts them all.
+            <p>
+              openFDA matched {COUNT.format(match.total)} {type} labels. None from the original
+              packager matched exactly, so this is the newest exact match from a repackager.
+            </p>
+          ))}
         <p className="trace-meta">
           {plural(sources.openfda_requests, 'openFDA search', 'openFDA searches')} in{' '}
           {seconds(sources.openfda_ms)}. RxNorm in {seconds(sources.rxnorm_ms)}.
@@ -121,21 +129,23 @@ function AnswerTrace({ focus }: { focus: Focus }): React.JSX.Element {
 }
 
 function LabelRun({ label }: { label: LabelAnswers }): React.JSX.Element | null {
-  if (label.input_tokens === null) return null
-  const used = tokens(label.input_tokens, label.output_tokens)
+  // No model version means Jev was never asked about this label.
+  if (label.model_version === null) return null
+  const used = label.input_tokens === null ? null : tokens(label.input_tokens, label.output_tokens)
   return (
     <section>
       <h3>Jev</h3>
       {label.fresh ? (
         <p>
-          Judged just now: {used} tokens
+          Judged just now{used !== null && <>: {used} tokens</>}
           {label.latency_ms !== null && <> in {seconds(label.latency_ms)}</>}. Stored for next time.
         </p>
       ) : (
         <p>
           Served from the store, so no Jev call now. Judged
           {label.judged_at && <> {DAY.format(new Date(label.judged_at))}</>} with{' '}
-          {label.model_version ?? 'Jev'}: {used} tokens.
+          {label.model_version}
+          {used !== null && <>: {used} tokens</>}.
         </p>
       )}
     </section>

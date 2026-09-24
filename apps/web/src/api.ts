@@ -174,8 +174,12 @@ const run = {
 
 export const LabelAnswersSchema = LabelInfoSchema.extend({
   ...run,
-  // SQLite may drop the timezone, so a local datetime is accepted too.
-  judged_at: z.iso.datetime({ offset: true, local: true }).nullable(),
+  // Stored times are UTC. One without a timezone is read as UTC, never as the viewer's local
+  // time, which could show the wrong day.
+  judged_at: z.iso
+    .datetime({ offset: true, local: true })
+    .transform((t) => (/(Z|[+-]\d{2}:\d{2})$/.test(t) ? t : `${t}Z`))
+    .nullable(),
   // True when this request judged the label; false when it came from the store.
   fresh: z.boolean(),
   answers: z.array(AnswerSchema),

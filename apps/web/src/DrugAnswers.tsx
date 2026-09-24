@@ -98,6 +98,8 @@ export function DrugAnswers({ drug, chipsSlot, panelSlot, onUsage }: Props): Rea
   const trace = <TraceDetails sources={state.data.sources} label={label} focus={focus} />
 
   function showLabel(i: number): void {
+    // Re-clicking the shown label changes nothing, so the custom answer stays with it.
+    if (labels[i] === label) return
     setLabelIndex(i)
     setCustom(null)
   }
@@ -189,12 +191,14 @@ function labelsUsage(data: AnswersResponse): Session {
   return {
     tokens: fresh.reduce((sum, l) => sum + (l.input_tokens ?? 0) + (l.output_tokens ?? 0), 0),
     live: fresh.length,
-    stored: data.labels.filter((l) => !l.fresh && l.input_tokens !== null).length,
+    // From the store: a run exists but was not made now. A label Jev was never asked about
+    // (every question skipped) did not come from the store either.
+    stored: data.labels.filter((l) => !l.fresh && l.model_version !== null).length,
   }
 }
 
 function askUsage(data: AskResponse): Session {
-  const asked = data.input_tokens !== null
+  const asked = data.answer.status === 'judged'
   return {
     tokens: (data.input_tokens ?? 0) + (data.output_tokens ?? 0),
     live: asked ? 1 : 0,

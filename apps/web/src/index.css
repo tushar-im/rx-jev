@@ -111,6 +111,8 @@ body {
   box-sizing: border-box;
   width: 100%;
   max-width: 50rem;
+  /* Centred in the middle column at wide widths. */
+  justify-self: center;
   padding: 2.5rem 3rem;
 }
 

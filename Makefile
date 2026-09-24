@@ -1,4 +1,4 @@
-.PHONY: install dev dev-api dev-web test test-api test-web lint format golden
+.PHONY: install dev dev-api dev-web dev-worker test test-api test-web test-worker lint format golden
 
 install:
 	cd apps/api && uv sync
@@ -13,13 +13,20 @@ dev-api:
 dev-web:
 	cd apps/web && npm run dev
 
-test: test-api test-web
+# The API Worker on :8787 with local D1, KV and Durable Objects
+dev-worker:
+	cd apps/worker && npx wrangler dev --port 8787
+
+test: test-api test-web test-worker
 
 test-api:
 	cd apps/api && uv run pytest -q
 
 test-web:
 	cd apps/web && npm test
+
+test-worker:
+	cd apps/worker && npm test
 
 lint:
 	cd apps/api && uv run ruff check . && uv run ruff format --check .

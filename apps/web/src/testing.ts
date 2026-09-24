@@ -62,6 +62,7 @@ export function labelAnswers(overrides: Partial<LabelAnswers> = {}): LabelAnswer
     version: '5',
     effective_time: '2026-09-09',
     product_type: 'otc',
+    layout: 'otc',
     brand_name: 'Advil',
     manufacturer_name: 'Haleon US Holdings LLC',
     dailymed_url:

@@ -2,7 +2,7 @@
 
 install:
 	cd apps/api && uv sync
-	cd apps/web && npm install
+	npm install
 
 # Run both servers: make -j2 dev
 dev: dev-api dev-web
@@ -23,8 +23,8 @@ test-web:
 
 lint:
 	cd apps/api && uv run ruff check . && uv run ruff format --check .
-	cd apps/web && npm run format:check && npm run lint && npm run typecheck
+	npm run format:check && npm run lint && npm run typecheck
 
 format:
 	cd apps/api && uv run ruff format .
-	cd apps/web && npm run format
+	npm run format

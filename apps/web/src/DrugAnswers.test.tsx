@@ -1,8 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { StrictMode } from 'react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AnswersResponse, ResolvedDrug } from './api.ts'
 import { DrugAnswers } from './DrugAnswers.tsx'
-import { answer, askResponse, labelAnswers } from './testing.ts'
+import { answer, askResponse, labelAnswers, sourceTrace } from './testing.ts'
 
 const ibuprofen: ResolvedDrug = {
   query: 'advil',
@@ -45,6 +46,7 @@ const both: AnswersResponse = {
   rxcui: '5640',
   ingredients: ibuprofen.ingredients,
   labels: [otc, prescription],
+  sources: sourceTrace(),
 }
 
 describe('DrugAnswers', () => {
@@ -154,5 +156,21 @@ describe('DrugAnswers', () => {
     expect(
       screen.queryByRole('heading', { name: 'What the label says about your question' }),
     ).not.toBeInTheDocument()
+  })
+
+  it('reports the Jev usage of a response once, even when an aborted request still answers', async () => {
+    // StrictMode runs the fetch effect twice; this fetch ignores the first one's abort.
+    mockAnswers(200, both)
+    const onUsage = vi.fn()
+    render(
+      <StrictMode>
+        <DrugAnswers drug={ibuprofen} onUsage={onUsage} />
+      </StrictMode>,
+    )
+    await screen.findByRole('button', { name: 'Pregnancy' })
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
+    await waitFor(() => expect(onUsage).toHaveBeenCalledOnce())
+    expect(onUsage).toHaveBeenCalledWith({ tokens: 0, live: 0, stored: 2 })
   })
 })

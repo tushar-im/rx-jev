@@ -1,4 +1,4 @@
-import type { Answer, AskResponse, CustomAnswer, Group, LabelAnswers } from './api.ts'
+import type { Answer, AskResponse, CustomAnswer, Group, LabelAnswers, SourceTrace } from './api.ts'
 
 // Test data shaped like the API's answers response. Label text here is public label
 // wording, never patient data.
@@ -50,6 +50,8 @@ export function answer(questionId: string, overrides: Partial<Answer> = {}): Ans
         lead_in: 'If pregnant or breast-feeding,',
       },
     },
+    candidates: 38,
+    sections: ['pregnancy_or_breast_feeding', 'do_not_use'],
     ...overrides,
   }
 }
@@ -64,6 +66,12 @@ export function labelAnswers(overrides: Partial<LabelAnswers> = {}): LabelAnswer
     manufacturer_name: 'Haleon US Holdings LLC',
     dailymed_url:
       'https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=0ca02f8b-4413-4e7c-a67b-8c67c53e1343',
+    model_version: 'jev-1.13.0',
+    judged_at: '2026-09-21T10:00:00Z',
+    input_tokens: 10968,
+    output_tokens: 56,
+    latency_ms: 910,
+    fresh: false,
     answers: QUESTIONS.map(([id]) => answer(id)),
     ...overrides,
   }
@@ -80,11 +88,37 @@ export function customAnswer(overrides: Partial<CustomAnswer> = {}): CustomAnswe
 }
 
 export function askResponse(overrides: Partial<CustomAnswer> = {}): AskResponse {
-  const { answers: _answers, ...label } = labelAnswers()
+  const {
+    answers: _answers,
+    model_version: _model,
+    judged_at: _judged,
+    input_tokens: _in,
+    output_tokens: _out,
+    latency_ms: _latency,
+    fresh: _fresh,
+    ...label
+  } = labelAnswers()
   return {
     rxcui: '5640',
     label,
     model_version: 'jev-1.13.0',
+    input_tokens: 2105,
+    output_tokens: 56,
+    latency_ms: 640,
     answer: customAnswer(overrides),
+    sources: sourceTrace(),
+  }
+}
+
+export function sourceTrace(overrides: Partial<SourceTrace> = {}): SourceTrace {
+  return {
+    rxnorm_ms: 310,
+    openfda_ms: 820,
+    openfda_requests: 2,
+    matches: {
+      otc: { total: 831, original_packager: true },
+      prescription: { total: 47, original_packager: true },
+    },
+    ...overrides,
   }
 }

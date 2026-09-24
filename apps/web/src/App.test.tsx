@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App.tsx'
-import { labelAnswers } from './testing.ts'
+import { askResponse, labelAnswers, sourceTrace } from './testing.ts'
 
 function mockFetch(status: number, body: unknown): void {
   vi.stubGlobal(
@@ -13,6 +13,7 @@ function mockFetch(status: number, body: unknown): void {
 describe('App', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+    localStorage.clear()
   })
 
   it('shows the API as online when health check passes', async () => {
@@ -141,6 +142,7 @@ describe('App', () => {
                   rxcui: '5640',
                   ingredients: [{ rxcui: '5640', name: 'ibuprofen' }],
                   labels: [labelAnswers()],
+                  sources: sourceTrace(),
                 }
               : path === '/api/drugs/suggestions'
                 ? { query: 'Advil', names: [] }
@@ -174,5 +176,71 @@ describe('App', () => {
     expect(caution).toHaveTextContent('no pharmacist has checked them')
     expect(caution).toHaveTextContent('Talk to a pharmacist or doctor')
     expect(caution.textContent).not.toMatch(/\bsafe\b|allowed|ok to take/i)
+  })
+
+  it('shows how it works in a panel that can be hidden', () => {
+    mockFetch(200, { status: 'ok' })
+    render(<App />)
+    const panel = screen.getByRole('complementary', { name: 'How this answer was made' })
+    const explainer = within(panel).getByText(/never writes/i)
+    expect(explainer).toBeVisible()
+
+    fireEvent.click(within(panel).getByRole('button', { name: 'Hide' }))
+
+    expect(explainer).not.toBeVisible()
+    expect(within(panel).getByRole('button', { name: 'Show' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+  })
+
+  it('remembers that the panel was hidden', () => {
+    mockFetch(200, { status: 'ok' })
+    const { unmount } = render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'Hide' }))
+    unmount()
+
+    render(<App />)
+    expect(screen.getByRole('button', { name: 'Show' })).toBeInTheDocument()
+  })
+
+  it("adds this session's Jev tokens to the panel", async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const path = new URL(String(input), 'http://localhost').pathname
+        const body =
+          path === '/api/drugs/resolve'
+            ? { query: 'Advil', rxcui: '5640', ingredients: [{ rxcui: '5640', name: 'ibuprofen' }] }
+            : path === '/api/labels/5640/answers'
+              ? {
+                  rxcui: '5640',
+                  ingredients: [{ rxcui: '5640', name: 'ibuprofen' }],
+                  labels: [labelAnswers({ fresh: true, input_tokens: 1000, output_tokens: 24 })],
+                  sources: sourceTrace(),
+                }
+              : path === '/api/labels/5640/ask'
+                ? askResponse()
+                : path === '/api/drugs/suggestions'
+                  ? { query: 'Advil', names: [] }
+                  : { status: 'ok' }
+        return new Response(JSON.stringify(body), { status: 200 })
+      }),
+    )
+    render(<App />)
+    fireEvent.change(screen.getByRole('combobox', { name: /drug name/i }), {
+      target: { value: 'Advil' },
+    })
+    fireEvent.submit(screen.getByRole('search'))
+    const panel = screen.getByRole('complementary', { name: 'How this answer was made' })
+    expect(await within(panel).findByText('1,024')).toBeInTheDocument()
+
+    fireEvent.change(await screen.findByRole('textbox', { name: /your own question/i }), {
+      target: { value: 'Can I take it with grapefruit juice?' },
+    })
+    fireEvent.submit(screen.getByRole('form', { name: /your own question/i }))
+
+    expect(await within(panel).findByText('3,185')).toBeInTheDocument()
+    expect(within(panel).getByText(/asked live/i)).toBeInTheDocument()
   })
 })

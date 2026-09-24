@@ -54,8 +54,14 @@ export function AnswerCard({ label, answer }: Props): React.JSX.Element {
             Read the full label on DailyMed
           </a>
         </p>
-        {!answer.reviewed && <p className="unreviewed">Not yet checked by a pharmacist.</p>}
-        <p className="pharmacist">Ask your pharmacist about your own situation.</p>
+        <p role="note" aria-label="Pharmacist note" className="pharmacist-note">
+          {!answer.reviewed && (
+            <>
+              <span>Not yet checked by a pharmacist.</span>{' '}
+            </>
+          )}
+          <span>Ask your pharmacist about your own situation.</span>
+        </p>
       </footer>
     </article>
   )

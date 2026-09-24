@@ -11,6 +11,9 @@
   --caution-fg: #ffffff;
   --chip-clear-bg: #e7e5e4;
   --chip-clear-line: #a8a29e;
+  --note-bg: #fef3c7;
+  --note-fg: #78350f;
+  --note-line: #d97706;
   font-family: system-ui, -apple-system, sans-serif;
   color: var(--fg);
   background: var(--bg);
@@ -30,6 +33,9 @@
     --caution-fg: #fee2e2;
     --chip-clear-bg: #44403c;
     --chip-clear-line: #78716c;
+    --note-bg: #3a2a12;
+    --note-fg: #fcd34d;
+    --note-line: #b45309;
   }
 }
 
@@ -405,6 +411,18 @@ p {
 .answer-card footer {
   margin-top: 1rem;
   border-top: 1px solid var(--line);
+}
+
+/* The pharmacist note stands out from the rest of the footer, in one line. */
+.answer-card .pharmacist-note {
+  margin: 0.9rem 0 0.2rem;
+  padding: 0.55rem 0.8rem;
+  border-left: 3px solid var(--note-line);
+  border-radius: 0 0.35rem 0.35rem 0;
+  color: var(--note-fg);
+  background: var(--note-bg);
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .answer-card a {

@@ -61,6 +61,22 @@ describe('AnswerCard', () => {
     expect(screen.getByText('Not yet checked by a pharmacist.')).toBeInTheDocument()
   })
 
+  it('puts both pharmacist lines in one highlighted note', () => {
+    render(<AnswerCard label={label} answer={answer('pregnancy', { reviewed: false })} />)
+
+    expect(screen.getByRole('note', { name: 'Pharmacist note' })).toHaveTextContent(
+      'Not yet checked by a pharmacist. Ask your pharmacist about your own situation.',
+    )
+  })
+
+  it('keeps only the pharmacist line once an answer is reviewed', () => {
+    render(<AnswerCard label={label} answer={answer('pregnancy', { reviewed: true })} />)
+
+    const note = screen.getByRole('note', { name: 'Pharmacist note' })
+    expect(note).toHaveTextContent('Ask your pharmacist about your own situation.')
+    expect(note).not.toHaveTextContent('Not yet checked')
+  })
+
   it('shows no category or quote when the answer is not confident', () => {
     render(<AnswerCard label={label} answer={answer('pregnancy', { confident: false })} />)
 

@@ -67,8 +67,9 @@ class Answer(BaseModel):
     status: AnswerStatus
     # True only once a pharmacist has checked both judgments.
     reviewed: bool
-    # True when both confidences reach the display threshold, so the category may be shown.
-    # Otherwise show the quote and point to the full label. Always False when skipped.
+    # True when both confidences reach the display threshold and there is a quote, so the
+    # category may be shown. Otherwise the UI shows "We couldn't find a clear answer" and
+    # points to the full label. Always False when skipped or when evidence is `none`.
     confident: bool
     stance: StanceView | None
     evidence: EvidenceView | None
@@ -158,8 +159,8 @@ def _answer(
         title=question.title,
         status="judged",
         reviewed=stance.reviewed and evidence.reviewed,
-        confident=min(stance.distribution.confidence, evidence.distribution.confidence)
-        >= min_confidence,
+        confident=evidence.distribution.choice != NONE
+        and min(stance.distribution.confidence, evidence.distribution.confidence) >= min_confidence,
         stance=StanceView.model_validate(stance.distribution.model_dump()),
         evidence=_evidence(request.asked[question.id], evidence.distribution),
     )

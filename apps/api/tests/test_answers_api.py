@@ -263,6 +263,18 @@ def test_confident_needs_both_confidences_at_the_threshold(engine: Engine, jev: 
     assert all(a["confident"] is False for a in skipped)
 
 
+def test_evidence_none_is_never_confident(engine: Engine) -> None:
+    jev = FakeJev(pick=lambda key, options: NONE if NONE in options else options[0])
+    with serve(engine, jev) as client:
+        app.dependency_overrides[get_settings] = lambda: Settings(
+            _env_file=None, display_min_confidence=0.8
+        )
+        label = client.get(f"/api/labels/{METFORMIN}/answers").json()["labels"][0]
+    judged = [a for a in label["answers"] if a["status"] == "judged"]
+    assert judged and all(a["evidence"]["choice"] == NONE for a in judged)
+    assert all(a["confident"] is False for a in judged)
+
+
 def test_gate_1_display_threshold_is_the_default() -> None:
     assert Settings(_env_file=None).display_min_confidence == 0.9
 

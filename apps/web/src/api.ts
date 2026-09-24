@@ -64,3 +64,75 @@ export function resolveDrug(name: string): Promise<ResolvedDrug> {
   const params = new URLSearchParams({ name })
   return getJson(`/api/drugs/resolve?${params}`, ResolvedDrugSchema)
 }
+
+export const STANCES = [
+  'warns_against',
+  'caution',
+  'dose_change',
+  'no_known_issue',
+  'not_mentioned',
+] as const
+export const StanceSchema = z.enum(STANCES)
+export type Stance = z.infer<typeof StanceSchema>
+
+export const GROUPS = ['who', 'conditions', 'combinations', 'daily_life', 'serious'] as const
+export const GroupSchema = z.enum(GROUPS)
+export type Group = z.infer<typeof GroupSchema>
+
+export const QuoteSchema = z.object({
+  section: z.string(),
+  // Verbatim label text. When `lead_in` is set, show it with the text, both verbatim.
+  text: z.string(),
+  lead_in: z.string().nullable(),
+})
+export type Quote = z.infer<typeof QuoteSchema>
+
+export const AnswerSchema = z.object({
+  question_id: z.string(),
+  group: GroupSchema,
+  title: z.string(),
+  // `judged`, or why the question was not sent to Jev.
+  status: z.enum(['judged', 'no_sections', 'too_long']),
+  reviewed: z.boolean(),
+  // The category may be shown only when this is true.
+  confident: z.boolean(),
+  stance: z
+    .object({
+      choice: StanceSchema,
+      confidence: z.number(),
+      probabilities: z.record(StanceSchema, z.number()),
+    })
+    .nullable(),
+  evidence: z
+    .object({
+      choice: z.string(),
+      confidence: z.number(),
+      probability: z.number(),
+      quote: QuoteSchema.nullable(),
+    })
+    .nullable(),
+})
+export type Answer = z.infer<typeof AnswerSchema>
+
+export const LabelAnswersSchema = z.object({
+  set_id: z.string(),
+  version: z.string(),
+  effective_time: z.iso.date(),
+  product_type: z.enum(['otc', 'prescription']),
+  brand_name: z.string().nullable(),
+  manufacturer_name: z.string().nullable(),
+  dailymed_url: z.url(),
+  answers: z.array(AnswerSchema),
+})
+export type LabelAnswers = z.infer<typeof LabelAnswersSchema>
+
+export const AnswersResponseSchema = z.object({
+  rxcui: z.string(),
+  ingredients: z.array(IngredientSchema),
+  labels: z.array(LabelAnswersSchema),
+})
+export type AnswersResponse = z.infer<typeof AnswersResponseSchema>
+
+export function fetchAnswers(rxcui: string, signal?: AbortSignal): Promise<AnswersResponse> {
+  return getJson(`/api/labels/${encodeURIComponent(rxcui)}/answers`, AnswersResponseSchema, signal)
+}

@@ -64,7 +64,6 @@ export function App(): React.JSX.Element {
       </div>
       <aside className="sidebar" aria-label="Search and questions">
         <h1 className="brand">rx-jev</h1>
-        <p className="tagline">What the drug label says, word for word.</p>
         <DrugSearch onResolved={setDrug} onLookupStart={() => setDrug(null)} />
         <div ref={setChipsSlot} className="chips-slot" />
       </aside>

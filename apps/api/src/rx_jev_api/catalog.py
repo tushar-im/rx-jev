@@ -17,6 +17,7 @@ __all__ = [
     "Question",
     "QuestionId",
     "candidate_sections",
+    "custom_sections",
     "get_question",
     "label_format",
 ]
@@ -221,3 +222,9 @@ def candidate_sections(question_id: QuestionId, label: Label) -> list[str]:
         question.otc_sections if label_format(label) == "otc" else question.prescription_sections
     )
     return [name for name in wanted if label.sections.get(name, "").strip()]
+
+
+def custom_sections(label: Label) -> list[str]:
+    """Sections a reader's own question may be answered from: every section the catalog
+    reads for this label, in catalog order."""
+    return list(dict.fromkeys(s for q in CATALOG for s in candidate_sections(q.id, label)))

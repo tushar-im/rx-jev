@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { AnswerCard } from './AnswerCard.tsx'
-import { answer, labelAnswers } from './testing.ts'
+import { answer, customAnswer, labelAnswers } from './testing.ts'
 
 const label = labelAnswers()
 
@@ -112,5 +112,17 @@ describe('AnswerCard', () => {
 
     expect(screen.queryByText(/^The label /)).not.toBeInTheDocument()
     expect(screen.getByText(/couldn't find a clear answer/)).toBeInTheDocument()
+  })
+
+  it("heads a reader's own question as their question and repeats it", () => {
+    render(<AnswerCard label={label} answer={customAnswer()} />)
+
+    expect(
+      screen.getByRole('heading', { name: 'What the label says about your question' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Your question: Can I take it with grapefruit juice?'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Not yet checked by a pharmacist.')).toBeInTheDocument()
   })
 })

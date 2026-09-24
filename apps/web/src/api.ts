@@ -38,7 +38,25 @@ export class ApiError extends Error {
 }
 
 async function getJson<T>(path: string, schema: z.ZodType<T>, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(path, { headers: { Accept: 'application/json' }, signal })
+  return requestJson(path, schema, { headers: { Accept: 'application/json' }, signal })
+}
+
+async function postJson<T>(
+  path: string,
+  payload: unknown,
+  schema: z.ZodType<T>,
+  signal?: AbortSignal,
+): Promise<T> {
+  return requestJson(path, schema, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    signal,
+  })
+}
+
+async function requestJson<T>(path: string, schema: z.ZodType<T>, init: RequestInit): Promise<T> {
+  const response = await fetch(path, init)
   const body: unknown = await response.json()
   if (!response.ok) {
     const problem = ProblemSchema.safeParse(body)
@@ -92,10 +110,8 @@ export const QuoteSchema = z.object({
 })
 export type Quote = z.infer<typeof QuoteSchema>
 
-export const AnswerSchema = z.object({
-  question_id: z.string(),
-  group: GroupSchema,
-  title: z.string(),
+// What Jev judged about one question, catalog or custom.
+const judged = {
   // `judged`, or why the question was not sent to Jev.
   status: z.enum(['judged', 'no_sections', 'too_long']),
   reviewed: z.boolean(),
@@ -116,10 +132,25 @@ export const AnswerSchema = z.object({
       quote: QuoteSchema.nullable(),
     })
     .nullable(),
+}
+
+export const AnswerSchema = z.object({
+  question_id: z.string(),
+  group: GroupSchema,
+  title: z.string(),
+  ...judged,
 })
 export type Answer = z.infer<typeof AnswerSchema>
 
-export const LabelAnswersSchema = z.object({
+// A reader's own question, asked live. Never stored, so never checked by a pharmacist.
+export const CustomAnswerSchema = z.object({
+  question: z.string(),
+  ...judged,
+  reviewed: z.literal(false),
+})
+export type CustomAnswer = z.infer<typeof CustomAnswerSchema>
+
+export const LabelInfoSchema = z.object({
   set_id: z.string(),
   version: z.string(),
   effective_time: z.iso.date(),
@@ -127,6 +158,10 @@ export const LabelAnswersSchema = z.object({
   brand_name: z.string().nullable(),
   manufacturer_name: z.string().nullable(),
   dailymed_url: z.url(),
+})
+export type LabelInfo = z.infer<typeof LabelInfoSchema>
+
+export const LabelAnswersSchema = LabelInfoSchema.extend({
   answers: z.array(AnswerSchema),
 })
 export type LabelAnswers = z.infer<typeof LabelAnswersSchema>
@@ -140,4 +175,26 @@ export type AnswersResponse = z.infer<typeof AnswersResponseSchema>
 
 export function fetchAnswers(rxcui: string, signal?: AbortSignal): Promise<AnswersResponse> {
   return getJson(`/api/labels/${encodeURIComponent(rxcui)}/answers`, AnswersResponseSchema, signal)
+}
+
+export const AskResponseSchema = z.object({
+  rxcui: z.string(),
+  label: LabelInfoSchema,
+  model_version: z.string().nullable(),
+  answer: CustomAnswerSchema,
+})
+export type AskResponse = z.infer<typeof AskResponseSchema>
+
+export function askLabel(
+  rxcui: string,
+  setId: string,
+  question: string,
+  signal?: AbortSignal,
+): Promise<AskResponse> {
+  return postJson(
+    `/api/labels/${encodeURIComponent(rxcui)}/ask`,
+    { set_id: setId, question },
+    AskResponseSchema,
+    signal,
+  )
 }

@@ -1,4 +1,4 @@
-import type { Answer, Group, LabelAnswers } from './api.ts'
+import type { Answer, AskResponse, CustomAnswer, Group, LabelAnswers } from './api.ts'
 
 // Test data shaped like the API's answers response. Label text here is public label
 // wording, never patient data.
@@ -66,5 +66,25 @@ export function labelAnswers(overrides: Partial<LabelAnswers> = {}): LabelAnswer
       'https://dailymed.nlm.nih.gov/dailymed/lookup.cfm?setid=0ca02f8b-4413-4e7c-a67b-8c67c53e1343',
     answers: QUESTIONS.map(([id]) => answer(id)),
     ...overrides,
+  }
+}
+
+export function customAnswer(overrides: Partial<CustomAnswer> = {}): CustomAnswer {
+  const { question_id: _id, group: _group, title: _title, ...judged } = answer('pregnancy')
+  return {
+    ...judged,
+    question: 'Can I take it with grapefruit juice?',
+    reviewed: false,
+    ...overrides,
+  }
+}
+
+export function askResponse(overrides: Partial<CustomAnswer> = {}): AskResponse {
+  const { answers: _answers, ...label } = labelAnswers()
+  return {
+    rxcui: '5640',
+    label,
+    model_version: 'jev-1.13.0',
+    answer: customAnswer(overrides),
   }
 }

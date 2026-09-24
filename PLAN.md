@@ -115,8 +115,13 @@ apps/api  (FastAPI)
   sentences). A question with no candidate sections is skipped and served with a status
   saying why. Nothing is ever truncated.
 - **Keys.** `TYPESAFE_API_KEY` lives only in the backend environment. The browser never sees it.
-- **Model version.** Request `jev-latest`. Every run records the version Jev reports, so a
-  new version shows up in the stored runs; re-check the thresholds when one appears.
+- **Model version.** Request `jev-latest`. Stored runs are keyed by that requested name,
+  not by the version Jev reports, so a new Jev release does not re-judge stored labels:
+  they keep answers from the version they were judged with (`jev-1.13.0` for the Gate 1
+  set). Only labels judged after a release use the new version. Each run records the
+  reported version, and the batch script lists every label judged by a version other than
+  `validated_model_version` (config, `jev-1.13.0`), whose thresholds were never checked.
+  To move stored labels to a new version, re-check the thresholds on it, then re-judge.
 - **External data.** Every openFDA, RxNorm and Jev response is parsed with Pydantic on the
   way in. Every API response is parsed with zod in the browser.
 - **Errors.** RFC 7807 Problem Details everywhere.

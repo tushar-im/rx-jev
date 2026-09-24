@@ -15,7 +15,7 @@ import httpx
 from sqlmodel import Session
 from typesafe_sdk import TypeSafeClient
 
-from rx_jev_api.batch import precompute, read_names, write_report
+from rx_jev_api.batch import precompute, read_names, unvalidated_labels, write_report
 from rx_jev_api.clients.openfda import OpenFdaClient
 from rx_jev_api.clients.rxnorm import RxNormClient
 from rx_jev_api.config import get_settings
@@ -69,6 +69,12 @@ def main() -> None:
     print(f"\n{len(reports) - len(failed)}/{len(reports)} ok. Report: {report_path}")
     if failed:
         print("Not ok: " + ", ".join(failed))
+    unvalidated = unvalidated_labels(reports, settings.validated_model_version)
+    if unvalidated:
+        print(
+            f"Judged by a Jev version other than {settings.validated_model_version}, "
+            "so re-check the Gate 1 thresholds: " + ", ".join(unvalidated)
+        )
 
 
 if __name__ == "__main__":

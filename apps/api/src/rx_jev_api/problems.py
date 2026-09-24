@@ -30,7 +30,10 @@ def problem(status: int, detail: str, type_: str = "about:blank") -> JSONRespons
 
 
 async def _http_error(_: Request, exc: StarletteHTTPException) -> JSONResponse:
-    return problem(exc.status_code, str(exc.detail))
+    response = problem(exc.status_code, str(exc.detail))
+    # Keep headers such as Retry-After on a 429.
+    response.headers.update(exc.headers or {})
+    return response
 
 
 async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:

@@ -1,4 +1,4 @@
-import type { Answer, LabelAnswers, Quote, Stance } from './api.ts'
+import type { Answer, CustomAnswer, LabelInfo, Quote, Stance } from './api.ts'
 import { PRODUCT_TYPE_TEXT } from './format.ts'
 
 // Category names say what the label does, never whether a drug is safe for anyone.
@@ -16,8 +16,9 @@ const NO_SECTION = 'This label has no section about this. Read the full label or
 const DATE = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeZone: 'UTC' })
 
 type Props = {
-  label: LabelAnswers
-  answer: Answer
+  label: LabelInfo
+  // A catalog question, or the reader's own question.
+  answer: Answer | CustomAnswer
 }
 
 export function AnswerCard({ label, answer }: Props): React.JSX.Element {
@@ -28,7 +29,12 @@ export function AnswerCard({ label, answer }: Props): React.JSX.Element {
 
   return (
     <article className="answer-card" aria-live="polite">
-      <h3>What the label says about {answer.title.toLowerCase()}</h3>
+      {/* A reader's wording is never repeated: "Is it safe for me?" must not look answered. */}
+      {'question' in answer ? (
+        <h3>What the label says about your question</h3>
+      ) : (
+        <h3>What the label says about {answer.title.toLowerCase()}</h3>
+      )}
       {shown ? (
         <Finding stance={shown.stance} quote={shown.quote} />
       ) : (

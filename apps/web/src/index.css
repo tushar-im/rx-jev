@@ -64,7 +64,9 @@ p {
 }
 
 .drug-search input,
-.drug-search button {
+.drug-search button,
+.custom-question input,
+.custom-question button {
   font: inherit;
   padding: 0.6rem 0.8rem;
   border: 1px solid var(--line);
@@ -73,13 +75,16 @@ p {
   background: var(--surface);
 }
 
-.drug-search input {
+.drug-search input,
+.custom-question input {
   flex: 1;
   min-width: 0;
 }
 
 .drug-search input:focus-visible,
-.drug-search button:focus-visible {
+.drug-search button:focus-visible,
+.custom-question input:focus-visible,
+.custom-question button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
@@ -228,4 +233,23 @@ p {
 
 .answer-card a {
   color: var(--accent);
+}
+
+.custom-question {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.custom-question label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.custom-question-row {
+  display: flex;
+  gap: 0.5rem;
 }

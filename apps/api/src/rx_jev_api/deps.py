@@ -1,5 +1,6 @@
 from collections.abc import Iterator, Sequence
 from functools import lru_cache
+from threading import Lock
 from typing import Annotated
 
 import httpx
@@ -13,6 +14,7 @@ from rx_jev_api.clients.rxnorm import RxNormClient
 from rx_jev_api.config import Settings, get_settings
 from rx_jev_api.db import make_engine
 from rx_jev_api.judge import Judge
+from rx_jev_api.ratelimit import Limit, RateLimiter
 from rx_jev_api.store import Store
 
 UPSTREAM_TIMEOUT = httpx.Timeout(20.0)
@@ -59,6 +61,22 @@ def get_judge(settings: SettingsDep) -> Iterator[Judge]:
         yield Judge(client, settings.typesafe_model)
 
 
+_ask_limiters: dict[tuple[int, int], RateLimiter] = {}
+_ask_limiters_lock = Lock()
+
+
+def get_ask_limiter(settings: SettingsDep) -> RateLimiter:
+    # One limiter per process, shared by every request. Created under a lock so concurrent
+    # first asks never count their hits in two separate limiters.
+    key = (settings.ask_per_minute, settings.ask_per_day)
+    with _ask_limiters_lock:
+        if key not in _ask_limiters:
+            _ask_limiters[key] = RateLimiter(
+                [Limit(count=key[0], seconds=60), Limit(count=key[1], seconds=86_400)]
+            )
+        return _ask_limiters[key]
+
+
 @lru_cache
 def get_engine() -> Engine:
     return make_engine(get_settings().database_url)
@@ -78,3 +96,4 @@ DrugNamesDep = Annotated[Sequence[str], Depends(get_drug_names)]
 OpenFdaDep = Annotated[OpenFdaClient, Depends(get_openfda_client)]
 JudgeDep = Annotated[Judge, Depends(get_judge)]
 StoreDep = Annotated[Store, Depends(get_store)]
+AskLimiterDep = Annotated[RateLimiter, Depends(get_ask_limiter)]

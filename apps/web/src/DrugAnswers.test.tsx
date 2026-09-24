@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AnswersResponse, ResolvedDrug } from './api.ts'
 import { DrugAnswers } from './DrugAnswers.tsx'
-import { answer, labelAnswers } from './testing.ts'
+import { answer, askResponse, labelAnswers } from './testing.ts'
 
 const ibuprofen: ResolvedDrug = {
   query: 'advil',
@@ -132,5 +132,27 @@ describe('DrugAnswers', () => {
     const alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent('Answers are unavailable right now. Try again later.')
     expect(alert).not.toHaveTextContent('internal detail')
+  })
+
+  it('clears a custom answer when the label changes', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const body = String(input).endsWith('/ask') ? askResponse() : both
+        return new Response(JSON.stringify(body), { status: 200 })
+      }),
+    )
+    render(<DrugAnswers drug={ibuprofen} />)
+    fireEvent.change(await screen.findByRole('textbox', { name: /your own question/i }), {
+      target: { value: 'Can I take it with grapefruit juice?' },
+    })
+    fireEvent.submit(screen.getByRole('form', { name: /your own question/i }))
+    await screen.findByRole('heading', { name: 'What the label says about your question' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Prescription' }))
+
+    expect(
+      screen.queryByRole('heading', { name: 'What the label says about your question' }),
+    ).not.toBeInTheDocument()
   })
 })

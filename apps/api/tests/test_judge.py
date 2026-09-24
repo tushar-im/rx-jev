@@ -209,6 +209,23 @@ def test_prompt_hash_is_stable_and_tracks_label_text(metformin_rx: Label) -> Non
     assert build_request(changed).prompt_hash != build_request(metformin_rx).prompt_hash
 
 
+def test_catalog_prompt_hashes_are_pinned(metformin_rx: Label, ibuprofen_otc: Label) -> None:
+    # Stored runs are keyed by these hashes. A change re-judges every stored label, so it
+    # must be a deliberate prompt change, never a side effect of refactoring.
+    assert (
+        build_request(metformin_rx).prompt_hash
+        == "8e18faef81c01d94ab20679d7a26b30db147a073f073ec81101454f21ce4e3c3"
+    )
+    assert (
+        build_request(ibuprofen_otc).prompt_hash
+        == "be40b80cdc9b414b04cc955c4f999293dfd6a80911b3415cd72695ebae42a2af"
+    )
+    assert (
+        build_request(metformin_rx, max_tokens=4_000).prompt_hash
+        == "45c0435c9e168f4b095d89a4c3c5ee7c2c0b5732e9972ea7091ad85cc5da1d8e"
+    )
+
+
 def test_judge_sends_all_questions_in_one_request(metformin_rx: Label) -> None:
     jev = FakeJev()
     request = build_request(metformin_rx)

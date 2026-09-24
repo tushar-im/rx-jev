@@ -17,7 +17,7 @@ from pydantic import BaseModel
 
 from rx_jev_api.answering import JudgedLabel, judge_labels
 from rx_jev_api.catalog import CATALOG, Group, LabelFormat, Question, QuestionId, label_format
-from rx_jev_api.clients.openfda import ProductType
+from rx_jev_api.clients.openfda import Label, ProductType
 from rx_jev_api.clients.rxnorm import Ingredient
 from rx_jev_api.config import GATE_1_MIN_CONFIDENCE
 from rx_jev_api.deps import JudgeDep, OpenFdaDep, RxNormDep, SettingsDep, StoreDep
@@ -75,7 +75,7 @@ class Answer(BaseModel):
     evidence: EvidenceView | None
 
 
-class LabelAnswers(BaseModel):
+class LabelInfo(BaseModel):
     set_id: str
     version: str
     effective_time: date
@@ -84,6 +84,9 @@ class LabelAnswers(BaseModel):
     brand_name: str | None
     manufacturer_name: str | None
     dailymed_url: str
+
+
+class LabelAnswers(LabelInfo):
     # None when no question had candidate sections, so Jev was never asked.
     model_version: str | None
     judged_at: datetime | None
@@ -119,6 +122,15 @@ def label_answers(
 ) -> LabelAnswers:
     label, request, run = judged.label, judged.request, judged.run
     return LabelAnswers(
+        **label_info(label).model_dump(),
+        model_version=run.model_version if run else None,
+        judged_at=run.created_at if run else None,
+        answers=[_answer(q, request, run, min_confidence) for q in CATALOG],
+    )
+
+
+def label_info(label: Label) -> LabelInfo:
+    return LabelInfo(
         set_id=label.set_id,
         version=label.version,
         effective_time=label.effective_time,
@@ -127,10 +139,12 @@ def label_answers(
         brand_name=label.brand_name,
         manufacturer_name=label.manufacturer_name,
         dailymed_url=label.dailymed_url,
-        model_version=run.model_version if run else None,
-        judged_at=run.created_at if run else None,
-        answers=[_answer(q, request, run, min_confidence) for q in CATALOG],
     )
+
+
+def is_confident(stance: Distribution, evidence: Distribution, min_confidence: float) -> bool:
+    """Whether a category may be shown: a real quote and both confidences at the threshold."""
+    return evidence.choice != NONE and min(stance.confidence, evidence.confidence) >= min_confidence
 
 
 def _answer(
@@ -159,14 +173,13 @@ def _answer(
         title=question.title,
         status="judged",
         reviewed=stance.reviewed and evidence.reviewed,
-        confident=evidence.distribution.choice != NONE
-        and min(stance.distribution.confidence, evidence.distribution.confidence) >= min_confidence,
+        confident=is_confident(stance.distribution, evidence.distribution, min_confidence),
         stance=StanceView.model_validate(stance.distribution.model_dump()),
-        evidence=_evidence(request.asked[question.id], evidence.distribution),
+        evidence=evidence_view(request.asked[question.id], evidence.distribution),
     )
 
 
-def _evidence(candidates: list[Candidate], distribution: Distribution) -> EvidenceView:
+def evidence_view(candidates: list[Candidate], distribution: Distribution) -> EvidenceView:
     chosen = distribution.choice
     candidate = next((c for c in candidates if c.id == chosen), None)
     if candidate is None and chosen != NONE:

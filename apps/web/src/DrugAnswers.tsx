@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnswerCard } from './AnswerCard.tsx'
+import { CustomQuestion } from './CustomQuestion.tsx'
 import { ApiError, fetchAnswers, type AnswersResponse, type ResolvedDrug } from './api.ts'
 import { PRODUCT_TYPE_TEXT } from './format.ts'
 import { QuestionChips } from './QuestionChips.tsx'
@@ -72,6 +73,7 @@ export function DrugAnswers({ drug }: Props): React.JSX.Element {
       ) : (
         <p className="hint">Pick a question to see what the label says.</p>
       )}
+      <CustomQuestion key={label.set_id} rxcui={drug.rxcui} label={label} />
     </div>
   )
 }

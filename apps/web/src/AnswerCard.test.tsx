@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { AnswerCard } from './AnswerCard.tsx'
-import { answer, labelAnswers } from './testing.ts'
+import { answer, customAnswer, labelAnswers } from './testing.ts'
 
 const label = labelAnswers()
 
@@ -112,5 +112,16 @@ describe('AnswerCard', () => {
 
     expect(screen.queryByText(/^The label /)).not.toBeInTheDocument()
     expect(screen.getByText(/couldn't find a clear answer/)).toBeInTheDocument()
+  })
+
+  it("heads a reader's own question neutrally and never repeats its wording", () => {
+    // A question such as "Is it safe for me?" must not appear to be answered by the card.
+    render(<AnswerCard label={label} answer={customAnswer({ question: 'Is it safe for me?' })} />)
+
+    expect(
+      screen.getByRole('heading', { name: 'What the label says about your question' }),
+    ).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/safe for me/i)
+    expect(screen.getByText('Not yet checked by a pharmacist.')).toBeInTheDocument()
   })
 })

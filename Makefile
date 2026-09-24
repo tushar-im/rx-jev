@@ -1,4 +1,4 @@
-.PHONY: install dev dev-api dev-web dev-worker test test-api test-web test-worker lint format golden
+.PHONY: install dev dev-api dev-web dev-worker test test-api test-web test-worker lint format golden db-local
 
 install:
 	cd apps/api && uv sync
@@ -39,3 +39,7 @@ format:
 # Golden files the TypeScript port must match: fixtures.json (committed) and store.jsonl (local)
 golden:
 	cd apps/api && PYTHONPATH=. uv run python scripts/write_golden.py
+
+# Local D1 for the Worker: apply migrations, then import apps/api/rx_jev.db
+db-local:
+	cd apps/worker && npm run db:migrate:local && npm run db:import

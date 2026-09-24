@@ -4,8 +4,7 @@ import { CATALOG } from '../src/catalog.ts'
 import { OpenFdaClient } from '../src/clients/openfda.ts'
 import { RxNormClient } from '../src/clients/rxnorm.ts'
 import { PROBLEM_JSON } from '../src/problems.ts'
-import { type Services } from '../src/app.ts'
-import { testApp } from './helpers.ts'
+import { type TestOverrides, testApp } from './helpers.ts'
 import { json, mockFetch } from './recorded.ts'
 
 type Body = {
@@ -23,7 +22,7 @@ type Body = {
   }[]
 }
 
-async function get(path: string, overrides: Partial<Services> = {}): Promise<Response> {
+async function get(path: string, overrides: TestOverrides = {}): Promise<Response> {
   return testApp(overrides).request(path, {}, env)
 }
 

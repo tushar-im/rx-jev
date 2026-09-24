@@ -7,8 +7,10 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "test": "vitest run",
-    "typecheck": "tsc -p .",
-    "types": "wrangler types --include-runtime false"
+    "typecheck": "tsc -p . && tsc -p test/node",
+    "types": "wrangler types --include-runtime false",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:import": "node scripts/import-store.ts"
   },
   "dependencies": {
     "@rx-jev/contract": "*",

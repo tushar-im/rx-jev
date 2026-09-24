@@ -1,9 +1,13 @@
+import { TypeSafeClient } from '@typesafe-ai/sdk'
 import type { Services } from './app.ts'
 import { OpenFdaClient } from './clients/openfda.ts'
 import { RxNormClient } from './clients/rxnorm.ts'
-import { readConfig } from './config.ts'
+import { type Config, readConfig } from './config.ts'
 import type { Env } from './env.ts'
+import { createDb } from './db/index.ts'
 import type { Fetch } from './http.ts'
+import { Judge } from './judge.ts'
+import { Store } from './store.ts'
 
 const globalFetch: Fetch = (input, init) => fetch(input, init)
 
@@ -20,6 +24,21 @@ function drugNames(rxnorm: RxNormClient, baseUrl: string): Promise<readonly stri
   return names
 }
 
+// One Jev request carries a whole label (roughly 30K tokens for long prescription labels).
+const JEV_TIMEOUT_MS = 60_000
+
+// Without a key the judge still serves stored answers; only a store miss fails.
+function jevClient(config: Config): TypeSafeClient | null {
+  if (config.typesafeApiKey === null) return null
+  return new TypeSafeClient({
+    apiKey: config.typesafeApiKey,
+    timeout: JEV_TIMEOUT_MS,
+    // The SDK retries 408, 429 and 5xx with backoff; two retries bound the total wait.
+    retry: { maxRetries: 2 },
+    logLevel: 'warn',
+  })
+}
+
 // The production services, from the Worker's bindings.
 export function workerServices(env: Env): Services {
   const config = readConfig({ ...env })
@@ -32,5 +51,7 @@ export function workerServices(env: Env): Services {
       config.openfdaApiKey,
     ),
     drugNames: () => drugNames(rxnorm, config.rxnormBaseUrl),
+    judge: new Judge(jevClient(config), config.typesafeModel),
+    store: new Store(createDb(env.DB)),
   }
 }

@@ -1,11 +1,13 @@
 import { existsSync, readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it } from 'vitest'
 import { checkLabel, type LabelGolden } from '../golden.ts'
 
 // The golden file of the whole local store, written by `make golden`. It is not committed
 // (it holds every stored label), so this runs only where it has been generated.
-const STORE = fileURLToPath(new URL('../../../../fixtures/golden/store.jsonl', import.meta.url))
+const HERE = dirname(fileURLToPath(import.meta.url))
+const STORE = resolve(HERE, '../../../../fixtures/golden/store.jsonl')
 const CUSTOM_QUESTION = 'Can I drink grapefruit juice while taking this?'
 
 const entries: LabelGolden[] = existsSync(STORE)

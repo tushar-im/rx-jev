@@ -195,7 +195,9 @@ describe('DrugAnswers', () => {
     render(<DrugAnswers drug={ibuprofen} />)
 
     const group = await screen.findByRole('group', { name: 'Which label' })
-    expect(group).toHaveTextContent('Over-the-counter10 clear')
+    expect(group).toHaveTextContent('Over-the-counter10')
+    const counts = [...group.querySelectorAll('.switch-count')].map((c) => c.textContent)
+    expect(counts).toEqual(['10', '1'])
     expect(screen.getByRole('button', { name: 'Over-the-counter' })).toHaveAccessibleDescription(
       '10 questions with a clear answer',
     )

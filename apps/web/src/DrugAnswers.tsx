@@ -133,8 +133,13 @@ export function DrugAnswers({ drug, chipsSlot, panelSlot, onUsage }: Props): Rea
                   onClick={() => showLabel(i)}
                 >
                   {PRODUCT_TYPE_TEXT[l.product_type]}
-                  <span className="switch-count" aria-hidden="true">
-                    {clear} clear
+                  {/* Just the number; the hover title and description say what it counts. */}
+                  <span
+                    className="switch-count"
+                    aria-hidden="true"
+                    title={`${clear} ${clear === 1 ? 'question' : 'questions'} with a clear answer`}
+                  >
+                    {clear}
                   </span>
                   <span id={`${switchId}-${i}`} hidden>
                     {clear} {clear === 1 ? 'question' : 'questions'} with a clear answer

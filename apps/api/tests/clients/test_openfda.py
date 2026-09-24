@@ -5,6 +5,7 @@ import pytest
 
 from rx_jev_api.clients.openfda import (
     PAGE_SIZE,
+    LabelMatch,
     OpenFdaClient,
     UpstreamError,
     matches_ingredients,
@@ -240,3 +241,28 @@ def test_no_exact_match_after_exhausting_results_falls_back_then_returns_none() 
         return httpx.Response(200, json={"results": combos[skip : skip + limit]})
 
     assert make_client(httpx.MockTransport(paged)).canonical_labels(["ibuprofen"]).otc is None
+
+
+def test_reports_how_many_labels_each_search_matched(client: OpenFdaClient) -> None:
+    labels = client.canonical_labels(["ibuprofen"])
+
+    assert labels.matches == {
+        "otc": LabelMatch(total=831, original_packager=True),
+        "prescription": LabelMatch(total=47, original_packager=True),
+    }
+    assert labels.requests == 2
+
+
+def test_counts_every_search_including_empty_ones(client: OpenFdaClient) -> None:
+    labels = client.canonical_labels(["metformin"])
+
+    # No OTC label at all: two empty searches, then the prescription one.
+    assert labels.matches == {"prescription": LabelMatch(total=124, original_packager=True)}
+    assert labels.requests == 3
+
+
+def test_a_repackager_match_is_not_an_original_packager_match(client: OpenFdaClient) -> None:
+    labels = client.canonical_labels(["loratadine"])
+
+    assert labels.matches["prescription"].original_packager is False
+    assert labels.matches["prescription"].total >= 1

@@ -61,6 +61,11 @@ def client(engine: Engine, jev: FakeJev) -> Iterator[TestClient]:
         yield c
 
 
+def without_trace(body: dict) -> dict:
+    labels = [{k: v for k, v in label.items() if k != "fresh"} for label in body["labels"]]
+    return {k: v for k, v in body.items() if k != "sources"} | {"labels": labels}
+
+
 def runs(engine: Engine) -> int:
     with Session(engine) as s:
         return len(s.exec(select(JudgeRun)).all())
@@ -82,7 +87,9 @@ def test_hit_serves_from_the_store_without_calling_jev(client: TestClient, jev: 
     first = client.get(f"/api/labels/{METFORMIN}/answers").json()
     second = client.get(f"/api/labels/{METFORMIN}/answers").json()
     assert len(jev.requests) == 1
-    assert second == first
+    # Everything but the per-request trace must match: `fresh` and the source timings
+    # describe this request, not the answers (agreed for M5.2).
+    assert without_trace(second) == without_trace(first)
 
 
 def test_every_catalog_question_is_answered_in_order_and_unreviewed(

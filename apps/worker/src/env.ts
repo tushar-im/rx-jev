@@ -1,9 +1,12 @@
+import type { AskLimiter } from './limiter.ts'
+
 // The API Worker's bindings, as declared in wrangler.jsonc.
 export interface Env {
   DB: D1Database
   // RxNorm's display name list and other slow-changing upstream data.
   CACHE: KVNamespace
-  ASK_LIMITER: DurableObjectNamespace
+  // One rate limiter object per client address.
+  ASK_LIMITER: DurableObjectNamespace<AskLimiter>
   // Secrets.
   TYPESAFE_API_KEY?: string
   OPENFDA_API_KEY?: string

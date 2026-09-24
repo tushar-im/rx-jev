@@ -6,6 +6,7 @@ import { type Config, readConfig } from './config.ts'
 import type { Env } from './env.ts'
 import { createDb } from './db/index.ts'
 import type { Fetch } from './http.ts'
+import { durableAskLimiter } from './limiter.ts'
 import { Judge } from './judge.ts'
 import { Store } from './store.ts'
 
@@ -53,5 +54,9 @@ export function workerServices(env: Env): Services {
     drugNames: () => drugNames(rxnorm, config.rxnormBaseUrl),
     judge: new Judge(jevClient(config), config.typesafeModel),
     store: new Store(createDb(env.DB)),
+    askLimiter: durableAskLimiter(env.ASK_LIMITER, [
+      { count: config.askPerMinute, seconds: 60 },
+      { count: config.askPerDay, seconds: 86_400 },
+    ]),
   }
 }

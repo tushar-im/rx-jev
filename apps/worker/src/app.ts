@@ -4,8 +4,10 @@ import type { RxNormClient } from './clients/rxnorm.ts'
 import type { Config } from './config.ts'
 import type { Env } from './env.ts'
 import type { Judge } from './judge.ts'
+import type { ClientLimiter } from './ratelimit.ts'
 import { registerProblemHandlers } from './problems.ts'
 import { answerRoutes } from './routes/answers.ts'
+import { askRoutes } from './routes/ask.ts'
 import { drugRoutes } from './routes/drugs.ts'
 import { healthRoutes } from './routes/health.ts'
 import { labelRoutes } from './routes/labels.ts'
@@ -21,6 +23,8 @@ export type Services = {
   drugNames: () => Promise<readonly string[]>
   judge: Judge
   store: Store
+  // Asks per client, since every custom question calls Jev live.
+  askLimiter: ClientLimiter
 }
 
 export type ServicesFactory = (env: Env) => Services
@@ -38,5 +42,6 @@ export function createApp(makeServices: ServicesFactory): Hono<AppEnv> {
   app.route('/api/drugs', drugRoutes)
   app.route('/api/labels', labelRoutes)
   app.route('/api/labels', answerRoutes)
+  app.route('/api/labels', askRoutes)
   return app
 }

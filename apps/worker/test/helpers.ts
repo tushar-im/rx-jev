@@ -6,6 +6,7 @@ import { readConfig } from '../src/config.ts'
 import { createDb } from '../src/db/index.ts'
 import { judgeRuns } from '../src/db/schema.ts'
 import type { Env } from '../src/env.ts'
+import { type ClientLimiter, RateLimiter } from '../src/ratelimit.ts'
 import { Judge } from '../src/judge.ts'
 import { Store } from '../src/store.ts'
 import type { FakeJev } from './jev.ts'
@@ -38,6 +39,14 @@ export class OneLabel extends OpenFdaClient {
   }
 }
 
+/** A limiter kept in memory, so tests can inspect and drive it. */
+export function memoryLimiter(limiter: RateLimiter): ClientLimiter {
+  return {
+    acquire: async (client) => limiter.acquire(client),
+    release: async (slot) => limiter.release(slot),
+  }
+}
+
 export type TestOverrides = Partial<Services> & { jev?: FakeJev | null }
 
 /** Services on recorded upstreams, the test D1 and a fake Jev (unconfigured when null). */
@@ -51,6 +60,7 @@ export function testServices(env: Env, overrides: TestOverrides = {}): Services 
     drugNames: () => rxnorm.displayNames(),
     judge: new Judge(jev?.client() ?? null, 'jev-latest'),
     store: new Store(createDb(env.DB)),
+    askLimiter: memoryLimiter(new RateLimiter([])),
     ...rest,
   }
 }

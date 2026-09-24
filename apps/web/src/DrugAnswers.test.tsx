@@ -95,4 +95,38 @@ describe('DrugAnswers', () => {
 
     expect(screen.queryByRole('button', { name: 'Over-the-counter' })).not.toBeInTheDocument()
   })
+
+  it('says it is reading the label while answers load', () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => {})))
+    render(<DrugAnswers drug={ibuprofen} />)
+
+    expect(screen.getByRole('status')).toHaveTextContent(/Reading the label/)
+  })
+
+  it('passes on why no label was found', async () => {
+    mockAnswers(404, {
+      type: 'about:blank',
+      title: 'Not Found',
+      status: 404,
+      detail: 'No FDA label found for ibuprofen.',
+    })
+    render(<DrugAnswers drug={ibuprofen} />)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('No FDA label found for ibuprofen.')
+  })
+
+  it.each([502, 503])('shows a plain message when the service fails with %i', async (status) => {
+    mockAnswers(status, {
+      type: 'about:blank',
+      title: 'Service Unavailable',
+      status,
+      detail: 'internal detail',
+    })
+    render(<DrugAnswers drug={ibuprofen} />)
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Answers are unavailable right now. Try again later.')
+    expect(alert).not.toHaveTextContent('internal detail')
+  })
 })
+

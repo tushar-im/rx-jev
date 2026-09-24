@@ -11,6 +11,7 @@ const STANCE_TEXT: Record<Stance, string> = {
 }
 
 const NO_CLEAR_ANSWER = "We couldn't find a clear answer. Read the full label or ask a pharmacist."
+const NO_SECTION = 'This label has no section about this. Read the full label or ask a pharmacist.'
 
 const DATE = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeZone: 'UTC' })
 
@@ -27,7 +28,11 @@ export function AnswerCard({ label, answer }: Props): React.JSX.Element {
   return (
     <article className="answer-card" aria-live="polite">
       <h3>What the label says about {answer.title.toLowerCase()}</h3>
-      {shown ? <Finding stance={shown.stance} quote={shown.quote} /> : <p>{NO_CLEAR_ANSWER}</p>}
+      {shown ? (
+        <Finding stance={shown.stance} quote={shown.quote} />
+      ) : (
+        <p className="no-answer">{answer.status === 'no_sections' ? NO_SECTION : NO_CLEAR_ANSWER}</p>
+      )}
       <footer>
         <p className="provenance">
           {label.brand_name ?? PRODUCT_TYPE_TEXT[label.product_type]} label, version {label.version},

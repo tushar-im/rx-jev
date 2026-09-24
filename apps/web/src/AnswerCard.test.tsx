@@ -65,4 +65,44 @@ describe('AnswerCard', () => {
     expect(screen.queryByRole('blockquote')).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Read the full label on DailyMed' })).toBeInTheDocument()
   })
+
+  it('says the label has no section for a question it cannot answer', () => {
+    const skipped = answer('boxed_warning', {
+      status: 'no_sections',
+      confident: false,
+      stance: null,
+      evidence: null,
+    })
+    render(<AnswerCard label={label} answer={skipped} />)
+
+    expect(
+      screen.getByText(
+        'This label has no section about this. Read the full label or ask a pharmacist.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/couldn't find a clear answer/)).not.toBeInTheDocument()
+  })
+
+  it('treats a question too long to judge as having no clear answer', () => {
+    const skipped = answer('kidney', {
+      status: 'too_long',
+      confident: false,
+      stance: null,
+      evidence: null,
+    })
+    render(<AnswerCard label={label} answer={skipped} />)
+
+    expect(
+      screen.getByText("We couldn't find a clear answer. Read the full label or ask a pharmacist."),
+    ).toBeInTheDocument()
+  })
+
+  it('shows no category when evidence is none, even if the API says confident', () => {
+    const base = answer('pregnancy')
+    const evidence = base.evidence && { ...base.evidence, choice: 'none', quote: null }
+    render(<AnswerCard label={label} answer={{ ...base, evidence }} />)
+
+    expect(screen.queryByText('The label advises caution')).not.toBeInTheDocument()
+    expect(screen.getByText(/couldn't find a clear answer/)).toBeInTheDocument()
+  })
 })

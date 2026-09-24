@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { AnswerCard } from './AnswerCard.tsx'
-import { fetchAnswers, type AnswersResponse, type ResolvedDrug } from './api.ts'
+import { ApiError, fetchAnswers, type AnswersResponse, type ResolvedDrug } from './api.ts'
 import { PRODUCT_TYPE_TEXT } from './format.ts'
 import { QuestionChips } from './QuestionChips.tsx'
+
+const UNAVAILABLE = 'Answers are unavailable right now. Try again later.'
 
 type State =
   | { kind: 'loading' }
@@ -24,15 +26,23 @@ export function DrugAnswers({ drug }: Props): React.JSX.Element {
     const controller = new AbortController()
     fetchAnswers(drug.rxcui, controller.signal)
       .then((data) => setState({ kind: 'loaded', data }))
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setState({ kind: 'failed', message: 'Answers are unavailable right now. Try again later.' })
-        }
+      .catch((e: unknown) => {
+        if (controller.signal.aborted) return
+        // A 404 says which drug has no label; other failures stay generic.
+        const notFound = e instanceof ApiError && e.problem.status === 404
+        setState({ kind: 'failed', message: notFound ? e.problem.detail : UNAVAILABLE })
       })
     return () => controller.abort()
   }, [drug.rxcui])
 
-  if (state.kind === 'loading') return <p className="loading">Reading the label…</p>
+  if (state.kind === 'loading') {
+    // A label read for the first time is judged by Jev, which can take a minute.
+    return (
+      <p role="status" className="loading">
+        Reading the label… The first look at a label can take up to a minute.
+      </p>
+    )
+  }
   if (state.kind === 'failed') return <p role="alert">{state.message}</p>
 
   const { labels } = state.data

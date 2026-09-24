@@ -256,14 +256,15 @@ p {
 }
 
 .answer-card {
-  padding: 1rem 1.25rem;
+  padding: 1.25rem 1.5rem;
   border: 1px solid var(--line);
   border-radius: 0.5rem;
   background: var(--surface);
 }
 
 .answer-card h3 {
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.9rem;
+  font-size: 1.15rem;
 }
 
 .stance {
@@ -275,19 +276,48 @@ p {
   font-weight: 600;
 }
 
-/* Neutral on purpose: no green ticks or red crosses. */
+/* Neutral on purpose: no green ticks or red crosses. Categories differ by shape only. */
 .stance-icon {
-  width: 0.6rem;
-  height: 0.6rem;
+  flex: none;
+  width: 0.65rem;
+  height: 0.65rem;
   border-radius: 50%;
   background: var(--muted);
 }
 
+.stance[data-stance='warns_against'] .stance-icon {
+  border-radius: 0.1rem;
+}
+
+.stance[data-stance='caution'] .stance-icon {
+  border-radius: 0;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.stance[data-stance='dose_change'] .stance-icon {
+  border-radius: 0;
+  transform: rotate(45deg) scale(0.85);
+}
+
+.stance[data-stance='no_known_issue'] .stance-icon {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--muted);
+}
+
+.stance[data-stance='not_mentioned'] .stance-icon {
+  height: 0.15rem;
+  border-radius: 0.1rem;
+}
+
+/* The label's own words are the point of the page, so they get the largest type. */
 .answer-card blockquote {
   margin: 0;
   padding: 0.25rem 0 0.25rem 1rem;
   border-left: 3px solid var(--line);
-  font-size: 1.05rem;
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  font-size: 1.3rem;
+  line-height: 1.5;
+  color: var(--fg);
 }
 
 .answer-card .section,
@@ -430,6 +460,14 @@ p {
 
 /* Narrow screens: last, so it overrides the rules above. */
 @media (max-width: 1024px) {
+  .demo-caution {
+    font-size: 0.8rem;
+  }
+
+  .answer-card blockquote {
+    font-size: 1.15rem;
+  }
+
   .app,
   .app.panel-closed {
     grid-template-columns: minmax(0, 1fr);

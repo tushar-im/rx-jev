@@ -245,7 +245,7 @@ Before a public launch: the limiter needs a shared store if the API runs several
 the forwarded client address if it sits behind a proxy. The 0.9 threshold was set on catalog
 questions only; Gate 2 should spot-check custom answers too.
 
-### M5 UI uplift and transparency panel
+### M5 UI uplift and transparency panel (done)
 
 Done before Gate 2, so the reviewers see the layout that will launch.
 
@@ -265,8 +265,9 @@ Done before Gate 2, so the reviewers see the layout that will launch.
   default. For an answer shown as "We couldn't find a clear answer", it shows neither the
   stance nor its confidence, only that it is below the threshold, because the top guess is
   never shown.
-- M5.4 Polish: card typography and stance icons, desktop and phone checks, and the demo
-  script moved to 16:9.
+- M5.4 Polish: the quote in a larger serif, a neutral shape per stance (not colour), a
+  smaller caution strip on phones, desktop and phone checks, and the demo script moved to
+  16:9 with the panel's real numbers ([docs/demo-script.md](docs/demo-script.md)).
 
 ### GATE 2 Regulatory and wording review
 

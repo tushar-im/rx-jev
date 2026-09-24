@@ -263,6 +263,23 @@ def test_confident_needs_both_confidences_at_the_threshold(engine: Engine, jev: 
     assert all(a["confident"] is False for a in skipped)
 
 
+@pytest.mark.parametrize(
+    ("stance_conf", "evidence_conf", "expected"),
+    [(0.95, 0.95, True), (0.95, 0.85, False), (0.85, 0.95, False), (0.9, 0.9, True)],
+)
+def test_confident_only_when_stance_and_evidence_both_reach_the_threshold(
+    engine: Engine, stance_conf: float, evidence_conf: float, expected: bool
+) -> None:
+    def confidence(key: str) -> float:
+        return stance_conf if key.endswith(".stance") else evidence_conf
+
+    with serve(engine, FakeJev(confidence=confidence)) as client:
+        label = client.get(f"/api/labels/{METFORMIN}/answers").json()["labels"][0]
+    judged = [a for a in label["answers"] if a["status"] == "judged"]
+    assert judged
+    assert all(a["confident"] is expected for a in judged)
+
+
 def test_evidence_none_is_never_confident(engine: Engine) -> None:
     jev = FakeJev(pick=lambda key, options: NONE if NONE in options else options[0])
     with serve(engine, jev) as client:

@@ -69,7 +69,12 @@ def write_packets(rows: list[ReviewRow]) -> None:
 
 
 def write_comparison(rows: list[ReviewRow]) -> None:
-    results = compare(rows, read_grades(ROOT / "grades"))
+    candidate_ids = {
+        item["row_id"]: {c["id"] for c in item["candidates"]}
+        for path in sorted((ROOT / "packets").glob("*.json"))
+        for item in json.loads(path.read_text())
+    }
+    results = compare(rows, read_grades(ROOT / "grades"), candidate_ids)
     path = Path("review_sheet_compared.csv")
     fields = [
         *ReviewRow.model_fields,

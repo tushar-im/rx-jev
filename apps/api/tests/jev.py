@@ -23,11 +23,17 @@ def first_option(key: str, options: list[str]) -> str:
 
 class FakeJev:
     def __init__(
-        self, pick: Picker = first_option, status: int = 200, drop: set[str] | None = None
+        self,
+        pick: Picker = first_option,
+        status: int = 200,
+        drop: set[str] | None = None,
+        confidence: Callable[[str], float] | None = None,
     ) -> None:
         self.pick = pick
         self.status = status
         self.drop = drop or set()  # question keys to leave unanswered
+        # Confidence per question key; 0.8 for every question unless given.
+        self.confidence = confidence or (lambda key: 0.8)
         self.requests: list[dict[str, Any]] = []
 
     def client(self) -> TypeSafeClient:
@@ -65,5 +71,5 @@ class FakeJev:
             "type": "choice",
             "choice": choice,
             "probabilities": probabilities,
-            "confidence": 0.8,
+            "confidence": self.confidence(key),
         }

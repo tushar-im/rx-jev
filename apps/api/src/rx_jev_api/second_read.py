@@ -72,8 +72,21 @@ def read_grades(directory: Path) -> list[Grade]:
     return grades
 
 
-def compare(rows: list[ReviewRow], grades: list[Grade]) -> list[Comparison]:
-    by_row = {g.row_id: g for g in grades}
+def compare(
+    rows: list[ReviewRow], grades: list[Grade], candidate_ids: dict[str, set[str]]
+) -> list[Comparison]:
+    """Both readings of every row. `candidate_ids` holds each row's packet sentence IDs.
+
+    Raises ValueError for a row graded twice, or evidence that is not one of the row's
+    candidates: either would let a malformed grade pass as agreement.
+    """
+    by_row: dict[str, Grade] = {}
+    for g in grades:
+        if g.row_id in by_row:
+            raise ValueError(f"Row {g.row_id} is graded more than once.")
+        if g.evidence != NONE and g.evidence not in candidate_ids.get(g.row_id, set()):
+            raise ValueError(f"Row {g.row_id} grades evidence {g.evidence}, not a candidate.")
+        by_row[g.row_id] = g
     results: list[Comparison] = []
     for row in rows:
         grade = by_row.get(row.row_id)

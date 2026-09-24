@@ -7,6 +7,8 @@
   --line: #d6d3d1;
   --surface: #ffffff;
   --accent: #1d4ed8;
+  --caution-bg: #b91c1c;
+  --caution-fg: #ffffff;
   font-family: system-ui, -apple-system, sans-serif;
   color: var(--fg);
   background: var(--bg);
@@ -22,6 +24,8 @@
     --line: #44403c;
     --surface: #292524;
     --accent: #93c5fd;
+    --caution-bg: #7f1d1d;
+    --caution-fg: #fee2e2;
   }
 }
 
@@ -30,10 +34,74 @@ body {
   background: var(--bg);
 }
 
-main {
-  max-width: 40rem;
-  margin: 0 auto;
-  padding: 3rem 1rem;
+.app {
+  display: grid;
+  grid-template-columns: 17rem minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+}
+
+.demo-caution {
+  grid-column: 1 / -1;
+  padding: 0.5rem 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--caution-fg);
+  background: var(--caution-bg);
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 1rem;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 1.5rem 1.25rem;
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.brand {
+  margin: 0;
+  font-size: 1.6rem;
+  letter-spacing: -0.02em;
+}
+
+.tagline {
+  margin: -0.75rem 0 0;
+  font-size: 0.85rem;
+}
+
+.sidebar .status {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.stage {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 50rem;
+  padding: 2.5rem 3rem;
+}
+
+.drug-name {
+  margin: 0 0 1rem;
+  font-size: 1.6rem;
+}
+
+.drug-name::first-letter {
+  text-transform: uppercase;
+}
+
+.invite {
+  margin: 4rem 0 0;
+  font-size: 1.15rem;
 }
 
 p {
@@ -50,6 +118,7 @@ p {
 
 .drug-search {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.4rem;
 }
 
@@ -252,4 +321,39 @@ p {
 .custom-question-row {
   display: flex;
   gap: 0.5rem;
+}
+
+/* Narrow screens: last, so it overrides the rules above. */
+@media (max-width: 1024px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .stage {
+    padding: 1.5rem 1rem;
+  }
+
+  /* One scrolling row of chips instead of a tall list. */
+  .question-chips {
+    display: flex;
+    gap: 1.25rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  .chip-group {
+    flex: none;
+  }
+
+  .chip-group .chips {
+    flex-wrap: nowrap;
+  }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AnswerCard } from './AnswerCard.tsx'
 import { CustomQuestion } from './CustomQuestion.tsx'
 import { ApiError, fetchAnswers, type AnswersResponse, type ResolvedDrug } from './api.ts'
@@ -14,11 +15,13 @@ type State =
 
 type Props = {
   drug: ResolvedDrug
+  // Where to render the question chips, such as the page sidebar. Inline when absent.
+  chipsSlot?: HTMLElement | null
 }
 
 // What each of the drug's labels says. Mount with `key={drug.rxcui}` so a new drug
 // starts from a fresh state.
-export function DrugAnswers({ drug }: Props): React.JSX.Element {
+export function DrugAnswers({ drug, chipsSlot }: Props): React.JSX.Element {
   const [state, setState] = useState<State>({ kind: 'loading' })
   const [labelIndex, setLabelIndex] = useState(0)
   const [questionId, setQuestionId] = useState<string | null>(null)
@@ -50,6 +53,9 @@ export function DrugAnswers({ drug }: Props): React.JSX.Element {
   const label = labels[labelIndex] ?? labels[0]
   if (!label) return <p role="alert">No FDA label found for this drug.</p>
   const answer = label.answers.find((a) => a.question_id === questionId)
+  const chips = (
+    <QuestionChips answers={label.answers} selected={questionId} onSelect={setQuestionId} />
+  )
 
   return (
     <div className="drug-answers">
@@ -67,7 +73,7 @@ export function DrugAnswers({ drug }: Props): React.JSX.Element {
           ))}
         </div>
       )}
-      <QuestionChips answers={label.answers} selected={questionId} onSelect={setQuestionId} />
+      {chipsSlot ? createPortal(chips, chipsSlot) : chips}
       {answer ? (
         <AnswerCard label={label} answer={answer} />
       ) : (

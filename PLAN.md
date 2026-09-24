@@ -245,6 +245,29 @@ Before a public launch: the limiter needs a shared store if the API runs several
 the forwarded client address if it sits behind a proxy. The 0.9 threshold was set on catalog
 questions only; Gate 2 should spot-check custom answers too.
 
+### M5 UI uplift and transparency panel
+
+Done before Gate 2, so the reviewers see the layout that will launch.
+
+- M5.1 Three-column layout: a sidebar with the brand, the search and the question chips; the
+  answer card in the center; a panel on the right. Below about 1024 px the columns stack
+  and the chips become one scrolling row. A red strip across the top of every view says it is a demo
+  project, not medical advice, that AI picked the quotes with no pharmacist's check, and to
+  talk to a pharmacist or doctor before deciding anything about a medicine.
+- M5.2 API trace fields, so the panel shows real numbers:
+  - For each label: its Jev run (tokens, latency, model) and whether it was judged now or
+    served from the store.
+  - For each answer: how many candidate sentences and sections Jev chose from.
+  - For the lookup: how many labels openFDA matched per product type, and RxNorm and
+    openFDA time.
+  - For a custom question: its live Jev tokens and latency.
+- M5.3 "How this answer was made" panel with session totals, behind a toggle that is on by
+  default. For an answer shown as "We couldn't find a clear answer", it shows neither the
+  stance nor its confidence, only that it is below the threshold, because the top guess is
+  never shown.
+- M5.4 Polish: card typography and stance icons, desktop and phone checks, and the demo
+  script moved to 16:9.
+
 ### GATE 2 Regulatory and wording review
 
 Confirm with a regulatory advisor that the wording and display rules keep this a label

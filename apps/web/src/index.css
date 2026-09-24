@@ -152,3 +152,80 @@ p {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+
+.drug-answers {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.label-switch {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  overflow: hidden;
+}
+
+.label-switch button {
+  font: inherit;
+  padding: 0.4rem 0.9rem;
+  border: 0;
+  color: var(--fg);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.label-switch button[aria-pressed='true'] {
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.answer-card {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--surface);
+}
+
+.answer-card h3 {
+  margin: 0 0 0.75rem;
+}
+
+.stance {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  color: var(--fg);
+  font-weight: 600;
+}
+
+/* Neutral on purpose: no green ticks or red crosses. */
+.stance-icon {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.answer-card blockquote {
+  margin: 0;
+  padding: 0.25rem 0 0.25rem 1rem;
+  border-left: 3px solid var(--line);
+  font-size: 1.05rem;
+}
+
+.answer-card .section,
+.answer-card footer p {
+  font-size: 0.85rem;
+}
+
+.answer-card footer {
+  margin-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.answer-card a {
+  color: var(--accent);
+}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchHealth, type ResolvedDrug } from './api.ts'
+import { DrugAnswers } from './DrugAnswers.tsx'
 import { DrugSearch } from './DrugSearch.tsx'
 
 type ApiStatus = 'checking' | 'online' | 'offline'
@@ -22,6 +23,7 @@ export function App(): React.JSX.Element {
       {drug && (
         <section aria-live="polite">
           <h2>{drug.ingredients.map((i) => i.name).join(' and ')}</h2>
+          <DrugAnswers key={drug.rxcui} drug={drug} />
         </section>
       )}
       <p className="status" data-status={status}>

@@ -7,12 +7,14 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    // The API Worker from `make dev-worker`; API_URL=http://127.0.0.1:8000 for the Python API.
     proxy: {
-      '/api': 'http://127.0.0.1:8000',
+      '/api': process.env.API_URL ?? 'http://127.0.0.1:8787',
     },
   },
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
+    include: ['src/**/*.test.{ts,tsx}', 'worker/**/*.test.ts'],
   },
 })

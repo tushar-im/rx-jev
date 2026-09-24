@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { fetchHealth, type ResolvedDrug } from './api.ts'
 import { DrugAnswers } from './DrugAnswers.tsx'
 import { DrugSearch } from './DrugSearch.tsx'
+import { loadDrugNames } from './names.ts'
 import { HowItWorks, type Session, SessionTotals } from './TracePanel.tsx'
 
 type ApiStatus = 'checking' | 'online' | 'offline'
@@ -38,7 +39,11 @@ export function App(): React.JSX.Element {
       </div>
       <aside className="sidebar" aria-label="Search and questions">
         <h1 className="brand">rx-jev</h1>
-        <DrugSearch onResolved={setDrug} onLookupStart={() => setDrug(null)} />
+        <DrugSearch
+          onResolved={setDrug}
+          onLookupStart={() => setDrug(null)}
+          loadNames={loadDrugNames}
+        />
         <div ref={setChipsSlot} className="chips-slot" />
       </aside>
       <main className="stage">

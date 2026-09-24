@@ -57,7 +57,10 @@ export function testServices(env: Env, overrides: TestOverrides = {}): Services 
     config: readConfig({}),
     rxnorm,
     openfda: recordedOpenFda(),
-    drugNames: () => rxnorm.displayNames(),
+    drugNames: async () => ({
+      names: await rxnorm.displayNames(),
+      updated_at: '2026-09-25T00:00:00.000Z',
+    }),
     judge: new Judge(jev?.client() ?? null, 'jev-latest'),
     store: new Store(createDb(env.DB)),
     askLimiter: memoryLimiter(new RateLimiter([])),

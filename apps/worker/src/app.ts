@@ -1,3 +1,4 @@
+import type { DrugNames } from '@rx-jev/contract'
 import { Hono } from 'hono'
 import type { OpenFdaClient } from './clients/openfda.ts'
 import type { RxNormClient } from './clients/rxnorm.ts'
@@ -20,7 +21,7 @@ export type Services = {
   rxnorm: RxNormClient
   openfda: OpenFdaClient
   // RxNorm's display names, for suggestions.
-  drugNames: () => Promise<readonly string[]>
+  drugNames: () => Promise<DrugNames>
   judge: Judge
   store: Store
   // Asks per client, since every custom question calls Jev live.

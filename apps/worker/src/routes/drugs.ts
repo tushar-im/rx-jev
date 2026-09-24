@@ -1,4 +1,4 @@
-import type { ResolvedDrug, Suggestions } from '@rx-jev/contract'
+import type { DrugNames, ResolvedDrug, Suggestions } from '@rx-jev/contract'
 import { suggest } from '@rx-jev/contract/suggest'
 import { Hono } from 'hono'
 import { z } from 'zod'
@@ -21,8 +21,17 @@ const ResolveQuery = z.object({ name: chars(1, 100) })
 export const drugRoutes = new Hono<AppEnv>()
   .get('/suggestions', async (c) => {
     const { q } = parseOr422(SuggestionsQuery, c.req.query(), 'query')
-    const names = await c.var.services.drugNames()
+    const { names } = await c.var.services.drugNames()
     return c.json<Suggestions>({ query: q, names: suggest(names, q) })
+  })
+  // The whole list, so the browser can suggest names without a request per keystroke.
+  .get('/names', async (c) => {
+    const list = await c.var.services.drugNames()
+    const etag = `W/"${list.updated_at}"`
+    c.header('ETag', etag)
+    c.header('Cache-Control', 'public, max-age=3600')
+    if (c.req.header('If-None-Match') === etag) return c.body(null, 304)
+    return c.json<DrugNames>(list)
   })
   .get('/resolve', async (c) => {
     const { name } = parseOr422(ResolveQuery, c.req.query(), 'query')

@@ -1,0 +1,15 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  // The web Worker: the static build, with /api/* passed to the API Worker.
+  "name": "rx-jev-web",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-08-20",
+  "observability": { "enabled": true },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "services": [{ "binding": "API", "service": "rx-jev-api" }]
+}

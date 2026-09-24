@@ -61,7 +61,7 @@ export function workerServices(env: Env): Services {
       config.openfdaApiKey,
       db,
     ),
-    drugNames: async () => (await drugNames(rxnorm, env.CACHE)).names,
+    drugNames: () => drugNames(rxnorm, env.CACHE),
     judge: new Judge(jevClient(config), config.typesafeModel),
     store: new Store(db),
     askLimiter: durableAskLimiter(env.ASK_LIMITER, [

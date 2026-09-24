@@ -1,3 +1,4 @@
+import type { DrugNames } from '@rx-jev/contract'
 import { env } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
 import { RxNormClient } from '../src/clients/rxnorm.ts'
@@ -6,16 +7,23 @@ import { testApp } from './helpers.ts'
 import { rxnormFetch } from './recorded.ts'
 
 const NAMES = ['advil', 'advil pm', 'glipiZIDE / metFORMIN', 'metFORMIN', 'tylenol pm']
+const UPDATED_AT = '2026-09-25T04:17:00.000Z'
 
-function app(drugNames: () => Promise<readonly string[]> = async () => NAMES) {
+type NamesSource = () => Promise<DrugNames>
+
+function app(drugNames: NamesSource = async () => ({ names: NAMES, updated_at: UPDATED_AT })) {
   return testApp({
     rxnorm: new RxNormClient({ baseUrl: 'https://rxnav.test', fetch: rxnormFetch() }),
     drugNames,
   })
 }
 
-async function get(path: string, drugNames?: () => Promise<readonly string[]>): Promise<Response> {
-  return app(drugNames).request(path, {}, env)
+async function get(
+  path: string,
+  drugNames?: NamesSource,
+  headers: Record<string, string> = {},
+): Promise<Response> {
+  return app(drugNames).request(path, { headers }, env)
 }
 
 describe('drug suggestions', () => {
@@ -43,6 +51,30 @@ describe('drug suggestions', () => {
 
     expect(response.status).toBe(502)
     expect(response.headers.get('content-type')).toBe(PROBLEM_JSON)
+  })
+})
+
+describe('drug names', () => {
+  it('lists every RxNorm name for matching in the browser', async () => {
+    const response = await get('/api/drugs/names')
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ names: NAMES, updated_at: UPDATED_AT })
+    expect(response.headers.get('cache-control')).toBe('public, max-age=3600')
+  })
+
+  it('revalidates with a 304 until the list is refreshed', async () => {
+    const etag = (await get('/api/drugs/names')).headers.get('etag') ?? ''
+
+    expect(etag).not.toBe('')
+    const response = await get('/api/drugs/names', undefined, { 'If-None-Match': etag })
+    expect(response.status).toBe(304)
+    const refreshed = await get(
+      '/api/drugs/names',
+      async () => ({ names: NAMES, updated_at: '2026-09-26T04:17:00.000Z' }),
+      { 'If-None-Match': etag },
+    )
+    expect(refreshed.status).toBe(200)
   })
 })
 

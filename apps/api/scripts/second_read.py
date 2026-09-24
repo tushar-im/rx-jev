@@ -22,7 +22,13 @@ from sqlmodel import Session
 from rx_jev_api.config import get_settings
 from rx_jev_api.db import make_engine
 from rx_jev_api.review import REVIEW_COLUMNS, ReviewRow
-from rx_jev_api.second_read import compare, packet, read_grades
+from rx_jev_api.second_read import (
+    compare,
+    load_candidate_ids,
+    packet,
+    read_grades,
+    write_packet_batches,
+)
 from rx_jev_api.store import Store
 
 SHEET = Path("review_sheet.json")
@@ -44,7 +50,6 @@ def main() -> None:
 
 def write_packets(rows: list[ReviewRow]) -> None:
     out = ROOT / "packets"
-    out.mkdir(parents=True, exist_ok=True)
     with Session(make_engine(get_settings().database_url)) as session:
         store = Store(session)
         items = []
@@ -54,27 +59,16 @@ def write_packets(rows: list[ReviewRow]) -> None:
                 sys.exit(f"Label {row.set_id} v{row.version} is not in the store.")
             items.append(packet(row, label))
 
-    batches: list[list[dict]] = [[]]
-    size = 0
-    for item in items:
-        chars = sum(len(c["text"]) for c in item["candidates"])
-        if batches[-1] and size + chars > BATCH_CHARS:
-            batches.append([])
-            size = 0
-        batches[-1].append(item)
-        size += chars
-    for n, batch in enumerate(batches, start=1):
-        (out / f"{n:03}.json").write_text(json.dumps(batch, indent=1, ensure_ascii=False))
-    print(f"{len(items)} rows in {len(batches)} packet batches under {out}/")
+    count = write_packet_batches(out, items, BATCH_CHARS)
+    print(f"{len(items)} rows in {count} packet batches under {out}/")
 
 
 def write_comparison(rows: list[ReviewRow]) -> None:
-    candidate_ids = {
-        item["row_id"]: {c["id"] for c in item["candidates"]}
-        for path in sorted((ROOT / "packets").glob("*.json"))
-        for item in json.loads(path.read_text())
-    }
-    results = compare(rows, read_grades(ROOT / "grades"), candidate_ids)
+    try:
+        candidate_ids = load_candidate_ids(ROOT / "packets", [r.row_id for r in rows])
+        results = compare(rows, read_grades(ROOT / "grades"), candidate_ids)
+    except ValueError as exc:
+        sys.exit(f"Cannot compare: {exc}")
     path = Path("review_sheet_compared.csv")
     fields = [
         *ReviewRow.model_fields,

@@ -17,7 +17,16 @@ from rx_jev_api.judge import NONE, Stance
 from rx_jev_api.review import ReviewRow
 from rx_jev_api.sentences import label_candidates
 
-__all__ = ["Comparison", "EvidenceMatch", "Grade", "compare", "packet", "read_grades"]
+__all__ = [
+    "Comparison",
+    "EvidenceMatch",
+    "Grade",
+    "compare",
+    "load_candidate_ids",
+    "packet",
+    "read_grades",
+    "write_packet_batches",
+]
 
 # `same` sentence, an `other_sentence` (both real), or one side chose `none`.
 EvidenceMatch = Literal["same", "other_sentence", "none_mismatch"]
@@ -59,6 +68,53 @@ def packet(row: ReviewRow, label: Label) -> dict[str, Any]:
             for c in label_candidates(label, row.sections)
         ],
     }
+
+
+def write_packet_batches(directory: Path, items: list[dict[str, Any]], batch_chars: int) -> int:
+    """Replace the directory's packet batches, so no batch from an earlier sheet survives.
+
+    A batch closes once adding the next row would pass `batch_chars` of sentence text.
+    Returns the number of batches written.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    for old in directory.glob("*.json"):
+        old.unlink()
+
+    batches: list[list[dict[str, Any]]] = [[]]
+    size = 0
+    for item in items:
+        chars = sum(len(c["text"]) for c in item["candidates"])
+        if batches[-1] and size + chars > batch_chars:
+            batches.append([])
+            size = 0
+        batches[-1].append(item)
+        size += chars
+    for n, batch in enumerate(batches, start=1):
+        path = directory / f"{n:03}.json"
+        path.write_text(json.dumps(batch, indent=1, ensure_ascii=False))
+    return len(batches)
+
+
+def load_candidate_ids(directory: Path, row_ids: list[str]) -> dict[str, set[str]]:
+    """Each current row's candidate IDs from the packets, which must match the sheet exactly.
+
+    Raises ValueError for a row in two packets, a packet row not in the sheet (a stale
+    batch), or a sheet row without a packet.
+    """
+    wanted = set(row_ids)
+    ids: dict[str, set[str]] = {}
+    for path in sorted(directory.glob("*.json")):
+        for item in json.loads(path.read_text()):
+            row_id = item["row_id"]
+            if row_id in ids:
+                raise ValueError(f"Row {row_id} appears in more than one packet ({path.name}).")
+            if row_id not in wanted:
+                raise ValueError(f"Packet {path.name} holds row {row_id}, not in the sheet.")
+            ids[row_id] = {c["id"] for c in item["candidates"]}
+    missing = [r for r in row_ids if r not in ids]
+    if missing:
+        raise ValueError(f"No packet for rows: {', '.join(missing)}.")
+    return ids
 
 
 def read_grades(directory: Path) -> list[Grade]:

@@ -13,8 +13,10 @@ from rx_jev_api.review import ReviewRow, label_rows
 from rx_jev_api.second_read import (
     Grade,
     compare,
+    load_candidate_ids,
     packet,
     read_grades,
+    write_packet_batches,
 )
 from rx_jev_api.store import Store
 from tests.jev import FakeJev
@@ -115,6 +117,41 @@ def test_evidence_that_is_not_a_candidate_of_the_row_is_rejected(
 ) -> None:
     with pytest.raises(ValueError, match="made-up-id"):
         compare(rows[:1], [grade(rows[0], evidence="made-up-id")], ids)
+
+
+def item(row_id: str, *ids: str) -> dict:
+    return {"row_id": row_id, "candidates": [{"id": i, "text": "x" * 10} for i in ids]}
+
+
+def test_writing_packets_removes_batches_from_an_earlier_sheet(tmp_path: Path) -> None:
+    (tmp_path / "007.json").write_text(json.dumps([item("stale", "s9")]))
+    count = write_packet_batches(tmp_path, [item("a", "s1"), item("b", "s2")], batch_chars=10)
+    assert count == 2
+    assert sorted(p.name for p in tmp_path.glob("*.json")) == ["001.json", "002.json"]
+
+
+def test_candidate_ids_are_loaded_for_exactly_the_current_rows(tmp_path: Path) -> None:
+    write_packet_batches(tmp_path, [item("a", "s1", "s2"), item("b", "s3")], batch_chars=100)
+    assert load_candidate_ids(tmp_path, ["a", "b"]) == {"a": {"s1", "s2"}, "b": {"s3"}}
+
+
+def test_a_row_in_two_packets_is_rejected(tmp_path: Path) -> None:
+    (tmp_path / "001.json").write_text(json.dumps([item("a", "s1")]))
+    (tmp_path / "002.json").write_text(json.dumps([item("a", "s2")]))
+    with pytest.raises(ValueError, match="a"):
+        load_candidate_ids(tmp_path, ["a"])
+
+
+def test_packets_for_rows_not_in_the_sheet_are_rejected(tmp_path: Path) -> None:
+    (tmp_path / "001.json").write_text(json.dumps([item("a", "s1"), item("old", "s2")]))
+    with pytest.raises(ValueError, match="old"):
+        load_candidate_ids(tmp_path, ["a"])
+
+
+def test_sheet_rows_without_a_packet_are_rejected(tmp_path: Path) -> None:
+    (tmp_path / "001.json").write_text(json.dumps([item("a", "s1")]))
+    with pytest.raises(ValueError, match="b"):
+        load_candidate_ids(tmp_path, ["a", "b"])
 
 
 def test_read_grades_merges_batch_files_and_rejects_bad_stances(tmp_path: Path) -> None:

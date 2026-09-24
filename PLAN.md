@@ -273,7 +273,7 @@ Done before Gate 2, so the reviewers see the layout that will launch.
   other label answers a question clearly, the card points to it without saying what it says.
   OTC and prescription labels are never merged: they are different products.
 
-### M6 Cloudflare deployment: TypeScript port
+### M6 Cloudflare deployment: TypeScript port (M6.1 to M6.10 done, M6.11 prepared)
 
 The backend is ported from Python to TypeScript and deployed as Cloudflare Workers. The app
 waits on the network (openFDA 4 to 8 s, Jev 1 to 60 s per label), so what the move buys is
@@ -366,6 +366,22 @@ Stories:
     without calling Jev;
   - then `apps/api` removed, and CLAUDE.md and the Makefile updated for the TypeScript
     stack.
+
+Where it stands:
+
+- Parity: every golden file matches byte for byte: the 7 fixture labels with full request
+  bodies, and all 123 stored labels at three token budgets and with a custom question. The
+  three pinned prompt hashes match. Checked live through the local Workers: Tylenol PM,
+  Wellbutrin and Benadryl load from the imported store without calling Jev.
+- The import finds all 141 stored runs for their labels. 23 of the 123 labels have a run
+  for today's prompt, the same as on the Python app; the rest predate the Gate 1 prompt
+  changes and are judged again when first opened.
+- Additions beyond the Python API: `openfda_cached` in the source trace, `/api/drugs/names`
+  for the browser's name list, and the `ETag` on stored answers.
+- M6.11 is prepared: Wrangler configs, `make db-remote`, `make deploy`, `make smoke`, and
+  the steps in `docs/deploy-cloudflare.md`. Creating the Cloudflare resources, the secrets,
+  Access and the deploy need the owner's account. `apps/api` is removed only after the
+  deployed smoke test passes.
 
 ### GATE 2 Regulatory and wording review
 

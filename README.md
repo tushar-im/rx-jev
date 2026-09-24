@@ -7,22 +7,34 @@ rx-jev reads US drug labels from openFDA and uses [TypeSafe Jev](https://docs.ty
 to find the sentence that answers your question. It does not give medical advice and does
 not say whether a drug is right for you. Ask a pharmacist or doctor.
 
-> Status: scaffold only. See [PLAN.md](PLAN.md) for milestones.
+> Status: a private prototype built for Cloudflare Workers. It stays behind Cloudflare Access
+> until the Gate 2 review. See [PLAN.md](PLAN.md) for milestones.
 
 ## Requirements
 
-- Python 3.13 and [uv](https://docs.astral.sh/uv/)
 - Node 24 and npm
-- A TypeSafe API key from [console.typesafe.ai](https://console.typesafe.ai/), needed from M2
+- A TypeSafe API key from [console.typesafe.ai](https://console.typesafe.ai/)
+- Python 3.13 and [uv](https://docs.astral.sh/uv/), only for the Python reference app and the
+  golden files, until the M6 cutover
 
 ## Setup
 
 ```bash
 make install
-cp apps/api/.env.example apps/api/.env
 ```
 
-Then put your key in `apps/api/.env`.
+Put your keys in `apps/worker/.dev.vars`, which Git ignores:
+
+```
+TYPESAFE_API_KEY=...
+OPENFDA_API_KEY=...
+```
+
+Create the local D1 database and import the judgment store:
+
+```bash
+make db-local
+```
 
 ## Run
 
@@ -31,7 +43,7 @@ make -j2 dev
 ```
 
 - Web: http://localhost:5173
-- API: http://localhost:8000, interactive docs at http://localhost:8000/docs
+- API Worker: http://localhost:8787/api/health
 
 ## Test and lint
 
@@ -43,14 +55,22 @@ make test
 make lint
 ```
 
+## Deploy
+
+See [docs/deploy-cloudflare.md](docs/deploy-cloudflare.md).
+
 ## Layout
 
 ```
 apps/
-  api/   FastAPI backend: RxNorm, openFDA, Jev, storage
-  web/   Vite + React frontend
-PLAN.md    product, architecture, milestones
-CLAUDE.md  rules for AI coding agents working in this repo
+  worker/   API Worker: Hono, Drizzle on D1, KV, Durable Objects, TypeSafe Jev
+  web/      Vite + React app, and the web Worker that serves it
+  api/      Python FastAPI app, the reference until the M6 cutover
+packages/
+  contract/ zod schemas of the API, shared by both apps
+fixtures/   recorded RxNorm and openFDA responses, golden files
+PLAN.md     product, architecture, milestones
+CLAUDE.md   rules for AI coding agents working in this repo
 ```
 
 ## Data sources

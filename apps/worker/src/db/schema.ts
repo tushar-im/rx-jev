@@ -68,4 +68,13 @@ export const judgments = sqliteTable(
   (t) => [index('judgment_run_id').on(t.run_id)],
 )
 
-export const schema = { labels, judgeRuns, judgments }
+// openFDA canonical label lookups by ingredient set, reused for 24 hours.
+export const openfdaCache = sqliteTable('openfda_cache', {
+  // The ingredient names as JSON, in RxNorm's order.
+  key: text('key').primaryKey(),
+  // The canonical labels and match counts of the lookup.
+  body: text('body', { mode: 'json' }).notNull().$type<unknown>(),
+  fetched_at_ms: integer('fetched_at_ms').notNull(),
+})
+
+export const schema = { labels, judgeRuns, judgments, openfdaCache }

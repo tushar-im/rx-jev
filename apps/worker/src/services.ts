@@ -1,6 +1,7 @@
+import type { DrugNames } from '@rx-jev/contract'
 import { TypeSafeClient } from '@typesafe-ai/sdk'
 import type { Services } from './app.ts'
-import { OpenFdaClient } from './clients/openfda.ts'
+import { CachedOpenFda, kvDrugNames } from './cache.ts'
 import { RxNormClient } from './clients/rxnorm.ts'
 import { type Config, readConfig } from './config.ts'
 import type { Env } from './env.ts'
@@ -12,17 +13,20 @@ import { Store } from './store.ts'
 
 const globalFetch: Fetch = (input, init) => fetch(input, init)
 
-// Fetched once per isolate; a failed fetch is not kept, so the next request retries.
-const drugNamesByUrl = new Map<string, Promise<readonly string[]>>()
+// RxNorm's names are read from KV at most once an hour per isolate; a failed read is not
+// kept, so the next request retries.
+const NAMES_TTL_MS = 3_600_000
+let drugNamesMemo: { list: Promise<DrugNames>; at: number } | null = null
 
-function drugNames(rxnorm: RxNormClient, baseUrl: string): Promise<readonly string[]> {
-  let names = drugNamesByUrl.get(baseUrl)
-  if (names === undefined) {
-    names = rxnorm.displayNames()
-    names.catch(() => drugNamesByUrl.delete(baseUrl))
-    drugNamesByUrl.set(baseUrl, names)
+function drugNames(rxnorm: RxNormClient, kv: KVNamespace): Promise<DrugNames> {
+  if (drugNamesMemo === null || Date.now() - drugNamesMemo.at > NAMES_TTL_MS) {
+    const list = kvDrugNames(rxnorm, kv)
+    list.catch(() => {
+      drugNamesMemo = null
+    })
+    drugNamesMemo = { list, at: Date.now() }
   }
-  return names
+  return drugNamesMemo.list
 }
 
 // One Jev request carries a whole label (roughly 30K tokens for long prescription labels).
@@ -40,20 +44,26 @@ function jevClient(config: Config): TypeSafeClient | null {
   })
 }
 
+export function rxnormClient(config: Config): RxNormClient {
+  return new RxNormClient({ baseUrl: config.rxnormBaseUrl, fetch: globalFetch })
+}
+
 // The production services, from the Worker's bindings.
 export function workerServices(env: Env): Services {
   const config = readConfig({ ...env })
-  const rxnorm = new RxNormClient({ baseUrl: config.rxnormBaseUrl, fetch: globalFetch })
+  const rxnorm = rxnormClient(config)
+  const db = createDb(env.DB)
   return {
     config,
     rxnorm,
-    openfda: new OpenFdaClient(
+    openfda: new CachedOpenFda(
       { baseUrl: config.openfdaBaseUrl, fetch: globalFetch },
       config.openfdaApiKey,
+      db,
     ),
-    drugNames: () => drugNames(rxnorm, config.rxnormBaseUrl),
+    drugNames: async () => (await drugNames(rxnorm, env.CACHE)).names,
     judge: new Judge(jevClient(config), config.typesafeModel),
-    store: new Store(createDb(env.DB)),
+    store: new Store(db),
     askLimiter: durableAskLimiter(env.ASK_LIMITER, [
       { count: config.askPerMinute, seconds: 60 },
       { count: config.askPerDay, seconds: 86_400 },

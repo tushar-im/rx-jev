@@ -98,6 +98,14 @@ describe('HowItWorks', () => {
     expect(screen.getByText(/5 openFDA searches/i)).toBeInTheDocument()
   })
 
+  it('says when the openFDA lookup came from the cache', () => {
+    const sources = sourceTrace({ openfda_cached: true, openfda_requests: 0 })
+    render(<TraceDetails sources={sources} label={labelAnswers()} focus={null} />)
+
+    expect(screen.getByText(/from the cache/i)).toBeInTheDocument()
+    expect(document.body.textContent).not.toMatch(/0 openFDA searches/i)
+  })
+
   it('keeps a stored run visible when its token count is unknown', () => {
     const label = labelAnswers({ input_tokens: null, output_tokens: null })
     render(<TraceDetails sources={sourceTrace()} label={label} focus={null} />)

@@ -36,6 +36,7 @@ export async function canonicalLabels(
       rxnorm_ms: rxnormMs,
       openfda_ms: openfdaMs,
       openfda_requests: canonical.requests,
+      openfda_cached: canonical.cached,
       matches: canonical.matches,
     },
   }

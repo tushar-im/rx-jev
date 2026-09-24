@@ -60,8 +60,15 @@ export function TraceDetails({ sources: labelSources, label, focus }: Props): Re
             </p>
           ))}
         <p className="trace-meta">
-          {plural(sources.openfda_requests, 'openFDA search', 'openFDA searches')} in{' '}
-          {seconds(sources.openfda_ms)}. RxNorm in {seconds(sources.rxnorm_ms)}.
+          {sources.openfda_cached ? (
+            <>openFDA lookup from the cache, made in the last 24 hours.</>
+          ) : (
+            <>
+              {plural(sources.openfda_requests, 'openFDA search', 'openFDA searches')} in{' '}
+              {seconds(sources.openfda_ms)}.
+            </>
+          )}{' '}
+          RxNorm in {seconds(sources.rxnorm_ms)}.
         </p>
       </section>
       {focus && <AnswerTrace focus={focus} />}

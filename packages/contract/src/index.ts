@@ -23,6 +23,14 @@ export type Ingredient = z.infer<typeof IngredientSchema>
 export const SuggestionsSchema = z.object({ query: z.string(), names: z.array(z.string()) })
 export type Suggestions = z.infer<typeof SuggestionsSchema>
 
+// RxNorm's display names, for suggestions matched in the browser.
+export const DrugNamesSchema = z.object({
+  names: z.array(z.string()),
+  // When the list was fetched from RxNorm, ISO 8601.
+  updated_at: z.string(),
+})
+export type DrugNames = z.infer<typeof DrugNamesSchema>
+
 // `rxcui` is the ingredient-set concept that the labels and answers routes take.
 export const ResolvedDrugSchema = z.object({
   query: z.string(),
@@ -159,6 +167,8 @@ export const SourceTraceSchema = z.object({
   rxnorm_ms: z.number().int(),
   openfda_ms: z.number().int(),
   openfda_requests: z.number().int(),
+  // True when the openFDA lookup was served from the 24-hour cache, so no search was made.
+  openfda_cached: z.boolean(),
   // Per product type with a canonical label: how many labels its search matched.
   matches: z.partialRecord(ProductTypeSchema, LabelMatchSchema),
 })

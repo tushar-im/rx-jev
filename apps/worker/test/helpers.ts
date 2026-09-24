@@ -35,7 +35,7 @@ export class OneLabel extends OpenFdaClient {
   }
 
   override async canonicalLabels(): Promise<CanonicalLabels> {
-    return { otc: null, prescription: this.#label, matches: {}, requests: 0 }
+    return { otc: null, prescription: this.#label, matches: {}, requests: 0, cached: false }
   }
 }
 

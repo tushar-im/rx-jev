@@ -21,6 +21,8 @@
     "bindings": [{ "name": "ASK_LIMITER", "class_name": "AskLimiter" }]
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["AskLimiter"] }],
+  // Refreshes RxNorm's name list in KV daily.
+  "triggers": { "crons": ["17 4 * * *"] },
   "vars": {
     "TYPESAFE_MODEL": "jev-latest",
     "ASK_PER_MINUTE": "5",

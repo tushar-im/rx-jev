@@ -54,6 +54,8 @@ export type CanonicalLabels = {
   matches: Partial<Record<ProductType, LabelMatch>>
   // openFDA searches made, empty ones included.
   requests: number
+  // True when served from the lookup cache instead of openFDA.
+  cached: boolean
 }
 
 // Raw openFDA payloads.
@@ -115,7 +117,13 @@ export class OpenFdaClient {
   async canonicalLabels(ingredients: string[]): Promise<CanonicalLabels> {
     if (ingredients.length === 0) throw new Error('At least one ingredient is required')
     const counter = { requests: 0 }
-    const result: CanonicalLabels = { otc: null, prescription: null, matches: {}, requests: 0 }
+    const result: CanonicalLabels = {
+      otc: null,
+      prescription: null,
+      matches: {},
+      requests: 0,
+      cached: false,
+    }
     for (const productType of ['otc', 'prescription'] as const) {
       const found = await this.#canonical(ingredients, productType, counter)
       if (found !== null) {

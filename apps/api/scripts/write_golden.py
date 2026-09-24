@@ -57,9 +57,7 @@ def part_body(part: JudgePart) -> dict[str, Any]:
 
 
 def part_hash(part: JudgePart) -> str:
-    encoded = json.dumps(
-        part_body(part), sort_keys=True, separators=(",", ":"), ensure_ascii=False
-    )
+    encoded = json.dumps(part_body(part), sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(encoded.encode()).hexdigest()
 
 

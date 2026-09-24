@@ -246,6 +246,27 @@ def test_an_ask_holds_its_slot_during_the_upstream_lookup(
     assert held and held[0] is not None
 
 
+def test_a_404_gives_back_only_its_own_slot(engine: Engine) -> None:
+    now = [1_000.0]
+    limiter = RateLimiter([Limit(count=2, seconds=60)], clock=lambda: now[0])
+
+    class Overlapping(RxNormClient):
+        def ingredients_of(self, rxcui: str) -> list[Ingredient]:
+            # A later ask from the same client takes a slot while this one is looking up.
+            now[0] += 10
+            assert limiter.hit("testclient") is None
+            return super().ingredients_of(rxcui)
+
+    with serve(engine, FakeJev()) as client:
+        app.dependency_overrides[get_ask_limiter] = lambda: limiter
+        app.dependency_overrides[get_rxnorm_client] = lambda: Overlapping(rxnorm_http())
+        assert ask(client, IBUPROFEN, "not-a-label").status_code == 404
+
+    # The later slot (at 1010) is still held; the 404's own slot (at 1000) is gone.
+    assert limiter.hit("testclient") is None
+    assert limiter.hit("testclient") == pytest.approx(60)
+
+
 @pytest.mark.parametrize("field", ["ask_per_minute", "ask_per_day"])
 def test_ask_limits_must_allow_at_least_one(field: str) -> None:
     with pytest.raises(ValidationError):

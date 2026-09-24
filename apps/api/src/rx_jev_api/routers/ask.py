@@ -7,13 +7,14 @@ limited in length and rate per client.
 """
 
 import math
-from typing import Annotated, Literal
+from typing import Annotated, Literal, NoReturn
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field, StringConstraints
 
 from rx_jev_api.deps import AskLimiterDep, JudgeDep, OpenFdaDep, RxNormDep, SettingsDep
 from rx_jev_api.judge import CUSTOM, build_custom_request, question_key
+from rx_jev_api.ratelimit import Slot
 from rx_jev_api.routers.answers import (
     AnswerStatus,
     EvidenceView,
@@ -74,9 +75,11 @@ def ask(
     limiter: AskLimiterDep,
 ) -> AskResponse:
     # The ask takes its slot before any upstream call, so a burst cannot all reach RxNorm and
-    # openFDA at once. An ask whose drug or label is not found gives the slot back.
+    # openFDA at once. An ask whose drug or label is not found gives back its own slot.
     client = request.client.host if request.client else "unknown"
-    _refuse_if_waiting(limiter.hit(client))
+    slot = limiter.acquire(client)
+    if not isinstance(slot, Slot):
+        _refuse(slot)
     try:
         _, labels = canonical_labels(rxcui, rxnorm, openfda)
         label = next((lb for lb in labels if lb.set_id == body.set_id), None)
@@ -87,7 +90,7 @@ def ask(
             )
     except HTTPException as exc:
         if exc.status_code == 404:
-            limiter.release(client)
+            limiter.release(slot)
         raise
 
     judge_request = build_custom_request(label, body.question)
@@ -117,9 +120,7 @@ def ask(
     )
 
 
-def _refuse_if_waiting(wait: float | None) -> None:
-    if wait is None:
-        return
+def _refuse(wait: float) -> NoReturn:
     seconds = max(1, math.ceil(wait))
     raise HTTPException(
         status_code=429,

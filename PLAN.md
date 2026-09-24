@@ -238,8 +238,8 @@ Thresholds are agreed, so Gate 1 is passed and M3 may start.
   trimming. Each client may ask 5 per minute and 50 per day (`ask_per_minute`,
   `ask_per_day`); over that is 429 Problem Details with `Retry-After`. Counts are in memory,
   per process, keyed by client address. An ask takes its slot before any upstream call, so
-a burst cannot all reach RxNorm and openFDA, and gives it back if its drug or label is not
-found; invalid requests cost nothing.
+a burst cannot all reach RxNorm and openFDA, and gives back that same slot, never another
+request's, if its drug or label is not found; invalid requests cost nothing.
 
 Before a public launch: the limiter needs a shared store if the API runs several workers, and
 the forwarded client address if it sits behind a proxy. The 0.9 threshold was set on catalog

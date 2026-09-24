@@ -1,6 +1,6 @@
 import pytest
 
-from rx_jev_api.ratelimit import Limit, RateLimiter
+from rx_jev_api.ratelimit import Limit, RateLimiter, Slot
 
 
 class Clock:
@@ -43,21 +43,36 @@ def test_rejected_hits_do_not_count(clock: Clock) -> None:
     assert limiter.hit("a") is None
 
 
-def test_release_takes_back_the_newest_hit(clock: Clock) -> None:
-    limiter = RateLimiter([Limit(count=2, seconds=60)], clock=clock)
-    assert limiter.hit("a") is None
-    clock.now += 10
-    assert limiter.hit("a") is None
-    limiter.release("a")
-    assert limiter.hit("a") is None
-    # The first hit still counts, so the window frees 60 s after it.
-    assert limiter.hit("a") == pytest.approx(50)
-
-
-def test_release_without_a_hit_does_nothing(clock: Clock) -> None:
+def test_acquire_returns_a_slot_or_how_long_to_wait(clock: Clock) -> None:
     limiter = RateLimiter([Limit(count=1, seconds=60)], clock=clock)
-    limiter.release("a")
+    assert isinstance(limiter.acquire("a"), Slot)
+    clock.now += 15
+    assert limiter.acquire("a") == pytest.approx(45)
+
+
+def test_release_takes_back_only_its_own_slot(clock: Clock) -> None:
+    limiter = RateLimiter([Limit(count=2, seconds=60)], clock=clock)
+    first = limiter.acquire("a")
+    clock.now += 10
+    assert isinstance(limiter.acquire("a"), Slot)
+    assert isinstance(first, Slot)
+    # The earlier request gives its slot back while the later one still holds its own.
+    limiter.release(first)
+    assert limiter.hit("a") is None
+    # Only the later hits remain, so the window frees 60 s after them, not 50 s.
+    assert limiter.hit("a") == pytest.approx(60)
+
+
+def test_releasing_twice_or_after_expiry_does_nothing(clock: Clock) -> None:
+    limiter = RateLimiter([Limit(count=1, seconds=60)], clock=clock)
+    slot = limiter.acquire("a")
+    assert isinstance(slot, Slot)
+    limiter.release(slot)
+    limiter.release(slot)
     assert limiter.clients() == 0
+    assert limiter.hit("a") is None
+    clock.now += 61
+    limiter.release(slot)
     assert limiter.hit("a") is None
 
 

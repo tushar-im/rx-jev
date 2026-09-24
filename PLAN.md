@@ -237,8 +237,9 @@ Thresholds are agreed, so Gate 1 is passed and M3 may start.
 - M4.2 Rate limiting and input length limits. Questions are 3 to 200 characters after
   trimming. Each client may ask 5 per minute and 50 per day (`ask_per_minute`,
   `ask_per_day`); over that is 429 Problem Details with `Retry-After`. Counts are in memory,
-  per process, keyed by client address. A spent limit is refused before any upstream call;
-an ask is counted only once its label is found, so invalid requests cost nothing.
+  per process, keyed by client address. An ask takes its slot before any upstream call, so
+a burst cannot all reach RxNorm and openFDA, and gives it back if its drug or label is not
+found; invalid requests cost nothing.
 
 Before a public launch: the limiter needs a shared store if the API runs several workers, and
 the forwarded client address if it sits behind a proxy. The 0.9 threshold was set on catalog

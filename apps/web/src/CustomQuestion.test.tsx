@@ -146,10 +146,16 @@ describe('CustomQuestion', () => {
     const fetchMock = mockAsk(200, askResponse())
     render(<CustomQuestion rxcui="5640" label={label} />)
 
-    expect(screen.getByRole('textbox', { name: /your own question/i })).toHaveAttribute(
-      'maxLength',
-      '200',
-    )
+    const input = screen.getByRole('textbox', { name: /your own question/i })
+    fireEvent.change(input, { target: { value: 'x'.repeat(201) } })
+    expect(input).toHaveValue('x'.repeat(200))
+
+    // 200 emoji are 200 characters to the API, though 400 UTF-16 units.
+    const emoji = '\u{1F600}'.repeat(200)
+    fireEvent.change(input, { target: { value: emoji } })
+    expect(input).toHaveValue(emoji)
+    expect(screen.getByRole('button', { name: 'Ask' })).toBeEnabled()
+
     askAbout(' ab ')
     expect(screen.getByRole('button', { name: 'Ask' })).toBeDisabled()
     expect(fetchMock).not.toHaveBeenCalled()

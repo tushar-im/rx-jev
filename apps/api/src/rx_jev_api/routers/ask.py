@@ -73,18 +73,22 @@ def ask(
     settings: SettingsDep,
     limiter: AskLimiterDep,
 ) -> AskResponse:
-    # A spent limit is refused before any upstream call, but an ask is counted only once
-    # its label is found, so a request that fails validation or finds no label costs nothing.
+    # The ask takes its slot before any upstream call, so a burst cannot all reach RxNorm and
+    # openFDA at once. An ask whose drug or label is not found gives the slot back.
     client = request.client.host if request.client else "unknown"
-    _refuse_if_waiting(limiter.wait(client))
-
-    _, labels = canonical_labels(rxcui, rxnorm, openfda)
-    label = next((lb for lb in labels if lb.set_id == body.set_id), None)
-    if label is None:
-        raise HTTPException(
-            status_code=404, detail=f"Label {body.set_id} is not a current label of this drug."
-        )
     _refuse_if_waiting(limiter.hit(client))
+    try:
+        _, labels = canonical_labels(rxcui, rxnorm, openfda)
+        label = next((lb for lb in labels if lb.set_id == body.set_id), None)
+        if label is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Label {body.set_id} is not a current label of this drug.",
+            )
+    except HTTPException as exc:
+        if exc.status_code == 404:
+            limiter.release(client)
+        raise
 
     judge_request = build_custom_request(label, body.question)
     skipped = judge_request.skipped.get(CUSTOM)

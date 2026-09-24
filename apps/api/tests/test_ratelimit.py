@@ -43,13 +43,22 @@ def test_rejected_hits_do_not_count(clock: Clock) -> None:
     assert limiter.hit("a") is None
 
 
-def test_wait_checks_without_counting(clock: Clock) -> None:
-    limiter = RateLimiter([Limit(count=1, seconds=60)], clock=clock)
-    assert limiter.wait("a") is None
-    assert limiter.wait("a") is None
+def test_release_takes_back_the_newest_hit(clock: Clock) -> None:
+    limiter = RateLimiter([Limit(count=2, seconds=60)], clock=clock)
     assert limiter.hit("a") is None
-    clock.now += 20
-    assert limiter.wait("a") == pytest.approx(40)
+    clock.now += 10
+    assert limiter.hit("a") is None
+    limiter.release("a")
+    assert limiter.hit("a") is None
+    # The first hit still counts, so the window frees 60 s after it.
+    assert limiter.hit("a") == pytest.approx(50)
+
+
+def test_release_without_a_hit_does_nothing(clock: Clock) -> None:
+    limiter = RateLimiter([Limit(count=1, seconds=60)], clock=clock)
+    limiter.release("a")
+    assert limiter.clients() == 0
+    assert limiter.hit("a") is None
 
 
 def test_clients_are_counted_apart(clock: Clock) -> None:

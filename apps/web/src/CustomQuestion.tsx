@@ -63,14 +63,14 @@ export function CustomQuestion({ rxcui, label }: Props): React.JSX.Element {
             type="text"
             value={text}
             onChange={(e) => {
-              setText(e.target.value)
+              // Capped in code points, as the API counts; `maxLength` counts UTF-16 units.
+              setText([...e.target.value].slice(0, MAX_CHARS).join(''))
               // An answer stays only while it matches the question in the box.
               inFlight.current?.abort()
               setState({ kind: 'idle' })
             }}
             placeholder="For example: grapefruit juice"
             autoComplete="off"
-            maxLength={MAX_CHARS}
           />
           <button type="submit" disabled={charCount(text) < MIN_CHARS || state.kind === 'asking'}>
             Ask

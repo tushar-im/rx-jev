@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from sqlalchemy import Engine
 
 from rx_jev_api.clients.openfda import Label
-from rx_jev_api.clients.rxnorm import RxNormClient
+from rx_jev_api.clients.rxnorm import Ingredient, RxNormClient
 from rx_jev_api.config import Settings, get_settings
 from rx_jev_api.db import make_engine
 from rx_jev_api.deps import get_ask_limiter, get_rxnorm_client
@@ -18,6 +18,7 @@ from rx_jev_api.problems import PROBLEM_JSON
 from rx_jev_api.ratelimit import Limit, RateLimiter
 from rx_jev_api.routers.ask import MAX_QUESTION_CHARS, MIN_QUESTION_CHARS
 from tests.jev import MODEL_VERSION, FakeJev
+from tests.recorded import rxnorm_http
 from tests.test_answers_api import IBUPROFEN, METFORMIN, runs, serve
 
 GRAPEFRUIT = "Can I drink grapefruit juice while taking this?"
@@ -223,6 +224,26 @@ def test_a_spent_limit_is_429_before_any_upstream_call(
         app.dependency_overrides[get_rxnorm_client] = lambda: RxNormClient(unreachable())
         response = ask(client, IBUPROFEN, ibuprofen_otc.set_id)
     assert response.status_code == 429
+
+
+def test_an_ask_holds_its_slot_during_the_upstream_lookup(
+    engine: Engine, ibuprofen_otc: Label
+) -> None:
+    # Concurrent asks must not all pass the limit and then all call RxNorm and openFDA.
+    limiter = RateLimiter([Limit(count=1, seconds=60)])
+    held: list[float | None] = []
+
+    class Checking(RxNormClient):
+        def ingredients_of(self, rxcui: str) -> list[Ingredient]:
+            held.append(limiter.hit("testclient"))
+            return super().ingredients_of(rxcui)
+
+    with serve(engine, FakeJev()) as client:
+        app.dependency_overrides[get_ask_limiter] = lambda: limiter
+        app.dependency_overrides[get_rxnorm_client] = lambda: Checking(rxnorm_http())
+        response = ask(client, IBUPROFEN, ibuprofen_otc.set_id)
+    assert response.status_code == 200
+    assert held and held[0] is not None
 
 
 @pytest.mark.parametrize("field", ["ask_per_minute", "ask_per_day"])

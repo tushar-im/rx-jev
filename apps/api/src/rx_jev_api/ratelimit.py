@@ -31,13 +31,6 @@ class RateLimiter:
         self._hits: dict[str, deque[float]] = {}
         self._lock = Lock()
 
-    def wait(self, key: str) -> float | None:
-        """Seconds until `key` may hit again, or None if it may now. Counts nothing."""
-        with self._lock:
-            now = self._clock()
-            self._forget(now)
-            return self._wait(self._hits.get(key, deque()), now)
-
     def hit(self, key: str) -> float | None:
         """Counts a hit for `key`, or, if a limit is spent, returns the seconds until it
         frees up and counts nothing."""
@@ -51,6 +44,15 @@ class RateLimiter:
             hits.append(now)
             self._hits[key] = hits
             return None
+
+    def release(self, key: str) -> None:
+        """Takes back the newest hit of `key`, for a request that turned out not to count."""
+        with self._lock:
+            hits = self._hits.get(key)
+            if hits:
+                hits.pop()
+            if not hits:
+                self._hits.pop(key, None)
 
     def clients(self) -> int:
         """Clients with a hit still inside some window."""

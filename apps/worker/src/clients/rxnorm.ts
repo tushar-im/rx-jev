@@ -1,6 +1,7 @@
 import type { Ingredient } from '@rx-jev/contract'
 import { z } from 'zod'
 import { get, type Http, parseBody } from '../http.ts'
+import { compareCodePoints } from '../python.ts'
 
 // RxNorm client: turns a drug name typed by a person into its ingredients and RxCUI.
 
@@ -99,15 +100,4 @@ function ingredientSetRxcui(ingredients: Ingredient[], mins: Concept[]): string 
   if (ingredients.length === 1) return ingredients[0]?.rxcui ?? null
   // Related MINs from a combination product are the combination itself; expect exactly one.
   return mins.length === 1 ? (mins[0]?.rxcui ?? null) : null
-}
-
-/** Orders strings by code point, as Python does, rather than by UTF-16 unit. */
-export function compareCodePoints(a: string, b: string): number {
-  const x = [...a]
-  const y = [...b]
-  for (let i = 0; i < Math.min(x.length, y.length); i++) {
-    const d = (x[i]?.codePointAt(0) ?? 0) - (y[i]?.codePointAt(0) ?? 0)
-    if (d !== 0) return d
-  }
-  return x.length - y.length
 }

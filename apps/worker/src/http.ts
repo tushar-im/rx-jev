@@ -9,7 +9,9 @@ export type Http = { baseUrl: string; fetch: Fetch }
 export const UPSTREAM_TIMEOUT_MS = 20_000
 
 export function url(http: Http, path: string, params: Record<string, string | number>): string {
-  const query = new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)]))
+  const query = new URLSearchParams(
+    Object.entries(params).map(([k, v]): [string, string] => [k, String(v)]),
+  )
   const suffix = query.size > 0 ? `?${query}` : ''
   return `${http.baseUrl.replace(/\/+$/, '')}${path}${suffix}`
 }

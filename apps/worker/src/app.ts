@@ -6,6 +6,7 @@ import type { Env } from './env.ts'
 import { registerProblemHandlers } from './problems.ts'
 import { drugRoutes } from './routes/drugs.ts'
 import { healthRoutes } from './routes/health.ts'
+import { labelRoutes } from './routes/labels.ts'
 
 // What the routes use, built once per request from the Worker's bindings. Tests build it
 // from recorded upstreams and a fake Jev instead.
@@ -30,5 +31,6 @@ export function createApp(makeServices: ServicesFactory): Hono<AppEnv> {
   })
   app.route('/api/health', healthRoutes)
   app.route('/api/drugs', drugRoutes)
+  app.route('/api/labels', labelRoutes)
   return app
 }

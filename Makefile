@@ -1,4 +1,4 @@
-.PHONY: install dev dev-api dev-web test test-api test-web lint format
+.PHONY: install dev dev-api dev-web test test-api test-web lint format golden
 
 install:
 	cd apps/api && uv sync
@@ -28,3 +28,7 @@ lint:
 format:
 	cd apps/api && uv run ruff format .
 	npm run format
+
+# Golden files the TypeScript port must match: fixtures.json (committed) and store.jsonl (local)
+golden:
+	cd apps/api && PYTHONPATH=. uv run python scripts/write_golden.py

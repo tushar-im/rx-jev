@@ -364,3 +364,6 @@ review_sheet.csv
 review_sheet.json
 second_read/
 review_sheet_compared.csv
+
+# Golden file of the whole local store: regenerate with make golden
+fixtures/golden/store.jsonl

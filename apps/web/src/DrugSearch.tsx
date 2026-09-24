@@ -120,8 +120,16 @@ export function DrugSearch({
           onKeyDown={onKeyDown}
           onBlur={() => setResult(null)}
         />
-        <button type="submit" disabled={busy}>
-          {busy ? 'Searching' : 'Search'}
+        <button
+          type="submit"
+          className="search-button"
+          disabled={busy}
+          aria-label={busy ? 'Searching' : 'Search'}
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+            <circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" strokeWidth="2" />
+            <path d="m20 20-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
         </button>
         {open && (
           <ul id={listId} role="listbox" aria-label="Suggestions">

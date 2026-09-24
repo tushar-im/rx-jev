@@ -22,11 +22,13 @@ type Props = {
   rxcui: string
   // The label on screen. Mount with `key={label.set_id}` so another label starts empty.
   label: LabelInfo
+  // Told of each answer as it arrives, and of null when the answer goes away.
+  onAnswered?: (data: AskResponse | null) => void
 }
 
 // A reader's own question about one label. Jev reads it live every time; the answer shows
 // the same fixed categories and verbatim quote as the catalog questions.
-export function CustomQuestion({ rxcui, label }: Props): React.JSX.Element {
+export function CustomQuestion({ rxcui, label, onAnswered }: Props): React.JSX.Element {
   const [text, setText] = useState('')
   const [state, setState] = useState<State>({ kind: 'idle' })
   const inFlight = useRef<AbortController | null>(null)
@@ -41,9 +43,12 @@ export function CustomQuestion({ rxcui, label }: Props): React.JSX.Element {
     const controller = new AbortController()
     inFlight.current = controller
     setState({ kind: 'asking' })
+    onAnswered?.(null)
     askLabel(rxcui, label.set_id, question, controller.signal)
       .then((data) => {
-        if (!controller.signal.aborted) setState({ kind: 'answered', data })
+        if (controller.signal.aborted) return
+        setState({ kind: 'answered', data })
+        onAnswered?.(data)
       })
       .catch((e: unknown) => {
         if (controller.signal.aborted) return
@@ -68,6 +73,7 @@ export function CustomQuestion({ rxcui, label }: Props): React.JSX.Element {
               // An answer stays only while it matches the question in the box.
               inFlight.current?.abort()
               setState({ kind: 'idle' })
+              onAnswered?.(null)
             }}
             placeholder="For example: grapefruit juice"
             autoComplete="off"

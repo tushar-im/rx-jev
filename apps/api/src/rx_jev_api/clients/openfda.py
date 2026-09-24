@@ -22,6 +22,7 @@ __all__ = [
     "PAGE_SIZE",
     "CanonicalLabels",
     "Label",
+    "LabelMatch",
     "ProductType",
     "OpenFdaClient",
     "UpstreamError",
@@ -65,9 +66,20 @@ class Label(BaseModel):
         return DAILYMED_URL + self.set_id
 
 
+class LabelMatch(BaseModel, frozen=True):
+    # Labels openFDA matched in the search the canonical label was picked from.
+    total: int
+    # True when that search was limited to original packagers, the first choice.
+    original_packager: bool
+
+
 class CanonicalLabels(BaseModel):
     otc: Label | None
     prescription: Label | None
+    # Per product type with a canonical label.
+    matches: dict[ProductType, LabelMatch] = {}
+    # openFDA searches made, empty ones included.
+    requests: int = 0
 
 
 # Raw openFDA payloads.
@@ -89,7 +101,16 @@ class _RawLabel(BaseModel, extra="allow"):
     openfda: _OpenFdaMeta
 
 
+class _ResultCounts(BaseModel):
+    total: int
+
+
+class _SearchMeta(BaseModel):
+    results: _ResultCounts | None = None
+
+
 class _SearchResponse(BaseModel):
+    meta: _SearchMeta | None = None
     results: list[_RawLabel] = []
 
 
@@ -123,41 +144,64 @@ class OpenFdaClient:
     def __init__(self, http: httpx.Client, api_key: str | None = None) -> None:
         self._http = http
         self._api_key = api_key
+        self._requests = 0
 
     def canonical_labels(self, ingredients: list[str]) -> CanonicalLabels:
         if not ingredients:
             raise ValueError("At least one ingredient is required")
+        self._requests = 0
+        labels: dict[ProductType, Label | None] = {}
+        matches: dict[ProductType, LabelMatch] = {}
+        for product_type in _PRODUCT_TYPES:
+            label, match = self._canonical(ingredients, product_type)
+            labels[product_type] = label
+            if match is not None:
+                matches[product_type] = match
         return CanonicalLabels(
-            otc=self._canonical(ingredients, "otc"),
-            prescription=self._canonical(ingredients, "prescription"),
+            otc=labels["otc"],
+            prescription=labels["prescription"],
+            matches=matches,
+            requests=self._requests,
         )
 
-    def _canonical(self, ingredients: list[str], product_type: ProductType) -> Label | None:
+    def _canonical(
+        self, ingredients: list[str], product_type: ProductType
+    ) -> tuple[Label | None, LabelMatch | None]:
         search = " AND ".join(f'openfda.substance_name:"{i}"' for i in ingredients)
         search += f' AND openfda.product_type:"{_PRODUCT_TYPES[product_type]}"'
-        raw = self._first_match(search + " AND openfda.is_original_packager:true", ingredients)
-        if raw is None:
-            raw = self._first_match(search, ingredients)
-        return _to_label(raw, product_type) if raw is not None else None
+        for original_packager, query in (
+            (True, search + " AND openfda.is_original_packager:true"),
+            (False, search),
+        ):
+            raw, total = self._first_match(query, ingredients)
+            if raw is not None:
+                match = LabelMatch(total=total, original_packager=original_packager)
+                return _to_label(raw, product_type), match
+        return None, None
 
-    def _first_match(self, search: str, ingredients: list[str]) -> _RawLabel | None:
+    def _first_match(self, search: str, ingredients: list[str]) -> tuple[_RawLabel | None, int]:
+        """The canonical label for `search`, if any, and how many labels the search matched."""
         # Results come newest first, so the first exact match is the canonical label.
         skip = 0
+        total = 0
         for limit in page_sizes():
             if skip > _MAX_SKIP:
                 raise UpstreamError("openFDA result set too large to search for a canonical label")
-            results = self._search(search, skip=skip, limit=limit)
+            results, page_total = self._search(search, skip=skip, limit=limit)
+            if skip == 0:
+                total = page_total
             for raw in results:
                 if raw.openfda.application_number and matches_ingredients(
                     raw.openfda.substance_name, ingredients
                 ):
-                    return raw
+                    return raw, total
             if len(results) < limit:
-                return None
+                return None, total
             skip += limit
-        return None
+        return None, total
 
-    def _search(self, search: str, skip: int, limit: int) -> list[_RawLabel]:
+    def _search(self, search: str, skip: int, limit: int) -> tuple[list[_RawLabel], int]:
+        """One page of results, and the total openFDA reports for the search."""
         params: dict[str, str | int] = {
             "search": search,
             "limit": limit,
@@ -166,13 +210,17 @@ class OpenFdaClient:
         }
         if self._api_key:
             params["api_key"] = self._api_key
+        self._requests += 1
         try:
             response = self._http.get("/drug/label.json", params=params)
             # openFDA answers a search with no results with 404.
             if response.status_code == 404:
-                return []
+                return [], 0
             response.raise_for_status()
-            return _SearchResponse.model_validate(response.json()).results
+            body = _SearchResponse.model_validate(response.json())
+            counts = body.meta.results if body.meta else None
+            # A response without meta still counts what it returned.
+            return body.results, counts.total if counts else len(body.results)
         except (httpx.HTTPError, ValueError, ValidationError) as exc:
             raise UpstreamError("openFDA label search failed") from exc
 

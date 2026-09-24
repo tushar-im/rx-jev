@@ -61,6 +61,22 @@ describe('AnswerCard', () => {
     expect(screen.getByText('Not yet checked by a pharmacist.')).toBeInTheDocument()
   })
 
+  it('puts both pharmacist lines in one highlighted note', () => {
+    render(<AnswerCard label={label} answer={answer('pregnancy', { reviewed: false })} />)
+
+    expect(screen.getByRole('note', { name: 'Pharmacist note' })).toHaveTextContent(
+      'Not yet checked by a pharmacist. Ask your pharmacist about your own situation.',
+    )
+  })
+
+  it('keeps only the pharmacist line once an answer is reviewed', () => {
+    render(<AnswerCard label={label} answer={answer('pregnancy', { reviewed: true })} />)
+
+    const note = screen.getByRole('note', { name: 'Pharmacist note' })
+    expect(note).toHaveTextContent('Ask your pharmacist about your own situation.')
+    expect(note).not.toHaveTextContent('Not yet checked')
+  })
+
   it('shows no category or quote when the answer is not confident', () => {
     render(<AnswerCard label={label} answer={answer('pregnancy', { confident: false })} />)
 
@@ -123,5 +139,24 @@ describe('AnswerCard', () => {
     ).toBeInTheDocument()
     expect(document.body.textContent).not.toMatch(/safe for me/i)
     expect(screen.getByText('Not yet checked by a pharmacist.')).toBeInTheDocument()
+  })
+
+  it('joins a lead-in to text that starts with punctuation without a stray space', () => {
+    const quote = {
+      section: 'pregnancy_or_breast_feeding',
+      text: ', ask a health professional before use.',
+      lead_in: 'If pregnant or breast-feeding',
+    }
+    const base = answer('pregnancy')
+    render(
+      <AnswerCard
+        label={label}
+        answer={{ ...base, evidence: base.evidence && { ...base.evidence, quote } }}
+      />,
+    )
+
+    expect(screen.getByRole('blockquote').textContent).toBe(
+      'If pregnant or breast-feeding, ask a health professional before use.',
+    )
   })
 })

@@ -13,6 +13,10 @@ const STANCE_TEXT: Record<Stance, string> = {
 const NO_CLEAR_ANSWER = "We couldn't find a clear answer. Read the full label or ask a pharmacist."
 const NO_SECTION = 'This label has no section about this. Read the full label or ask a pharmacist.'
 
+// A lead-in joins its text with a space, unless the text starts with punctuation such as
+// ", ask a doctor". Both parts stay verbatim.
+const LEADS_WITH_PUNCTUATION = /^[,.;:)]/
+
 const DATE = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeZone: 'UTC' })
 
 type Props = {
@@ -50,8 +54,14 @@ export function AnswerCard({ label, answer }: Props): React.JSX.Element {
             Read the full label on DailyMed
           </a>
         </p>
-        {!answer.reviewed && <p className="unreviewed">Not yet checked by a pharmacist.</p>}
-        <p className="pharmacist">Ask your pharmacist about your own situation.</p>
+        <p role="note" aria-label="Pharmacist note" className="pharmacist-note">
+          {!answer.reviewed && (
+            <>
+              <span>Not yet checked by a pharmacist.</span>{' '}
+            </>
+          )}
+          <span>Ask your pharmacist about your own situation.</span>
+        </p>
       </footer>
     </article>
   )
@@ -65,7 +75,12 @@ function Finding({ stance, quote }: { stance: Stance; quote: Quote }): React.JSX
         {STANCE_TEXT[stance]}
       </p>
       <blockquote>
-        {quote.lead_in && <>{quote.lead_in} </>}
+        {quote.lead_in && (
+          <>
+            {quote.lead_in}
+            {LEADS_WITH_PUNCTUATION.test(quote.text) ? '' : ' '}
+          </>
+        )}
         {quote.text}
       </blockquote>
       <p className="section">From the label section: {sectionName(quote.section)}</p>

@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { QuestionChips } from './QuestionChips.tsx'
-import { labelAnswers } from './testing.ts'
+import { answer, labelAnswers } from './testing.ts'
 
 describe('QuestionChips', () => {
   const { answers } = labelAnswers()
@@ -51,5 +51,47 @@ describe('QuestionChips', () => {
     render(<QuestionChips answers={onlyFood} selected={null} onSelect={vi.fn()} />)
 
     expect(screen.queryByRole('group')).not.toBeInTheDocument()
+  })
+
+  it('marks the questions this label answers clearly, whatever the answer', () => {
+    const mixed = [
+      answer('pregnancy'),
+      answer('kidney', { confident: false }),
+      answer('boxed_warning', {
+        status: 'no_sections',
+        confident: false,
+        stance: null,
+        evidence: null,
+      }),
+      answer('alcohol', { stance: { ...answer('alcohol').stance!, choice: 'warns_against' } }),
+    ]
+    render(<QuestionChips answers={mixed} selected={null} onSelect={vi.fn()} />)
+
+    const note = screen.getByText('Highlighted questions have a clear answer on this label.')
+    expect(note).toBeInTheDocument()
+    for (const name of ['Pregnancy', 'Alcohol']) {
+      expect(screen.getByRole('button', { name })).toHaveAccessibleDescription(
+        'Highlighted questions have a clear answer on this label.',
+      )
+    }
+    for (const name of ['Kidney disease', 'Boxed warning']) {
+      expect(screen.getByRole('button', { name })).not.toHaveAccessibleDescription()
+    }
+    // The mark says only that there is an answer, never which: both stances look the same.
+    expect(screen.getByRole('button', { name: 'Pregnancy' }).className).toBe(
+      screen.getByRole('button', { name: 'Alcohol' }).className,
+    )
+  })
+
+  it('shows no note when nothing on the label has a clear answer', () => {
+    render(
+      <QuestionChips
+        answers={[answer('kidney', { confident: false })]}
+        selected={null}
+        onSelect={vi.fn()}
+      />,
+    )
+
+    expect(screen.queryByText(/clear answer/)).not.toBeInTheDocument()
   })
 })

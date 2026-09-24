@@ -132,6 +132,9 @@ const judged = {
       quote: QuoteSchema.nullable(),
     })
     .nullable(),
+  // How many candidate sentences Jev chose from, and their sections. 0 and [] when skipped.
+  candidates: z.number().int(),
+  sections: z.array(z.string()),
 }
 
 export const AnswerSchema = z.object({
@@ -161,15 +164,49 @@ export const LabelInfoSchema = z.object({
 })
 export type LabelInfo = z.infer<typeof LabelInfoSchema>
 
+// The Jev run behind a label's answers, or behind one custom question.
+const run = {
+  model_version: z.string().nullable(),
+  input_tokens: z.number().int().nullable(),
+  output_tokens: z.number().int().nullable(),
+  latency_ms: z.number().int().nullable(),
+}
+
 export const LabelAnswersSchema = LabelInfoSchema.extend({
+  ...run,
+  // Stored times are UTC. One without a timezone is read as UTC, never as the viewer's local
+  // time, which could show the wrong day.
+  judged_at: z.iso
+    .datetime({ offset: true, local: true })
+    .transform((t) => (/(Z|[+-]\d{2}:\d{2})$/.test(t) ? t : `${t}Z`))
+    .nullable(),
+  // True when this request judged the label; false when it came from the store.
+  fresh: z.boolean(),
   answers: z.array(AnswerSchema),
 })
 export type LabelAnswers = z.infer<typeof LabelAnswersSchema>
+
+export const PRODUCT_TYPES = ['otc', 'prescription'] as const
+export const ProductTypeSchema = z.enum(PRODUCT_TYPES)
+
+// What the lookup asked RxNorm and openFDA.
+export const SourceTraceSchema = z.object({
+  rxnorm_ms: z.number().int(),
+  openfda_ms: z.number().int(),
+  openfda_requests: z.number().int(),
+  // Per product type with a canonical label: how many labels its search matched.
+  matches: z.partialRecord(
+    ProductTypeSchema,
+    z.object({ total: z.number().int(), original_packager: z.boolean() }),
+  ),
+})
+export type SourceTrace = z.infer<typeof SourceTraceSchema>
 
 export const AnswersResponseSchema = z.object({
   rxcui: z.string(),
   ingredients: z.array(IngredientSchema),
   labels: z.array(LabelAnswersSchema),
+  sources: SourceTraceSchema,
 })
 export type AnswersResponse = z.infer<typeof AnswersResponseSchema>
 
@@ -180,8 +217,9 @@ export function fetchAnswers(rxcui: string, signal?: AbortSignal): Promise<Answe
 export const AskResponseSchema = z.object({
   rxcui: z.string(),
   label: LabelInfoSchema,
-  model_version: z.string().nullable(),
+  ...run,
   answer: CustomAnswerSchema,
+  sources: SourceTraceSchema,
 })
 export type AskResponse = z.infer<typeof AskResponseSchema>
 

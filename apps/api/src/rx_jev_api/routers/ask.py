@@ -20,11 +20,12 @@ from rx_jev_api.routers.answers import (
     EvidenceView,
     LabelInfo,
     StanceView,
+    candidate_trace,
     evidence_view,
     is_confident,
     label_info,
 )
-from rx_jev_api.routers.labels import RxCuiPath, canonical_labels
+from rx_jev_api.routers.labels import RxCuiPath, SourceTrace, canonical_labels
 
 router = APIRouter(prefix="/api/labels", tags=["ask"])
 
@@ -53,14 +54,21 @@ class CustomAnswer(BaseModel):
     confident: bool
     stance: StanceView | None
     evidence: EvidenceView | None
+    # How many candidate sentences Jev chose from, and their sections. 0 and [] when skipped.
+    candidates: int
+    sections: list[str]
 
 
 class AskResponse(BaseModel):
     rxcui: str
     label: LabelInfo
-    # None when the question was skipped, so Jev was never asked.
+    # The live Jev run; all None when the question was skipped, so Jev was never asked.
     model_version: str | None
+    input_tokens: int | None
+    output_tokens: int | None
+    latency_ms: int | None
     answer: CustomAnswer
+    sources: SourceTrace
 
 
 @router.post("/{rxcui}/ask")
@@ -81,8 +89,8 @@ def ask(
     if not isinstance(slot, Slot):
         _refuse(slot)
     try:
-        _, labels = canonical_labels(rxcui, rxnorm, openfda)
-        label = next((lb for lb in labels if lb.set_id == body.set_id), None)
+        lookup = canonical_labels(rxcui, rxnorm, openfda)
+        label = next((lb for lb in lookup.labels if lb.set_id == body.set_id), None)
         if label is None:
             raise HTTPException(
                 status_code=404,
@@ -102,21 +110,42 @@ def ask(
             confident=False,
             stance=None,
             evidence=None,
+            candidates=0,
+            sections=[],
         )
-        return AskResponse(rxcui=rxcui, label=label_info(label), model_version=None, answer=answer)
+        return AskResponse(
+            rxcui=rxcui,
+            label=label_info(label),
+            model_version=None,
+            input_tokens=None,
+            output_tokens=None,
+            latency_ms=None,
+            answer=answer,
+            sources=lookup.sources,
+        )
 
     result = judge.judge(judge_request)
     stance = result.distributions[question_key(CUSTOM, "stance")]
     evidence = result.distributions[question_key(CUSTOM, "evidence")]
+    candidates, sections = candidate_trace(judge_request.asked[CUSTOM])
     answer = CustomAnswer(
         question=body.question,
         status="judged",
         confident=is_confident(stance, evidence, settings.display_min_confidence),
         stance=StanceView.model_validate(stance.model_dump()),
         evidence=evidence_view(judge_request.asked[CUSTOM], evidence),
+        candidates=candidates,
+        sections=sections,
     )
     return AskResponse(
-        rxcui=rxcui, label=label_info(label), model_version=result.model_version, answer=answer
+        rxcui=rxcui,
+        label=label_info(label),
+        model_version=result.model_version,
+        input_tokens=result.input_tokens,
+        output_tokens=result.output_tokens,
+        latency_ms=result.latency_ms,
+        answer=answer,
+        sources=lookup.sources,
     )
 
 

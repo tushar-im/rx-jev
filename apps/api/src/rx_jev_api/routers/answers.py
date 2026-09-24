@@ -29,7 +29,7 @@ from rx_jev_api.judge import (
     Stance,
     question_key,
 )
-from rx_jev_api.routers.labels import RxCuiPath, canonical_labels
+from rx_jev_api.routers.labels import RxCuiPath, SourceTrace, canonical_labels
 from rx_jev_api.sentences import Candidate
 from rx_jev_api.store import StoredRun
 
@@ -73,6 +73,9 @@ class Answer(BaseModel):
     confident: bool
     stance: StanceView | None
     evidence: EvidenceView | None
+    # How many candidate sentences Jev chose from, and their sections. 0 and [] when skipped.
+    candidates: int
+    sections: list[str]
 
 
 class LabelInfo(BaseModel):
@@ -90,6 +93,12 @@ class LabelAnswers(LabelInfo):
     # None when no question had candidate sections, so Jev was never asked.
     model_version: str | None
     judged_at: datetime | None
+    # The Jev run behind these answers; None when Jev was never asked.
+    input_tokens: int | None
+    output_tokens: int | None
+    latency_ms: int | None
+    # True when this request judged the label; False when it was served from the store.
+    fresh: bool
     answers: list[Answer]
 
 
@@ -97,6 +106,7 @@ class AnswersResponse(BaseModel):
     rxcui: str
     ingredients: list[Ingredient]
     labels: list[LabelAnswers]
+    sources: SourceTrace
 
 
 @router.get("/{rxcui}/answers")
@@ -108,12 +118,13 @@ def read_answers(
     store: StoreDep,
     settings: SettingsDep,
 ) -> AnswersResponse:
-    ingredients, labels = canonical_labels(rxcui, rxnorm, openfda)
-    judged = judge_labels(labels, judge, store)
+    lookup = canonical_labels(rxcui, rxnorm, openfda)
+    judged = judge_labels(lookup.labels, judge, store)
     return AnswersResponse(
         rxcui=rxcui,
-        ingredients=ingredients,
+        ingredients=lookup.ingredients,
         labels=[label_answers(j, settings.display_min_confidence) for j in judged],
+        sources=lookup.sources,
     )
 
 
@@ -125,6 +136,10 @@ def label_answers(
         **label_info(label).model_dump(),
         model_version=run.model_version if run else None,
         judged_at=run.created_at if run else None,
+        input_tokens=run.input_tokens if run else None,
+        output_tokens=run.output_tokens if run else None,
+        latency_ms=run.latency_ms if run else None,
+        fresh=judged.fresh,
         answers=[_answer(q, request, run, min_confidence) for q in CATALOG],
     )
 
@@ -140,6 +155,11 @@ def label_info(label: Label) -> LabelInfo:
         manufacturer_name=label.manufacturer_name,
         dailymed_url=label.dailymed_url,
     )
+
+
+def candidate_trace(candidates: list[Candidate]) -> tuple[int, list[str]]:
+    """How many sentences a question offered Jev, and their sections in label order."""
+    return len(candidates), list(dict.fromkeys(c.section for c in candidates))
 
 
 def is_confident(stance: Distribution, evidence: Distribution, min_confidence: float) -> bool:
@@ -161,12 +181,15 @@ def _answer(
             confident=False,
             stance=None,
             evidence=None,
+            candidates=0,
+            sections=[],
         )
     if run is None:
         raise RuntimeError(f"No stored run for judged question {question.id}.")
 
     stance = run.judgments[question_key(question.id, "stance")]
     evidence = run.judgments[question_key(question.id, "evidence")]
+    candidates, sections = candidate_trace(request.asked[question.id])
     return Answer(
         question_id=question.id,
         group=question.group,
@@ -176,6 +199,8 @@ def _answer(
         confident=is_confident(stance.distribution, evidence.distribution, min_confidence),
         stance=StanceView.model_validate(stance.distribution.model_dump()),
         evidence=evidence_view(request.asked[question.id], evidence.distribution),
+        candidates=candidates,
+        sections=sections,
     )
 
 

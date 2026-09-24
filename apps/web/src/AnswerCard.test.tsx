@@ -20,8 +20,12 @@ describe('AnswerCard', () => {
 
     expect(screen.getByText('The label advises caution')).toBeInTheDocument()
     const quote = screen.getByRole('blockquote')
-    expect(quote).toHaveTextContent('If pregnant or breast-feeding, ask a health professional before use.')
-    expect(screen.getByText('From the label section: Pregnancy or breast feeding')).toBeInTheDocument()
+    expect(quote).toHaveTextContent(
+      'If pregnant or breast-feeding, ask a health professional before use.',
+    )
+    expect(
+      screen.getByText('From the label section: Pregnancy or breast feeding'),
+    ).toBeInTheDocument()
   })
 
   it.each([
@@ -41,7 +45,9 @@ describe('AnswerCard', () => {
   it('carries the label version, date and a DailyMed link', () => {
     render(<AnswerCard label={label} answer={answer('pregnancy')} />)
 
-    expect(screen.getByText(/Advil label, version 5, effective September 9, 2026/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Advil label, version 5, effective September 9, 2026/),
+    ).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Read the full label on DailyMed' })).toHaveAttribute(
       'href',
       label.dailymed_url,
@@ -63,7 +69,9 @@ describe('AnswerCard', () => {
     ).toBeInTheDocument()
     expect(screen.queryByText(/^The label /)).not.toBeInTheDocument()
     expect(screen.queryByRole('blockquote')).not.toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Read the full label on DailyMed' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Read the full label on DailyMed' }),
+    ).toBeInTheDocument()
   })
 
   it('says the label has no section for a question it cannot answer', () => {

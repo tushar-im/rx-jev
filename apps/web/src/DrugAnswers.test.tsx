@@ -68,7 +68,9 @@ describe('DrugAnswers', () => {
     expect(
       screen.getByRole('heading', { name: 'What the label says about pregnancy' }),
     ).toBeInTheDocument()
-    expect(screen.getByRole('blockquote')).toHaveTextContent('ask a health professional before use.')
+    expect(screen.getByRole('blockquote')).toHaveTextContent(
+      'ask a health professional before use.',
+    )
   })
 
   it('switches between the OTC and prescription labels, keeping the question', async () => {
@@ -97,7 +99,10 @@ describe('DrugAnswers', () => {
   })
 
   it('says it is reading the label while answers load', () => {
-    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => {})))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>(() => {})),
+    )
     render(<DrugAnswers drug={ibuprofen} />)
 
     expect(screen.getByRole('status')).toHaveTextContent(/Reading the label/)
@@ -129,4 +134,3 @@ describe('DrugAnswers', () => {
     expect(alert).not.toHaveTextContent('internal detail')
   })
 })
-

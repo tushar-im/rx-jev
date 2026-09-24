@@ -99,7 +99,10 @@ describe('DrugSearch', () => {
     const input = screen.getByRole('combobox')
     fireEvent.keyDown(input, { key: 'ArrowDown' })
     fireEvent.keyDown(input, { key: 'ArrowDown' })
-    expect(screen.getByRole('option', { name: 'advil pm' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('option', { name: 'advil pm' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
     fireEvent.keyDown(input, { key: 'Enter' })
 
     await waitFor(() => expect(onResolved).toHaveBeenCalled())
@@ -126,7 +129,12 @@ describe('DrugSearch', () => {
       '/api/drugs/suggestions': () => [200, { query: 'xyzzy', names: [] }],
       '/api/drugs/resolve': () => [
         404,
-        { type: 'about:blank', title: 'Not Found', status: 404, detail: "No drug found named 'xyzzy'." },
+        {
+          type: 'about:blank',
+          title: 'Not Found',
+          status: 404,
+          detail: "No drug found named 'xyzzy'.",
+        },
       ],
     })
     const onResolved = renderSearch()

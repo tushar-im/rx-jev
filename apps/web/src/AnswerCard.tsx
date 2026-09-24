@@ -23,7 +23,8 @@ type Props = {
 export function AnswerCard({ label, answer }: Props): React.JSX.Element {
   const quote = answer.evidence?.quote ?? null
   // Only an answer the API marks confident shows a category, and it always has a quote.
-  const shown = answer.confident && answer.stance && quote ? { stance: answer.stance.choice, quote } : null
+  const shown =
+    answer.confident && answer.stance && quote ? { stance: answer.stance.choice, quote } : null
 
   return (
     <article className="answer-card" aria-live="polite">
@@ -31,12 +32,14 @@ export function AnswerCard({ label, answer }: Props): React.JSX.Element {
       {shown ? (
         <Finding stance={shown.stance} quote={shown.quote} />
       ) : (
-        <p className="no-answer">{answer.status === 'no_sections' ? NO_SECTION : NO_CLEAR_ANSWER}</p>
+        <p className="no-answer">
+          {answer.status === 'no_sections' ? NO_SECTION : NO_CLEAR_ANSWER}
+        </p>
       )}
       <footer>
         <p className="provenance">
-          {label.brand_name ?? PRODUCT_TYPE_TEXT[label.product_type]} label, version {label.version},
-          effective {DATE.format(new Date(label.effective_time))}.{' '}
+          {label.brand_name ?? PRODUCT_TYPE_TEXT[label.product_type]} label, version {label.version}
+          , effective {DATE.format(new Date(label.effective_time))}.{' '}
           <a href={label.dailymed_url} target="_blank" rel="noreferrer">
             Read the full label on DailyMed
           </a>

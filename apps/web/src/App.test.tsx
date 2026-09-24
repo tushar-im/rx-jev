@@ -21,7 +21,12 @@ describe('App', () => {
   })
 
   it('shows the API as offline when health check fails', async () => {
-    mockFetch(500, { type: 'about:blank', title: 'Internal Server Error', status: 500, detail: 'boom' })
+    mockFetch(500, {
+      type: 'about:blank',
+      title: 'Internal Server Error',
+      status: 500,
+      detail: 'boom',
+    })
     render(<App />)
     expect(await screen.findByText('API: offline')).toBeInTheDocument()
   })

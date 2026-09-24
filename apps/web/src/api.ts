@@ -45,7 +45,12 @@ async function getJson<T>(path: string, schema: z.ZodType<T>, signal?: AbortSign
     throw new ApiError(
       problem.success
         ? problem.data
-        : { type: 'about:blank', title: 'Error', status: response.status, detail: 'Unexpected error' },
+        : {
+            type: 'about:blank',
+            title: 'Error',
+            status: response.status,
+            detail: 'Unexpected error',
+          },
     )
   }
   return schema.parse(body)

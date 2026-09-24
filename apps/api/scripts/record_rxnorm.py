@@ -10,6 +10,8 @@ OUT = Path(__file__).parent.parent / "tests" / "fixtures" / "rxnorm"
 NAMES = ["Advil", "advill", "metformin", "Tylenol PM", "xyzzynotadrug"]
 # Ingredient-set RxCUIs looked up directly; 0 is not a real concept.
 RXCUIS = ["5640", "214181", "0"]
+# The display name list is about 28K names; keep only names sharing a word with these.
+DISPLAY_WORDS = ("advil", "metformin", "tylenol")
 
 
 def slug(text: str) -> str:
@@ -32,6 +34,14 @@ def main() -> None:
         for rxcui in RXCUIS:
             related = client.get(f"/rxcui/{rxcui}/related.json", params={"tty": "IN MIN"})
             save(f"related_{rxcui}", related.json())
+        record_display_names(client)
+
+
+def record_display_names(client: httpx.Client) -> None:
+    payload = client.get("/displaynames.json").json()
+    terms = payload["displayTermsList"]["term"]
+    kept = [t for t in terms if any(w in t.lower() for w in DISPLAY_WORDS)]
+    save("displaynames", {"displayTermsList": {"term": kept}})
 
 
 if __name__ == "__main__":

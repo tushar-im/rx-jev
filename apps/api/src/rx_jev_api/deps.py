@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from functools import lru_cache
 from typing import Annotated
 
@@ -27,6 +27,17 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
 def get_rxnorm_client(settings: SettingsDep) -> Iterator[RxNormClient]:
     with httpx.Client(base_url=settings.rxnorm_base_url, timeout=UPSTREAM_TIMEOUT) as http:
         yield RxNormClient(http)
+
+
+@lru_cache
+def _drug_names(base_url: str) -> tuple[str, ...]:
+    # Fetched once per process; a failed fetch raises and is retried on the next request.
+    with httpx.Client(base_url=base_url, timeout=UPSTREAM_TIMEOUT) as http:
+        return tuple(RxNormClient(http).display_names())
+
+
+def get_drug_names(settings: SettingsDep) -> Sequence[str]:
+    return _drug_names(settings.rxnorm_base_url)
 
 
 def get_openfda_client(settings: SettingsDep) -> Iterator[OpenFdaClient]:
@@ -63,6 +74,7 @@ def get_store(session: Annotated[Session, Depends(get_session)]) -> Store:
 
 
 RxNormDep = Annotated[RxNormClient, Depends(get_rxnorm_client)]
+DrugNamesDep = Annotated[Sequence[str], Depends(get_drug_names)]
 OpenFdaDep = Annotated[OpenFdaClient, Depends(get_openfda_client)]
 JudgeDep = Annotated[Judge, Depends(get_judge)]
 StoreDep = Annotated[Store, Depends(get_store)]

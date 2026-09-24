@@ -4,6 +4,9 @@
   --muted: #57534e;
   --ok: #15803d;
   --bad: #b91c1c;
+  --line: #d6d3d1;
+  --surface: #ffffff;
+  --accent: #1d4ed8;
   font-family: system-ui, -apple-system, sans-serif;
   color: var(--fg);
   background: var(--bg);
@@ -16,6 +19,9 @@
     --muted: #a8a29e;
     --ok: #4ade80;
     --bad: #f87171;
+    --line: #44403c;
+    --surface: #292524;
+    --accent: #93c5fd;
   }
 }
 
@@ -39,5 +45,70 @@ p {
 }
 
 .status[data-status='offline'] {
+  color: var(--bad);
+}
+
+.drug-search {
+  position: relative;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.drug-search label {
+  font-weight: 600;
+}
+
+.drug-search-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.drug-search input,
+.drug-search button {
+  font: inherit;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  color: var(--fg);
+  background: var(--surface);
+}
+
+.drug-search input {
+  flex: 1;
+  min-width: 0;
+}
+
+.drug-search input:focus-visible,
+.drug-search button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.drug-search [role='listbox'] {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  margin: 0.25rem 0 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  background: var(--surface);
+}
+
+.drug-search [role='option'] {
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+}
+
+.drug-search [role='option'][aria-selected='true'],
+.drug-search [role='option']:hover {
+  background: var(--bg);
+  color: var(--accent);
+}
+
+.search-error {
   color: var(--bad);
 }

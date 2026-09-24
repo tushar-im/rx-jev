@@ -16,6 +16,8 @@ def _rxnorm(request: httpx.Request) -> httpx.Response:
         fixture = FIXTURES / "rxnorm" / f"rxcui_{name}.json"
     elif path.endswith("/related.json"):
         fixture = FIXTURES / "rxnorm" / f"related_{path.split('/')[-2]}.json"
+    elif path.endswith("/displaynames.json"):
+        fixture = FIXTURES / "rxnorm" / "displaynames.json"
     else:
         raise AssertionError(f"Unexpected request: {request.url}")
     return httpx.Response(200, json=json.loads(fixture.read_text()))

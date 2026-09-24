@@ -52,6 +52,14 @@ class _RelatedResponse(BaseModel):
     relatedGroup: _RelatedGroup
 
 
+class _DisplayTerms(BaseModel):
+    term: list[str]
+
+
+class _DisplayNamesResponse(BaseModel):
+    displayTermsList: _DisplayTerms
+
+
 class RxNormClient:
     def __init__(self, http: httpx.Client) -> None:
         self._http = http
@@ -82,6 +90,10 @@ class RxNormClient:
         """Ingredients of any RxNorm concept; empty when RxNorm does not know the RxCUI."""
         ingredients, _ = self._related(rxcui)
         return ingredients
+
+    def display_names(self) -> list[str]:
+        """Every name RxNorm offers for autocomplete, about 28K ingredients and brands."""
+        return self._get(_DisplayNamesResponse, "/displaynames.json", {}).displayTermsList.term
 
     def _related(self, rxcui: str) -> tuple[list[Ingredient], list[_Concept]]:
         related = self._get(_RelatedResponse, f"/rxcui/{rxcui}/related.json", {"tty": "IN MIN"})

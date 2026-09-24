@@ -1,4 +1,4 @@
-.PHONY: install dev dev-api dev-web test test-api test-web lint
+.PHONY: install dev dev-api dev-web test test-api test-web lint format
 
 install:
 	cd apps/api && uv sync
@@ -23,4 +23,8 @@ test-web:
 
 lint:
 	cd apps/api && uv run ruff check . && uv run ruff format --check .
-	cd apps/web && npm run lint && npm run typecheck
+	cd apps/web && npm run format:check && npm run lint && npm run typecheck
+
+format:
+	cd apps/api && uv run ruff format .
+	cd apps/web && npm run format

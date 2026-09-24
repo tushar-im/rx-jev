@@ -18,7 +18,8 @@ catalog, and answer categories.
 make install       # uv sync + npm install
 make -j2 dev       # API on :8000, web on :5173 with /api proxied
 make test          # pytest + vitest
-make lint          # ruff check/format + oxlint + tsc
+make lint          # ruff check/format + biome format + oxlint + tsc
+make format        # ruff format + biome format
 ```
 
 ## Product guardrails, non-negotiable
@@ -50,7 +51,7 @@ make lint          # ruff check/format + oxlint + tsc
 - Python: `Annotated` for params and dependencies, return types on every route, `def` unless
   the body truly awaits, routers carry their own `prefix` and `tags`, HTTPX for HTTP,
   SQLModel for storage. No raw SQL.
-- TypeScript: strict, no `any`, no `as unknown as X`, named exports only except files a
+- TypeScript: format with Biome (`biome.json`), never Prettier. Strict, no `any`, no `as unknown as X`, named exports only except files a
   framework requires to default-export such as `vite.config.ts`. Explicit return types.
 - Every external payload is validated: Pydantic on the backend, zod in the browser.
 - Every error response is RFC 7807 Problem Details. Use `problem()` in `problems.py`.

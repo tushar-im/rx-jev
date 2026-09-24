@@ -206,13 +206,20 @@ for the label's text, and is the quoted sentence the one that shows it. Work hap
 
 Thresholds are agreed, so Gate 1 is passed and M3 may start.
 
-### M3 User interface
+### M3 User interface (done)
 
-- M3.1 Drug search with RxNorm suggestions.
+- M3.1 Drug search with RxNorm suggestions. RxNorm's approximate search does not match
+  partial words, so `/api/drugs/suggestions` matches the start of a name or word in
+  RxNorm's display name list (about 28K names, fetched once per process).
+  `/api/drugs/resolve` turns the chosen name into the ingredient-set RxCUI.
 - M3.2 Question chips grouped as in the catalog. `take_with_food` is hidden until it has
   its own options.
 - M3.3 Answer card: category, quoted sentence, label version and date, DailyMed link.
-- M3.4 Low-confidence and not-found states, driven by the API's `confident` flag.
+  "Ask your pharmacist" is a note on every card, not a link, until there is a place to
+  send people. Unreviewed answers say "Not yet checked by a pharmacist."
+- M3.4 Low-confidence and not-found states, driven by the API's `confident` flag. A
+  question with no candidate sections, such as a boxed warning on an OTC label, says the
+  label has no section about it.
 
 ### M4 Custom questions
 

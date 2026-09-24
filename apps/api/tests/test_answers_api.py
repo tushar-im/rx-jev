@@ -12,9 +12,10 @@ from sqlmodel import Session, select
 from rx_jev_api.catalog import CATALOG
 from rx_jev_api.clients.openfda import CanonicalLabels, Label, OpenFdaClient
 from rx_jev_api.clients.rxnorm import RxNormClient
+from rx_jev_api.config import Settings, get_settings
 from rx_jev_api.db import make_engine
 from rx_jev_api.deps import get_judge, get_openfda_client, get_rxnorm_client, get_session
-from rx_jev_api.judge import NONE, STANCES, Judge, SkipReason, build_request
+from rx_jev_api.judge import MAX_CHOICE_OPTIONS, NONE, STANCES, Judge, SkipReason, build_request
 from rx_jev_api.main import app
 from rx_jev_api.problems import PROBLEM_JSON
 from rx_jev_api.store import JudgeRun
@@ -217,6 +218,82 @@ def test_label_with_every_question_skipped_is_served_without_jev(
         assert answer["reviewed"] is False
     assert jev.requests == []
     assert runs(engine) == 0
+
+
+def test_question_with_more_sentences_than_one_choice_holds_is_judged(
+    engine: Engine, jev: FakeJev, metformin_rx: Label
+) -> None:
+    long = " ".join(f"Sentence number {n} is here." for n in range(MAX_CHOICE_OPTIONS))
+    label = metformin_rx.model_copy(
+        update={"sections": metformin_rx.sections | {"contraindications": long}}
+    )
+    request = build_request(label)
+    [question_id, *_] = request.evidence_chunks
+
+    with serve(engine, jev) as client:
+        app.dependency_overrides[get_openfda_client] = lambda: OneLabel(label)
+        response = client.get(f"/api/labels/{METFORMIN}/answers")
+
+    assert response.status_code == 200
+    [served] = response.json()["labels"]
+    answer = next(a for a in served["answers"] if a["question_id"] == question_id)
+    assert answer["status"] == "judged"
+    assert answer["stance"] is not None
+    quote = answer["evidence"]["quote"]
+    assert quote["text"] in label.sections[quote["section"]]
+    assert len(jev.requests) == len(request.parts) + 1
+
+
+def test_answers_below_the_display_threshold_are_not_confident(client: TestClient) -> None:
+    # FakeJev answers with confidence 0.8, under the 0.9 set at Gate 1.
+    label = client.get(f"/api/labels/{METFORMIN}/answers").json()["labels"][0]
+    assert label["answers"]
+    assert all(a["confident"] is False for a in label["answers"])
+
+
+def test_confident_needs_both_confidences_at_the_threshold(engine: Engine, jev: FakeJev) -> None:
+    with serve(engine, jev) as client:
+        app.dependency_overrides[get_settings] = lambda: Settings(
+            _env_file=None, display_min_confidence=0.8
+        )
+        label = client.get(f"/api/labels/{METFORMIN}/answers").json()["labels"][0]
+    judged = [a for a in label["answers"] if a["status"] == "judged"]
+    skipped = [a for a in label["answers"] if a["status"] != "judged"]
+    assert judged and all(a["confident"] is True for a in judged)
+    assert all(a["confident"] is False for a in skipped)
+
+
+@pytest.mark.parametrize(
+    ("stance_conf", "evidence_conf", "expected"),
+    [(0.95, 0.95, True), (0.95, 0.85, False), (0.85, 0.95, False), (0.9, 0.9, True)],
+)
+def test_confident_only_when_stance_and_evidence_both_reach_the_threshold(
+    engine: Engine, stance_conf: float, evidence_conf: float, expected: bool
+) -> None:
+    def confidence(key: str) -> float:
+        return stance_conf if key.endswith(".stance") else evidence_conf
+
+    with serve(engine, FakeJev(confidence=confidence)) as client:
+        label = client.get(f"/api/labels/{METFORMIN}/answers").json()["labels"][0]
+    judged = [a for a in label["answers"] if a["status"] == "judged"]
+    assert judged
+    assert all(a["confident"] is expected for a in judged)
+
+
+def test_evidence_none_is_never_confident(engine: Engine) -> None:
+    jev = FakeJev(pick=lambda key, options: NONE if NONE in options else options[0])
+    with serve(engine, jev) as client:
+        app.dependency_overrides[get_settings] = lambda: Settings(
+            _env_file=None, display_min_confidence=0.8
+        )
+        label = client.get(f"/api/labels/{METFORMIN}/answers").json()["labels"][0]
+    judged = [a for a in label["answers"] if a["status"] == "judged"]
+    assert judged and all(a["evidence"]["choice"] == NONE for a in judged)
+    assert all(a["confident"] is False for a in judged)
+
+
+def test_gate_1_display_threshold_is_the_default() -> None:
+    assert Settings(_env_file=None).display_min_confidence == 0.9
 
 
 def test_unknown_rxcui_is_404_problem(client: TestClient, jev: FakeJev) -> None:

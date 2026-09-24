@@ -23,7 +23,8 @@ safe, allowed, or right for anyone.
    ingredient, one per repackager: 907 OTC ibuprofen labels, 338 prescription metformin
    labels at time of writing. Some drugs, such as ibuprofen, have both an OTC and a
    prescription label; the API returns one of each and the UI lets the person switch. For
-   each type: the label's ingredient list must match exactly (salt forms allowed), prefer
+   each type: the label's ingredient list must match exactly (salt forms allowed), the
+   label must have an application number (which excludes homeopathic products), prefer
    the original packager and fall back to repackagers, then take the latest
    `effective_time`. openFDA stores only product-level RxCUIs, so the search uses
    ingredient names, not the ingredient RxCUI.
@@ -37,7 +38,7 @@ safe, allowed, or right for anyone.
 7. **Serve from the store, compute on a miss.** A miss means no stored judgments exist for
    this label `set_id`, `version`, prompt hash and model version. On a miss, the API runs
    step 5 for all standard questions in one request, stores the result, then serves it.
-   Answers not yet checked by a pharmacist carry `reviewed: false`. If Jev fails, the API
+   Answers not yet checked by a human reviewer carry `reviewed: false`. If Jev fails, the API
    returns a 503 Problem Details response and stores nothing. It never serves a partial or
    guessed answer. Custom questions always call Jev live and are never stored as reviewed.
 
@@ -60,8 +61,10 @@ Fixed for every question:
 - Headings read "What the label says about pregnancy", never "Is it safe in pregnancy".
 - No green ticks or red crosses. Neutral icons plus the quoted sentence.
 - Every answer shows the label version and date, and links to the DailyMed page.
-- Low-confidence stance or evidence `none` shows "We couldn't find a clear answer. Read the
-  full label or ask a pharmacist." It never shows a guess.
+- An answer shows its category only when the API marks it `confident`: stance and
+  evidence confidence both at least 0.9 (`display_min_confidence` in config, agreed at
+  Gate 1). Otherwise, or when evidence is `none`, it shows "We couldn't find a clear
+  answer. Read the full label or ask a pharmacist." It never shows a guess.
 - A persistent "Ask your pharmacist" link on every result.
 
 ### Question catalog, v1
@@ -106,11 +109,19 @@ apps/api  (FastAPI)
   thresholds can change without re-running inference.
 - **Jev request shape.** The state holds only the sections some question uses, each
   candidate keyed by its ID. Evidence options are those IDs plus `none`. A Choice holds at
-  most 255 options, so a question with more candidates, or with no candidate sections, is
-  skipped and served with a status saying why. It is never truncated.
+  most 255 options, so evidence with more candidates is asked as several chunk questions in
+  the same request, then decided by one more request over the top five sentences of each
+  chunk plus `none` (3 of 121 review-set labels, such as aripiprazole's 343 condition
+  sentences). A question with no candidate sections is skipped and served with a status
+  saying why. Nothing is ever truncated.
 - **Keys.** `TYPESAFE_API_KEY` lives only in the backend environment. The browser never sees it.
-- **Model version.** Pin the Jev version per deployment. An upgrade invalidates calibrated
-  thresholds, so re-run the review set before switching.
+- **Model version.** Request `jev-latest`. Stored runs are keyed by that requested name,
+  not by the version Jev reports, so a new Jev release does not re-judge stored labels:
+  they keep answers from the version they were judged with (`jev-1.13.0` for the Gate 1
+  set). Only labels judged after a release use the new version. Each run records the
+  reported version, and the batch script lists every label judged by a version other than
+  `validated_model_version` (config, `jev-1.13.0`), whose thresholds were never checked.
+  To move stored labels to a new version, re-check the thresholds on it, then re-judge.
 - **External data.** Every openFDA, RxNorm and Jev response is parsed with Pydantic on the
   way in. Every API response is parsed with zod in the browser.
 - **Errors.** RFC 7807 Problem Details everywhere.
@@ -135,7 +146,7 @@ tests and lint green on both sides.
 Live lookups take 4 to 6 seconds, mostly openFDA search pages. The M2 store absorbs this for
 repeat lookups. A name search endpoint for the UI is left to M3.1.
 
-### M2 Jev judgments (built, not yet run against live Jev)
+### M2 Jev judgments (done)
 
 - M2.1 Judge module: builds stance and evidence questions from the catalog.
 - M2.2 Store module: persist distributions keyed by label version.
@@ -146,22 +157,62 @@ repeat lookups. A name search endpoint for the UI is left to M3.1.
   (`scripts/precompute_review_set.py`, draft list in `scripts/review_set.txt`).
 
 All four stories are tested against a fake Jev. The first live run (74 of 100 drugs, all
-`jev-1.13.0`) took 0.4 to 1.5 s and 6K to 62K input tokens per label. Before Gate 1: pin
-`TYPESAFE_MODEL` to an exact version, finish the batch, and check the report.
+`jev-1.13.0`) took 0.4 to 1.5 s and 6K to 62K input tokens per label. Before Gate 1: finish
+the batch with `TYPESAFE_MODEL=jev-latest` and check the report.
 
-### GATE 1 Pharmacist review
+### GATE 1 Label-reading review
 
-A pharmacist reviews the stored answers for 100 drugs against the 19 v1 questions. Record,
-per question, stance accuracy, evidence accuracy, and every case where `not_mentioned` and
-`no_known_issue` were confused. Set confidence thresholds from this data, not from cookbook
-defaults. **Do not start M3 until thresholds are agreed.**
+No pharmacist is available yet, so the project owner reviews the stored answers for the 100
+drugs. The review checks what the label says, not clinical judgment: is the category right
+for the label's text, and is the quoted sentence the one that shows it. Work happens on
+`gate/1-label-review`.
+
+- G1.1 Review rules: when each category is correct, and when a quote is correct, written
+  from the answer categories above so every row is judged the same way.
+- G1.2 Review sheet (`scripts/build_review_sheet.py`): every `no_known_issue` answer and
+  every stance that disagrees with its evidence, plus up to 60 other answers from each
+  confidence band (below 0.5, 0.5 to 0.7, 0.7 to 0.9, 0.9 and up, by the weaker of the
+  two confidences). The first build picked 351 of 2,000 judged answers.
+- G1.3 Second reader (`scripts/second_read.py`): Claude graded all 351 rows blind to Jev's
+  answer. The stances agreed on 285 (81%); 83 rows disagreed on stance or on `none`.
+- G1.4 Thresholds, from the second read (done, 2026-09-23):
+
+  | Weaker confidence | Stance agreement | Share of 2,000 answers |
+  |---|---|---|
+  | 0.9 and up | 81/83 (98%) | 53% |
+  | 0.7 to 0.9 | 74/85 (87%) | 17% |
+  | 0.5 to 0.7 | 77/90 (86%) | 16% |
+  | below 0.5 | 53/93 (57%) | 15% |
+
+  No `not_mentioned` / `no_known_issue` swaps. Decisions agreed with the owner:
+  1. **Display threshold 0.9** on both confidences, applied at read time as `confident`.
+     Lower it only after the Gate 2 pharmacist spot-check.
+  2. **Children**: "safety or effectiveness not established" is `caution`. Added to the
+     children stance instructions, which changes their prompt hash: 107 stored labels are
+     re-judged on the next batch run (about 3.3M input tokens).
+  3. **Taking with food** is hidden in the UI. Its 14 disagreements were mostly the same
+     sentence put in different categories: the five categories do not fit food
+     instructions. It gets its own options (with food, empty stomach, either, not
+     mentioned) after M3.
+
+  Follow-ups found by the review, none blocking M3:
+  - Finasteride breastfeeding: `no_known_issue` at 0.73 from a fetal-study sentence, while
+    the label says it is not for use in women. Below the threshold, so not shown as a
+    category; re-check after the re-run.
+  - OTC sentence lead-ins: some "Ask a doctor" items carry a "Do not use" lead-in
+    (diphenhydramine, doxylamine), which can push a stance towards `warns_against`.
+  - Section headings are merged into sentences, such as "2 DOSAGE AND ADMINISTRATION ...".
+  - Aripiprazole still exceeds Jev's input limit (see Open questions).
+
+Thresholds are agreed, so Gate 1 is passed and M3 may start.
 
 ### M3 User interface
 
 - M3.1 Drug search with RxNorm suggestions.
-- M3.2 Question chips grouped as in the catalog.
+- M3.2 Question chips grouped as in the catalog. `take_with_food` is hidden until it has
+  its own options.
 - M3.3 Answer card: category, quoted sentence, label version and date, DailyMed link.
-- M3.4 Low-confidence and not-found states.
+- M3.4 Low-confidence and not-found states, driven by the API's `confident` flag.
 
 ### M4 Custom questions
 
@@ -171,7 +222,8 @@ defaults. **Do not start M3 until thresholds are agreed.**
 ### GATE 2 Regulatory and wording review
 
 Confirm with a regulatory advisor that the wording and display rules keep this a label
-reference tool, not a device giving individual advice. **Do not launch publicly before this.**
+reference tool, not a device giving individual advice. A pharmacist spot-checks the hard
+cases flagged in Gate 1 and a sample of the rest. **Do not launch publicly before this.**
 
 ## Open questions
 
@@ -182,6 +234,10 @@ reference tool, not a device giving individual advice. **Do not launch publicly 
   `400 max_tokens_exceeded` (fluoxetine, duloxetine, quetiapine, topiramate, tramadol,
   oxycodone). Labels over a conservative 55K estimate are now split into several requests
   by whole question. A single question too long for any request is skipped as `too_long`.
+  Open: aripiprazole still fails with `max_tokens_exceeded`. Its five parts are each
+  estimated at 52K to 55K tokens but carry about 1,000 sentence-ID options, so the
+  estimate undercounts option-heavy requests. Aripiprazole is left out of the Gate 1
+  review; fix by counting options in the estimate or lowering the budget for such parts.
 - **Evidence by ID.** Evidence options are bare candidate IDs that point into the state.
   Whether Jev resolves IDs as well as it would full sentence text is unmeasured; Gate 1
   evidence accuracy answers it.
@@ -191,7 +247,11 @@ reference tool, not a device giving individual advice. **Do not launch publicly 
   diphenhydramine, loratadine, atorvastatin and sertraline. Preferring the brand's NDA was
   rejected: for prescription ibuprofen it picks IV hospital products. Open: the rule does
   not yet consider route or dosage form, so a rare injectable could win for a drug that is
-  usually oral. Revisit at Gate 1.
+  usually oral. Revisit at Gate 1. The review-set run showed homeopathic products winning
+  the OTC slot for five prescription-only drugs (insulin glargine, levothyroxine,
+  citalopram, estradiol, potassium chloride). They have no `application_number`, while all
+  116 other review-set labels have an NDA, ANDA, BLA or OTC monograph number, so labels
+  without one are now skipped.
 - **Mislabelled product types.** Some repackager labels marked prescription use OTC
   sections, and older prescription labels use `warnings` and `precautions` instead of
   `warnings_and_cautions`. The M1.3 mapper must select by the sections actually present.

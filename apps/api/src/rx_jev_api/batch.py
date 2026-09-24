@@ -21,7 +21,14 @@ from rx_jev_api.clients.rxnorm import RxNormClient
 from rx_jev_api.judge import Judge, JudgeError, SkipReason
 from rx_jev_api.store import Store
 
-__all__ = ["DrugReport", "LabelReport", "precompute", "read_names", "write_report"]
+__all__ = [
+    "DrugReport",
+    "LabelReport",
+    "precompute",
+    "read_names",
+    "unvalidated_labels",
+    "write_report",
+]
 
 DrugStatus = Literal["ok", "not_found", "no_label", "upstream_failed", "jev_failed"]
 
@@ -65,6 +72,20 @@ def write_report(path: Path, reports: list[DrugReport]) -> None:
     except BaseException:
         Path(tmp).unlink(missing_ok=True)
         raise
+
+
+def unvalidated_labels(reports: list[DrugReport], validated_version: str) -> list[str]:
+    """Labels whose stored run came from a Jev version other than the one Gate 1 validated.
+
+    Runs are keyed by the requested model name, so a new version behind `jev-latest` only
+    reaches labels judged after it ships. Those answers need the thresholds re-checked.
+    """
+    return [
+        f"{report.name} ({label.product_type}, {label.model_version})"
+        for report in reports
+        for label in report.labels
+        if label.model_version is not None and label.model_version != validated_version
+    ]
 
 
 def read_names(text: str) -> list[str]:

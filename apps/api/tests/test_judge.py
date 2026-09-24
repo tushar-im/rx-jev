@@ -8,10 +8,12 @@ from rx_jev_api.clients.openfda import Label
 from rx_jev_api.judge import (
     MAX_CHOICE_OPTIONS,
     NONE,
+    SHORTLIST_PER_CHUNK,
     STANCES,
     Judge,
     JudgeError,
     build_request,
+    chunk_key,
     estimate_tokens,
     question_key,
 )
@@ -109,17 +111,94 @@ def test_instructions_name_the_subject_and_the_sections_to_read(metformin_rx: La
             assert f"`drug_label.sections.{section}`" in text
 
 
+def test_children_stance_counts_unestablished_safety_as_caution(metformin_rx: Label) -> None:
+    request = build_request(metformin_rx)
+    children = str(request.questions[question_key("children", "stance")].instructions)
+    assert "not been established" in children and "`caution`" in children
+    pregnancy = str(request.questions[question_key("pregnancy", "stance")].instructions)
+    assert "not been established" not in pregnancy
+
+
 def test_question_without_sections_is_skipped(ibuprofen_otc: Label) -> None:
     request = build_request(ibuprofen_otc)
     assert request.skipped["boxed_warning"] == "no_sections"
     assert "boxed_warning" not in request.asked
 
 
-def test_question_over_the_option_limit_is_skipped_not_truncated() -> None:
+def test_evidence_over_the_option_limit_is_split_into_chunks_not_truncated() -> None:
     request = build_request(long_label(MAX_CHOICE_OPTIONS))
-    assert request.skipped["allergy"] == "too_many_candidates"
-    assert "allergy" not in request.asked
+    candidates = [c.id for c in request.asked["allergy"]]
+    assert len(candidates) >= MAX_CHOICE_OPTIONS
+    assert "allergy" not in request.skipped
+    # Chunking one question never drops an unrelated one.
     assert "pregnancy" in request.asked
+
+    chunks = request.evidence_chunks["allergy"].chunks
+    assert len(chunks) == 2
+    assert [cid for chunk in chunks for cid in chunk] == candidates
+    assert question_key("allergy", "evidence") not in request.questions
+    for n, chunk in enumerate(chunks):
+        criteria = request.questions[chunk_key("allergy", n)].criteria
+        assert list(criteria) == [*chunk, NONE]
+        assert len(criteria) <= MAX_CHOICE_OPTIONS
+
+
+def test_stance_is_asked_when_evidence_is_chunked() -> None:
+    request = build_request(long_label(MAX_CHOICE_OPTIONS))
+    stance = request.questions[question_key("allergy", "stance")]
+    assert tuple(stance.criteria) == STANCES
+
+
+def test_evidence_within_the_option_limit_is_not_chunked(metformin_rx: Label) -> None:
+    assert build_request(metformin_rx).evidence_chunks == {}
+
+
+def test_chunked_evidence_is_decided_by_a_second_request_over_a_shortlist() -> None:
+    jev = FakeJev()
+    request = build_request(long_label(MAX_CHOICE_OPTIONS))
+    result = Judge(jev.client(), "jev-latest").judge(request)
+
+    assert len(jev.requests) == len(request.parts) + 1
+    final = jev.requests[-1]
+    chunked = set(request.evidence_chunks)
+    assert set(final["questions"]) == {question_key(q, "evidence") for q in chunked}
+
+    # Each chunk contributes its most probable sentences, in label order, plus `none`.
+    chunks = request.evidence_chunks["allergy"].chunks
+    shortlist = [cid for chunk in chunks for cid in chunk[:SHORTLIST_PER_CHUNK]]
+    options = list(final["questions"][question_key("allergy", "evidence")]["criteria"])
+    assert options == [*shortlist, NONE]
+    sections = final["state"]["drug_label"]["sections"]
+    assert {cid for entries in sections.values() for cid in entries} == set(shortlist)
+
+    assert set(result.distributions) == {
+        question_key(q, kind) for q in request.asked for kind in ("stance", "evidence")
+    }
+    assert result.distributions[question_key("allergy", "evidence")].choice == shortlist[0]
+    assert result.input_tokens == 1234 * len(jev.requests)
+
+
+def test_shortlist_follows_each_chunk_s_probabilities() -> None:
+    request = build_request(long_label(MAX_CHOICE_OPTIONS))
+    chunks = request.evidence_chunks["allergy"].chunks
+    favourites = {chunk_key("allergy", n): chunk[-1] for n, chunk in enumerate(chunks)}
+
+    def pick(key: str, options: list[str]) -> str:
+        return favourites.get(key, options[0])
+
+    jev = FakeJev(pick=pick)
+    Judge(jev.client(), "jev-latest").judge(request)
+    options = jev.requests[-1]["questions"][question_key("allergy", "evidence")]["criteria"]
+    for chunk in chunks:
+        assert chunk[-1] in options
+
+
+def test_all_chunks_answering_none_still_asks_the_shortlist() -> None:
+    jev = FakeJev(pick=lambda key, options: NONE if NONE in options else options[0])
+    request = build_request(long_label(MAX_CHOICE_OPTIONS))
+    result = Judge(jev.client(), "jev-latest").judge(request)
+    assert result.distributions[question_key("allergy", "evidence")].choice == NONE
+    assert len(jev.requests) == len(request.parts) + 1
 
 
 def test_prompt_hash_is_stable_and_tracks_label_text(metformin_rx: Label) -> None:

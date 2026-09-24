@@ -360,3 +360,7 @@ thumb
 sketch
 
 # End of https://www.toptal.com/developers/gitignore/api/python,react,nextjs,node
+review_sheet.csv
+review_sheet.json
+second_read/
+review_sheet_compared.csv

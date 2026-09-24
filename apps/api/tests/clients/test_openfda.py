@@ -21,7 +21,12 @@ def client() -> OpenFdaClient:
     return OpenFdaClient(openfda_http())
 
 
-def fake_label(set_id: str, substances: list[str], original: bool = True) -> dict:
+def fake_label(
+    set_id: str,
+    substances: list[str],
+    original: bool = True,
+    application_number: list[str] | None = None,
+) -> dict:
     return {
         "set_id": set_id,
         "version": "1",
@@ -32,9 +37,39 @@ def fake_label(set_id: str, substances: list[str], original: bool = True) -> dic
             "brand_name": ["Brand"],
             "manufacturer_name": ["Maker"],
             "is_original_packager": [original],
+            "application_number": ["M013"] if application_number is None else application_number,
         },
         "warnings": ["Line one.", "Line two."],
     }
+
+
+def otc_only(results: list[dict]) -> httpx.MockTransport:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "HUMAN OTC DRUG" not in request.url.params["search"]:
+            return httpx.Response(404, json={"error": {"code": "NOT_FOUND"}})
+        skip, limit = int(request.url.params["skip"]), int(request.url.params["limit"])
+        return httpx.Response(200, json={"results": results[skip : skip + limit]})
+
+    return httpx.MockTransport(handler)
+
+
+def test_skips_labels_without_an_application_number() -> None:
+    # Homeopathic products carry no NDA, ANDA, BLA or monograph number, and are not the drug.
+    results = [
+        fake_label("homeopathic", ["CITALOPRAM"], application_number=[]),
+        fake_label("approved", ["CITALOPRAM HYDROBROMIDE"], application_number=["ANDA077031"]),
+    ]
+    labels = make_client(otc_only(results)).canonical_labels(["citalopram"])
+
+    assert labels.otc is not None
+    assert labels.otc.set_id == "approved"
+
+
+def test_only_labels_without_an_application_number_is_none() -> None:
+    results = [fake_label("homeopathic", ["LEVOTHYROXINE"], application_number=[])]
+    labels = make_client(otc_only(results)).canonical_labels(["levothyroxine"])
+
+    assert labels.otc is None
 
 
 def test_drug_with_both_types_returns_one_label_per_type(client: OpenFdaClient) -> None:

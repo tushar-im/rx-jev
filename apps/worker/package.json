@@ -10,7 +10,10 @@
     "typecheck": "tsc -p . && tsc -p test/node",
     "types": "wrangler types --include-runtime false",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
-    "db:import": "node scripts/import-store.ts"
+    "db:import": "node scripts/import-store.ts",
+    "tools:precompute": "node --env-file-if-exists=.dev.vars scripts/precompute-review-set.ts",
+    "tools:review-sheet": "node --env-file-if-exists=.dev.vars scripts/build-review-sheet.ts",
+    "tools:second-read": "node scripts/second-read.ts"
   },
   "dependencies": {
     "@rx-jev/contract": "*",

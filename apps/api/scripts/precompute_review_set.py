@@ -24,7 +24,7 @@ from rx_jev_api.deps import JEV_RETRY, JEV_TIMEOUT, UPSTREAM_TIMEOUT
 from rx_jev_api.judge import Judge
 from rx_jev_api.store import Store
 
-NAMES = Path(__file__).parent / "review_set.txt"
+NAMES = Path(__file__).parents[2] / "worker" / "scripts" / "review_set.txt"
 REPORT = Path("review_set_report.json")
 
 

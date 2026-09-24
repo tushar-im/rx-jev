@@ -124,4 +124,23 @@ describe('AnswerCard', () => {
     expect(document.body.textContent).not.toMatch(/safe for me/i)
     expect(screen.getByText('Not yet checked by a pharmacist.')).toBeInTheDocument()
   })
+
+  it('joins a lead-in to text that starts with punctuation without a stray space', () => {
+    const quote = {
+      section: 'pregnancy_or_breast_feeding',
+      text: ', ask a health professional before use.',
+      lead_in: 'If pregnant or breast-feeding',
+    }
+    const base = answer('pregnancy')
+    render(
+      <AnswerCard
+        label={label}
+        answer={{ ...base, evidence: base.evidence && { ...base.evidence, quote } }}
+      />,
+    )
+
+    expect(screen.getByRole('blockquote').textContent).toBe(
+      'If pregnant or breast-feeding, ask a health professional before use.',
+    )
+  })
 })

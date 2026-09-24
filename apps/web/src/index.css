@@ -9,6 +9,8 @@
   --accent: #1d4ed8;
   --caution-bg: #b91c1c;
   --caution-fg: #ffffff;
+  --chip-clear-bg: #e7e5e4;
+  --chip-clear-line: #a8a29e;
   font-family: system-ui, -apple-system, sans-serif;
   color: var(--fg);
   background: var(--bg);
@@ -26,6 +28,8 @@
     --accent: #93c5fd;
     --caution-bg: #7f1d1d;
     --caution-fg: #fee2e2;
+    --chip-clear-bg: #44403c;
+    --chip-clear-line: #78716c;
   }
 }
 
@@ -232,6 +236,22 @@ p {
   color: var(--fg);
   background: var(--surface);
   cursor: pointer;
+}
+
+/* A clear answer on this label, of any category: a brighter neutral fill, no colour. */
+.chip[data-clear='true'] {
+  border-color: var(--chip-clear-line);
+  background: var(--chip-clear-bg);
+}
+
+.question-chips-wrap {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.chips-note {
+  margin: 0;
+  font-size: 0.8rem;
 }
 
 .chip[aria-pressed='true'] {

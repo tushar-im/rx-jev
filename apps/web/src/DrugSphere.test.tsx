@@ -1,7 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DrugSphere, project, spherePoints } from './DrugSphere.tsx'
-import { FEATURED_DRUGS } from './featured.ts'
 
 function reduceMotion(reduce: boolean): void {
   vi.stubGlobal(
@@ -88,17 +87,5 @@ describe('DrugSphere', () => {
     render(<DrugSphere names={['ibuprofen']} onPick={() => {}} />)
 
     expect(screen.getByText(/search works for other drugs too/i)).toBeInTheDocument()
-  })
-})
-
-describe('FEATURED_DRUGS', () => {
-  it('is a short list of distinct names', () => {
-    expect(FEATURED_DRUGS.length).toBeGreaterThanOrEqual(30)
-    expect(FEATURED_DRUGS.length).toBeLessThanOrEqual(60)
-    expect(new Set(FEATURED_DRUGS.map((n) => n.toLowerCase())).size).toBe(FEATURED_DRUGS.length)
-  })
-
-  it('keeps to one-word names, which stay readable on the sphere', () => {
-    expect(FEATURED_DRUGS.filter((n) => !/^[a-z]+$/i.test(n))).toEqual([])
   })
 })

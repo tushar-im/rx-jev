@@ -3,7 +3,7 @@ import { fetchHealth, type ResolvedDrug } from './api.ts'
 import { DrugAnswers } from './DrugAnswers.tsx'
 import { DrugSearch, type PickedName } from './DrugSearch.tsx'
 import { DrugSphere } from './DrugSphere.tsx'
-import { FEATURED_DRUGS } from './featured.ts'
+import { DRUG_POOL, SPHERE_SIZE, sampleDrugs } from './featured.ts'
 import { loadDrugNames } from './names.ts'
 import { HowItWorks, type Session, SessionTotals } from './TracePanel.tsx'
 
@@ -22,6 +22,8 @@ export function App(): React.JSX.Element {
   const [pick, setPick] = useState<PickedName | null>(null)
   // Bumped by Home to give a fresh, empty search; any lookup in flight is dropped with it.
   const [searchKey, setSearchKey] = useState(0)
+  // A different pick of drugs on each visit, and each time Home is pressed.
+  const [drugsToTry, setDrugsToTry] = useState(() => sampleDrugs(DRUG_POOL, SPHERE_SIZE))
 
   useEffect(() => {
     fetchHealth()
@@ -41,6 +43,7 @@ export function App(): React.JSX.Element {
     setDrug(null)
     setPick(null)
     setSearchKey((k) => k + 1)
+    setDrugsToTry(sampleDrugs(DRUG_POOL, SPHERE_SIZE))
   }
 
   function pickDrug(name: string): void {
@@ -101,7 +104,7 @@ export function App(): React.JSX.Element {
             <p className="invite">
               Search for a drug to see what its label says. Pick a question, or ask your own.
             </p>
-            <DrugSphere names={FEATURED_DRUGS} onPick={pickDrug} />
+            <DrugSphere names={drugsToTry} onPick={pickDrug} />
           </>
         )}
       </main>

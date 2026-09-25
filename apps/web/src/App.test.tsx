@@ -3,6 +3,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App.tsx'
 import { askResponse, labelAnswers, sourceTrace } from './testing.ts'
 
+// The home page shows a random pick of drugs; tests fix it, and count the picks.
+const sample = vi.hoisted(() => vi.fn((): readonly string[] => ['ibuprofen', 'naproxen']))
+vi.mock('./featured.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./featured.ts')>()),
+  sampleDrugs: sample,
+}))
+
 function mockFetch(status: number, body: unknown): void {
   vi.stubGlobal(
     'fetch',
@@ -186,6 +193,22 @@ describe('App', () => {
     expect(screen.queryByRole('heading', { name: 'ibuprofen' })).not.toBeInTheDocument()
     expect(screen.getByRole('list', { name: 'Drugs to try' })).toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: /drug name/i })).toHaveValue('')
+  })
+
+  it('shows a fresh pick of drugs each time Home is pressed', () => {
+    mockFetch(200, { status: 'ok' })
+    sample.mockReturnValueOnce(['ibuprofen', 'naproxen']).mockReturnValueOnce(['aspirin'])
+    render(<App />)
+    expect(screen.getByRole('button', { name: 'naproxen' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Home' }))
+
+    const list = screen.getByRole('list', { name: 'Drugs to try' })
+    expect(
+      within(list)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['aspirin'])
   })
 
   it('stays home when a lookup started before Home finishes afterwards', async () => {

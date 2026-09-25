@@ -7,8 +7,8 @@ rx-jev reads US drug labels from openFDA and uses [TypeSafe Jev](https://docs.ty
 to find the sentence that answers your question. It does not give medical advice and does
 not say whether a drug is right for you. Ask a pharmacist or doctor.
 
-> Status: a private prototype built for Cloudflare Workers. It stays behind Cloudflare Access
-> until the Gate 2 review. See [PLAN.md](PLAN.md) for milestones.
+> Status: a public prototype on Cloudflare Workers, built in public. It is a demo, not medical
+> advice, and has not yet had the Gate 2 review. See [PLAN.md](PLAN.md) for milestones.
 
 ## Requirements
 

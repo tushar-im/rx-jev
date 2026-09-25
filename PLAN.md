@@ -316,8 +316,12 @@ tests), so this is the cheapest time to port.
 - **Tests.** Vitest in the Workers runtime (`@cloudflare/vitest-pool-workers`), with a local
   D1. The 228 Python tests are ported. The recorded RxNorm and openFDA fixtures move to a
   shared `fixtures/` folder that both implementations replay.
-- **Private until Gate 2.** Both Workers sit behind Cloudflare Access, and open to the
-  public only after Gate 2.
+- **A public demo, launched on purpose before Gate 2**, as a #BuildInPublic project. The
+  safeguards:
+  - the red caution strip on every page;
+  - the per-client ask limits (5 a minute, 50 a day);
+  - a Cloudflare rate-limiting rule on `/api/labels/*`;
+  - a spending cap on the TypeSafe account.
 - **Python stays until cutover.** `apps/api` remains the reference until every port test and
   golden file passes and the deployed Worker has passed its smoke test. Then it is removed.
 
@@ -361,7 +365,6 @@ Stories:
   - D1, KV and the Durable Object created;
   - `TYPESAFE_API_KEY` and `OPENFDA_API_KEY` set as Worker secrets;
   - data imported;
-  - Cloudflare Access in front;
   - a smoke test on Tylenol PM, Wellbutrin and Benadryl, whose stored answers must load
     without calling Jev;
   - then `apps/api` removed, and CLAUDE.md and the Makefile updated for the TypeScript
@@ -380,14 +383,17 @@ Where it stands:
   for the browser's name list, and the `ETag` on stored answers.
 - M6.11 is prepared: Wrangler configs, `make db-remote`, `make deploy`, `make smoke`, and
   the steps in `docs/deploy-cloudflare.md`. Creating the Cloudflare resources, the secrets,
-  Access and the deploy need the owner's account. `apps/api` is removed only after the
-  deployed smoke test passes.
+  the safeguards and the deploy need the owner's account. `apps/api` is removed only after
+  the deployed smoke test passes.
 
 ### GATE 2 Regulatory and wording review
 
 Confirm with a regulatory advisor that the wording and display rules keep this a label
 reference tool, not a device giving individual advice. A pharmacist spot-checks the hard
-cases flagged in Gate 1 and a sample of the rest. **Do not launch publicly before this.**
+cases flagged in Gate 1 and a sample of the rest.
+
+The public demo (M6) launched before this gate on purpose. Gate 2 still applies before any
+use beyond a demo, such as partners or promoting rx-jev as a reference tool.
 
 ## Open questions
 

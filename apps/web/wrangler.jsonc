@@ -4,7 +4,7 @@
   "name": "rx-jev-web",
   "main": "worker/index.ts",
   "compatibility_date": "2026-08-20",
-  // Private until Gate 2: only the workers.dev URL, which Cloudflare Access protects.
+  // No preview URLs: only the workers.dev URL, or a custom domain (docs/deploy-cloudflare.md).
   "preview_urls": false,
   "observability": { "enabled": true },
   "assets": {

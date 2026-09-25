@@ -518,6 +518,136 @@ p {
 }
 
 /* Narrow screens: last, so it overrides the rules above. */
+/* The label overview, shown until a question is picked. */
+.label-overview {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.overview-source {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.overview-source a {
+  color: var(--accent);
+}
+
+.label-section {
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  background: var(--surface);
+}
+
+.label-section h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.label-text {
+  margin: 0 0 0.35rem;
+  color: var(--fg);
+  line-height: 1.55;
+  white-space: pre-line;
+}
+
+/* A long section shows its first lines; the rest stays in the page for "Show all". */
+.label-text[data-collapsed='true'] {
+  max-height: 9.3em;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, #000 60%, transparent);
+}
+
+.label-section .link-button {
+  font-size: 0.85rem;
+}
+
+/* The boxed warning is set apart, like the pharmacist note, so it is read first. */
+.boxed-warning {
+  border-color: var(--note-line);
+  border-left-width: 4px;
+  background: var(--note-bg);
+}
+
+.boxed-warning h3,
+.boxed-warning .label-text {
+  color: var(--note-fg);
+}
+
+.at-a-glance h3 {
+  margin: 0.4rem 0 0.2rem;
+  font-size: 1rem;
+}
+
+.glance-note {
+  margin: 0 0 0.6rem;
+  font-size: 0.85rem;
+}
+
+.glance-group h4 {
+  margin: 0.8rem 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.glance-group ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.glance-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.6rem;
+  width: 100%;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  color: var(--fg);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.glance-item[data-clear='true'] {
+  border-color: var(--chip-clear-line);
+  background: var(--chip-clear-bg);
+}
+
+.glance-item:hover {
+  border-color: var(--accent);
+}
+
+.glance-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Clear or not, never which way: every answer looks the same here. */
+.glance-status {
+  flex: none;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.answer-stack .back {
+  justify-self: start;
+  font-size: 0.85rem;
+}
+
 @media (max-width: 1024px) {
   .demo-caution {
     font-size: 0.8rem;

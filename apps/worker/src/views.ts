@@ -2,12 +2,16 @@ import {
   type Answer,
   type EvidenceView,
   type LabelAnswers,
+  type LabelOverview,
+  type LabelText,
   type StanceView,
   StanceViewSchema,
 } from '@rx-jev/contract'
 import type { JudgedLabel } from './answering.ts'
-import { CATALOG, type Question } from './catalog.ts'
+import { CATALOG, labelFormat, type Question } from './catalog.ts'
+import type { Label } from './clients/openfda.ts'
 import { type Distribution, NONE, questionKey } from './judge.ts'
+import { isBlank } from './python.ts'
 import { labelInfo } from './routes/labels.ts'
 import type { Candidate } from './sentences.ts'
 
@@ -24,7 +28,34 @@ export function labelAnswers(judged: JudgedLabel, minConfidence: number): LabelA
     output_tokens: run?.output_tokens ?? null,
     latency_ms: run?.latency_ms ?? null,
     fresh: judged.fresh,
+    overview: labelOverview(label),
     answers: CATALOG.map((q) => answer(q, judged, minConfidence)),
+  }
+}
+
+/** The first of `sections` the label has with text, whole and verbatim. */
+function section(label: Label, ...sections: string[]): LabelText | null {
+  for (const name of sections) {
+    const text = label.sections[name]
+    if (text !== undefined && !isBlank(text)) return { section: name, text }
+  }
+  return null
+}
+
+/**
+ * The label sections shown before a question is picked. OTC sections are shown by the
+ * label's layout, as the catalog reads it, since some labels marked prescription use the
+ * OTC Drug Facts layout.
+ */
+export function labelOverview(label: Label): LabelOverview {
+  const otc = labelFormat(label) === 'otc'
+  return {
+    boxed_warning: section(label, 'boxed_warning'),
+    purpose: otc ? section(label, 'purpose') : null,
+    uses: section(label, 'indications_and_usage'),
+    strengths: otc
+      ? section(label, 'active_ingredient')
+      : section(label, 'dosage_forms_and_strengths'),
   }
 }
 

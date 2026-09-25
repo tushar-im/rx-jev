@@ -14,4 +14,10 @@ describe('LabelAnswersSchema', () => {
 
     expect(label.judged_at).toBe('2026-09-21T00:30:00+00:00')
   })
+
+  it('reads answers without an overview, as the Python reference API sends them', () => {
+    const { overview: _overview, ...python } = labelAnswers()
+
+    expect(LabelAnswersSchema.parse(python).overview).toBeUndefined()
+  })
 })

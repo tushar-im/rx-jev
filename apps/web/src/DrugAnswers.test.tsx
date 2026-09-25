@@ -1,5 +1,5 @@
 import { StrictMode } from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AnswersResponse, ResolvedDrug } from './api.ts'
 import { DrugAnswers } from './DrugAnswers.tsx'
@@ -319,5 +319,29 @@ describe('DrugAnswers', () => {
     fireEvent.submit(screen.getByRole('form', { name: /your own question/i }))
 
     await waitFor(() => expect(onUsage).toHaveBeenLastCalledWith({ tokens: 0, live: 1, stored: 0 }))
+  })
+
+  it('shows the label overview until a question is picked', async () => {
+    mockAnswers(200, both)
+    render(<DrugAnswers drug={ibuprofen} />)
+
+    const glance = await screen.findByRole('region', { name: 'At a glance' })
+    expect(screen.getByRole('heading', { name: 'Purpose' })).toBeInTheDocument()
+    fireEvent.click(within(glance).getByRole('button', { name: /pregnancy/i }))
+
+    expect(
+      screen.getByRole('heading', { name: 'What the label says about pregnancy' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'At a glance' })).toBeNull()
+  })
+
+  it('goes back to the overview from an answer', async () => {
+    mockAnswers(200, both)
+    render(<DrugAnswers drug={ibuprofen} />)
+    const glance = await screen.findByRole('region', { name: 'At a glance' })
+    fireEvent.click(within(glance).getByRole('button', { name: /pregnancy/i }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to the label overview' }))
+    expect(screen.getByRole('region', { name: 'At a glance' })).toBeInTheDocument()
   })
 })

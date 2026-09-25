@@ -1,4 +1,12 @@
-import type { Answer, AskResponse, CustomAnswer, Group, LabelAnswers, SourceTrace } from './api.ts'
+import type {
+  Answer,
+  AskResponse,
+  CustomAnswer,
+  Group,
+  LabelAnswers,
+  SourceTrace,
+  LabelOverview,
+} from './api.ts'
 
 // Test data shaped like the API's answers response. Label text here is public label
 // wording, never patient data.
@@ -56,6 +64,22 @@ export function answer(questionId: string, overrides: Partial<Answer> = {}): Ans
   }
 }
 
+/** The overview of the Advil OTC label in `labelAnswers`. */
+export function labelOverview(): LabelOverview {
+  return {
+    boxed_warning: null,
+    purpose: { section: 'purpose', text: 'Purpose Pain reliever/fever reducer' },
+    uses: {
+      section: 'indications_and_usage',
+      text: 'Uses temporarily relieves minor aches and pains due to: headache toothache backache',
+    },
+    strengths: {
+      section: 'active_ingredient',
+      text: 'Active ingredient (in each tablet) Ibuprofen 200 mg (NSAID)*',
+    },
+  }
+}
+
 export function labelAnswers(overrides: Partial<LabelAnswers> = {}): LabelAnswers {
   return {
     set_id: '0ca02f8b-4413-4e7c-a67b-8c67c53e1343',
@@ -73,6 +97,7 @@ export function labelAnswers(overrides: Partial<LabelAnswers> = {}): LabelAnswer
     output_tokens: 56,
     latency_ms: 910,
     fresh: false,
+    overview: labelOverview(),
     answers: QUESTIONS.map(([id]) => answer(id)),
     ...overrides,
   }
@@ -97,6 +122,7 @@ export function askResponse(overrides: Partial<CustomAnswer> = {}): AskResponse 
     output_tokens: _out,
     latency_ms: _latency,
     fresh: _fresh,
+    overview: _overview,
     ...label
   } = labelAnswers()
   return {

@@ -13,10 +13,11 @@
     {
       "binding": "DB",
       "database_name": "rx-jev",
+      "database_id": "d916d65d-dc39-47c2-9e53-c183a1bc5af6",
       "migrations_dir": "migrations"
     }
   ],
-  "kv_namespaces": [{ "binding": "CACHE" }],
+  "kv_namespaces": [{ "binding": "CACHE", "id": "90c7666497e446599e0e597cea7793eb" }],
   "durable_objects": {
     "bindings": [{ "name": "ASK_LIMITER", "class_name": "AskLimiter" }]
   },

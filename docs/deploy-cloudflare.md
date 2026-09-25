@@ -38,7 +38,12 @@ npx wrangler whoami
 cd apps/worker && npx wrangler d1 create rx-jev
 ```
 
-Copy the `database_id` it prints into `apps/worker/wrangler.jsonc`, under `d1_databases`:
+If Wrangler asks whether to add the database to your config, answer **no**. Saying yes adds
+a second entry with a new binding instead of filling in the existing `DB` entry, and the
+import then cannot find the database.
+
+Copy the `database_id` it prints into `apps/worker/wrangler.jsonc`, into the existing `DB`
+entry under `d1_databases`:
 
 ```jsonc
 "d1_databases": [
@@ -57,13 +62,17 @@ Copy the `database_id` it prints into `apps/worker/wrangler.jsonc`, under `d1_da
 cd apps/worker && npx wrangler kv namespace create CACHE
 ```
 
-Copy the `id` it prints into `kv_namespaces`:
+Answer **no** again if Wrangler offers to add it to your config. Copy the `id` it prints into
+the existing `CACHE` entry under `kv_namespaces`:
 
 ```jsonc
 "kv_namespaces": [{ "binding": "CACHE", "id": "<paste here>" }],
 ```
 
-Commit both IDs. They are not secrets.
+There should be one `d1_databases` entry and one `kv_namespaces` entry. Commit both IDs. They
+are not secrets.
+
+Local development keys its D1 by the ID, so run `make db-local` once more after adding it.
 
 ## 4. Create the tables and import the store
 

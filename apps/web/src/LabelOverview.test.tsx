@@ -82,11 +82,11 @@ describe('LabelOverview', () => {
     )
   })
 
-  it('shows the grid alone when the API sends no overview', () => {
+  it('shows the clear answers alone when the API sends no overview', () => {
     const { overview: _overview, ...label } = labelAnswers()
     render(<LabelOverview label={label} onPick={vi.fn()} />)
 
-    expect(screen.getByRole('region', { name: 'At a glance' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Clear answers' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Purpose' })).toBeNull()
   })
 
@@ -109,43 +109,34 @@ describe('LabelOverview', () => {
     expect(screen.queryByRole('note', { name: 'Boxed warning' })).toBeNull()
   })
 
-  it('says which questions have a clear answer, and opens one when picked', () => {
+  it('names only the questions with a clear answer, and opens one when picked', () => {
     const onPick = vi.fn()
     const label = labelAnswers({
-      answers: [answer('pregnancy'), answer('kidney', { confident: false })],
+      answers: [answer('pregnancy'), answer('diabetes'), answer('kidney', { confident: false })],
     })
     render(<LabelOverview label={label} onPick={onPick} />)
 
-    const glance = screen.getByRole('region', { name: 'At a glance' })
-    const pregnancy = within(glance).getByRole('button', { name: /pregnancy/i })
-    expect(pregnancy).toHaveTextContent('Clear answer')
-    expect(within(glance).getByRole('button', { name: /kidney/i })).toHaveTextContent(
-      'No clear answer',
-    )
-    fireEvent.click(pregnancy)
+    const clear = screen.getByRole('region', { name: 'Clear answers' })
+    expect(clear).toHaveTextContent('This label clearly answers 2 questions')
+    expect(within(clear).queryByRole('button', { name: /kidney/i })).toBeNull()
+    fireEvent.click(within(clear).getByRole('button', { name: /^Pregnancy/ }))
     expect(onPick).toHaveBeenCalledWith('pregnancy')
   })
 
-  it('points to the boxed warning shown above rather than calling it unclear', () => {
-    const label = rxLabel()
-    render(
-      <LabelOverview
-        label={{ ...label, answers: [answer('boxed_warning', { confident: false })] }}
-        onPick={vi.fn()}
-      />,
-    )
+  it('says so when no question has a clear answer', () => {
+    const label = labelAnswers({ answers: [answer('kidney', { confident: false })] })
+    render(<LabelOverview label={label} onPick={vi.fn()} />)
 
-    const glance = screen.getByRole('region', { name: 'At a glance' })
-    expect(within(glance).getByRole('button', { name: /boxed warning/i })).toHaveTextContent(
-      'Shown above',
-    )
+    const clear = screen.getByRole('region', { name: 'Clear answers' })
+    expect(clear).toHaveTextContent(/no clear answer to the standard questions/i)
+    expect(within(clear).queryAllByRole('button')).toEqual([])
   })
 
   it('never shows what an answer says, only on its card', () => {
     render(<LabelOverview label={labelAnswers()} onPick={vi.fn()} />)
 
-    const glance = screen.getByRole('region', { name: 'At a glance' })
-    const text = (glance.textContent ?? '').toLowerCase()
+    const clear = screen.getByRole('region', { name: 'Clear answers' })
+    const text = (clear.textContent ?? '').toLowerCase()
     for (const stance of [...STANCES, ...STANCES.map((s) => s.replaceAll('_', ' '))]) {
       expect(text).not.toContain(stance)
     }

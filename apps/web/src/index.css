@@ -579,68 +579,9 @@ p {
   color: var(--note-fg);
 }
 
-.at-a-glance h3 {
-  margin: 0.4rem 0 0.2rem;
-  font-size: 1rem;
-}
-
-.glance-note {
-  margin: 0 0 0.6rem;
-  font-size: 0.85rem;
-}
-
-.glance-group h4 {
-  margin: 0.8rem 0 0.35rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.glance-group ul {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
-  gap: 0.4rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.glance-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 0.6rem;
-  width: 100%;
-  font: inherit;
-  font-size: 0.9rem;
-  text-align: left;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--line);
-  border-radius: 0.5rem;
-  color: var(--fg);
-  background: var(--surface);
-  cursor: pointer;
-}
-
-.glance-item[data-clear='true'] {
-  border-color: var(--chip-clear-line);
-  background: var(--chip-clear-bg);
-}
-
-.glance-item:hover {
-  border-color: var(--accent);
-}
-
-.glance-item:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
-/* Clear or not, never which way: every answer looks the same here. */
-.glance-status {
-  flex: none;
-  font-size: 0.75rem;
-  color: var(--muted);
+.clear-answers p {
+  margin: 0.2rem 0 0;
+  line-height: 1.6;
 }
 
 .answer-stack .back {

@@ -1,7 +1,7 @@
 import { useId, useState } from 'react'
-import { GROUPS, type LabelAnswers, type LabelOverview, type LabelText } from './api.ts'
+import type { LabelAnswers, LabelOverview, LabelText } from './api.ts'
 import { PRODUCT_TYPE_TEXT } from './format.ts'
-import { GROUP_TITLES, hasClearAnswer, visibleAnswers } from './questions.ts'
+import { hasClearAnswer, visibleAnswers } from './questions.ts'
 
 // The label itself, shown until a question is picked: its boxed warning, what it is for and
 // its strengths, each one whole section word for word, then which questions it answers
@@ -52,7 +52,7 @@ export function LabelOverview({ label, onPick }: Props): React.JSX.Element {
       {purpose && <LabelSection key={key(purpose)} text={purpose} />}
       {uses && <LabelSection key={key(uses)} text={uses} />}
       {strengths && <LabelSection key={key(strengths)} text={strengths} />}
-      <AtAGlance label={label} onPick={onPick} />
+      <ClearAnswers label={label} onPick={onPick} />
     </div>
   )
 }
@@ -96,47 +96,37 @@ function LabelSection({
   )
 }
 
-function AtAGlance({ label, onPick }: Props): React.JSX.Element {
-  const headingId = useId()
-  const visible = visibleAnswers(label.answers)
+// Which questions the label answers clearly, in one line. The sidebar chips already list
+// every question, so this names only the clear ones, as links to their cards.
+function ClearAnswers({ label, onPick }: Props): React.JSX.Element {
+  const clear = visibleAnswers(label.answers).filter(hasClearAnswer)
   return (
-    <section aria-labelledby={headingId} className="at-a-glance">
-      <h3 id={headingId}>At a glance</h3>
-      <p className="glance-note">
-        Which questions this label answers clearly. Pick one to see the sentence.
-      </p>
-      {GROUPS.map((group) => {
-        const inGroup = visible.filter((a) => a.group === group)
-        if (inGroup.length === 0) return null
-        return (
-          <div key={group} className="glance-group">
-            <h4>{GROUP_TITLES[group]}</h4>
-            <ul>
-              {inGroup.map((a) => {
-                // Says only whether the answer is clear, never which way it goes. The boxed
-                // warning, when the label has one, is already quoted in full above.
-                const clear = hasClearAnswer(a)
-                const above =
-                  a.question_id === 'boxed_warning' && Boolean(label.overview?.boxed_warning)
-                const status = above ? 'Shown above' : clear ? 'Clear answer' : 'No clear answer'
-                return (
-                  <li key={a.question_id}>
-                    <button
-                      type="button"
-                      className="glance-item"
-                      data-clear={clear || above}
-                      onClick={() => onPick(a.question_id)}
-                    >
-                      <span>{a.title}</span>
-                      <span className="glance-status">{status}</span>
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        )
-      })}
+    <section aria-label="Clear answers" className="clear-answers">
+      {clear.length === 0 ? (
+        <p>
+          This label has no clear answer to the standard questions. Pick one in the sidebar to see
+          what we found, or ask your own question below.
+        </p>
+      ) : (
+        <p>
+          This label clearly answers {clear.length} {clear.length === 1 ? 'question' : 'questions'}:{' '}
+          {clear.map((a, i) => (
+            <span key={a.question_id}>
+              {i > 0 && ', '}
+              <button
+                type="button"
+                className="link-button"
+                // Named apart from the sidebar chip of the same question.
+                aria-label={`${a.title}: show what the label says`}
+                onClick={() => onPick(a.question_id)}
+              >
+                {a.title}
+              </button>
+            </span>
+          ))}
+          . Pick any question in the sidebar to see what the label says.
+        </p>
+      )}
     </section>
   )
 }

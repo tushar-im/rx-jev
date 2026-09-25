@@ -97,4 +97,8 @@ describe('FEATURED_DRUGS', () => {
     expect(FEATURED_DRUGS.length).toBeLessThanOrEqual(60)
     expect(new Set(FEATURED_DRUGS.map((n) => n.toLowerCase())).size).toBe(FEATURED_DRUGS.length)
   })
+
+  it('keeps to one-word names, which stay readable on the sphere', () => {
+    expect(FEATURED_DRUGS.filter((n) => !/^[a-z]+$/i.test(n))).toEqual([])
+  })
 })

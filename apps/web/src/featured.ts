@@ -36,7 +36,7 @@ export const FEATURED_DRUGS: readonly string[] = [
   'acetaminophen',
   'naproxen',
   'aspirin',
-  'Tylenol PM',
+  'meclizine',
   'loratadine',
   'cetirizine',
   'diphenhydramine',
@@ -45,7 +45,7 @@ export const FEATURED_DRUGS: readonly string[] = [
   'omeprazole',
   'famotidine',
   'loperamide',
-  'bismuth subsalicylate',
+  'docusate',
   'hydrocortisone',
   'nicotine',
 ]

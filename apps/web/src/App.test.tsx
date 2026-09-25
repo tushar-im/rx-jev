@@ -133,7 +133,7 @@ describe('App', () => {
     render(<App />)
     const list = within(screen.getByRole('main')).getByRole('list', { name: 'Drugs to try' })
 
-    expect(within(list).getByRole('button', { name: 'Tylenol PM' })).toBeInTheDocument()
+    expect(within(list).getByRole('button', { name: 'ibuprofen' })).toBeInTheDocument()
   })
 
   it('looks up a drug picked from the home page', async () => {

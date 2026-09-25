@@ -7,7 +7,7 @@ import { buildRequest, MAX_CHOICE_OPTIONS, NONE } from '../src/judge.ts'
 import { PROBLEM_JSON } from '../src/problems.ts'
 import { IBUPROFEN, METFORMIN, OneLabel, runs, type TestOverrides, testApp } from './helpers.ts'
 import { FakeJev, MODEL_VERSION } from './jev.ts'
-import { longText, metforminRx } from './labels.ts'
+import { ibuprofenOtc, longText, metforminRx } from './labels.ts'
 
 type AnswerBody = {
   question_id: string
@@ -25,6 +25,7 @@ type AnswerBody = {
 }
 
 type LabelBody = Record<string, unknown> & {
+  overview: unknown
   set_id: string
   product_type: string
   model_version: string | null
@@ -365,5 +366,47 @@ describe('the answers trace', () => {
     const stored = await firstLabel(METFORMIN, { jev })
 
     for (const label of [fresh, stored]) expect(label.judged_at).toMatch(/(Z|\+00:00)$/)
+  })
+})
+
+describe('the label overview', () => {
+  it('quotes the boxed warning, uses and strengths of a prescription label verbatim', async () => {
+    const label = await metforminRx()
+    const served = await firstLabel(METFORMIN, { jev: new FakeJev() })
+
+    expect(served.overview).toEqual({
+      boxed_warning: { section: 'boxed_warning', text: label.sections.boxed_warning },
+      purpose: null,
+      uses: { section: 'indications_and_usage', text: label.sections.indications_and_usage },
+      strengths: {
+        section: 'dosage_forms_and_strengths',
+        text: label.sections.dosage_forms_and_strengths,
+      },
+    })
+  })
+
+  it('quotes the purpose, uses and active ingredient of an OTC label', async () => {
+    const label = await ibuprofenOtc()
+    const served = await firstLabel(IBUPROFEN, { jev: new FakeJev() })
+
+    expect(served.overview).toEqual({
+      boxed_warning: null,
+      purpose: { section: 'purpose', text: label.sections.purpose },
+      uses: { section: 'indications_and_usage', text: label.sections.indications_and_usage },
+      strengths: { section: 'active_ingredient', text: label.sections.active_ingredient },
+    })
+  })
+
+  it('leaves out sections the label does not have or leaves blank', async () => {
+    const metformin = await metforminRx()
+    const label = { ...metformin, sections: { boxed_warning: '  ', warnings: 'W.' } }
+    const served = await firstLabel(METFORMIN, { jev: new FakeJev(), openfda: new OneLabel(label) })
+
+    expect(served.overview).toEqual({
+      boxed_warning: null,
+      purpose: null,
+      uses: null,
+      strengths: null,
+    })
   })
 })

@@ -386,6 +386,36 @@ Where it stands:
   the safeguards and the deploy need the owner's account. `apps/api` is removed only after
   the deployed smoke test passes.
 
+### M7 Label overview
+
+Until a question is picked, the middle column says only "Pick a question to see what the
+label says". It shows the label itself instead, from the openFDA text already fetched and
+stored, so there is no new data source:
+
+- **The boxed warning**, when the label has one (38 of 90 stored prescription labels), in
+  full and verbatim, set apart so it is seen before any question.
+- **What the label says the drug is for:** `indications_and_usage` on every label, plus
+  `purpose` on OTC labels.
+- **Strengths:** `dosage_forms_and_strengths` on newer prescription labels,
+  `active_ingredient` on OTC labels; left out when the label has neither.
+- **At a glance:** every question, grouped as in the sidebar, marked "Clear answer" or "No
+  clear answer" and opening its card. It never shows a category: a verdict is only shown on
+  its card, next to its quote and provenance.
+- The label's provenance and the DailyMed link, as on every card.
+
+Every text block is one label section, verbatim, captioned with its section name. Long
+sections (boxed warnings run up to 6,300 characters) are collapsed behind "Show all", with
+the full text in the page; never cut or paraphrased.
+
+Not in M7: DailyMed's package label photos (a separate call to DailyMed per label; a
+possible later addition), the chemical structure, and DailyMed's formatted layout of long
+sections.
+
+Stories:
+
+- M7.1 The answers API carries each label's overview sections (`overview` in the contract).
+- M7.2 The overview in the middle column, with the at-a-glance grid.
+
 ### GATE 2 Regulatory and wording review
 
 Confirm with a regulatory advisor that the wording and display rules keep this a label

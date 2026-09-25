@@ -140,6 +140,26 @@ const run = {
   latency_ms: z.number().int().nullable(),
 }
 
+// One label section, verbatim, for the label overview.
+export const LabelTextSchema = z.object({
+  // The openFDA section it is quoted from, such as `boxed_warning`.
+  section: z.string(),
+  text: z.string(),
+})
+export type LabelText = z.infer<typeof LabelTextSchema>
+
+// What the middle column shows before a question is picked. Each part is one whole label
+// section, or null when the label does not have it.
+export const LabelOverviewSchema = z.object({
+  boxed_warning: LabelTextSchema.nullable(),
+  // OTC labels only.
+  purpose: LabelTextSchema.nullable(),
+  uses: LabelTextSchema.nullable(),
+  // Dosage forms and strengths on prescription labels, the active ingredient on OTC labels.
+  strengths: LabelTextSchema.nullable(),
+})
+export type LabelOverview = z.infer<typeof LabelOverviewSchema>
+
 export const LabelAnswersSchema = LabelInfoSchema.extend({
   ...run,
   // Stored times are UTC. One without a timezone is read as UTC, never as the viewer's local
@@ -150,6 +170,7 @@ export const LabelAnswersSchema = LabelInfoSchema.extend({
     .nullable(),
   // True when this request judged the label; false when it came from the store.
   fresh: z.boolean(),
+  overview: LabelOverviewSchema,
   answers: z.array(AnswerSchema),
 })
 export type LabelAnswers = z.infer<typeof LabelAnswersSchema>

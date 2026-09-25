@@ -73,6 +73,18 @@ export function labelAnswers(overrides: Partial<LabelAnswers> = {}): LabelAnswer
     output_tokens: 56,
     latency_ms: 910,
     fresh: false,
+    overview: {
+      boxed_warning: null,
+      purpose: { section: 'purpose', text: 'Purpose Pain reliever/fever reducer' },
+      uses: {
+        section: 'indications_and_usage',
+        text: 'Uses temporarily relieves minor aches and pains due to: headache toothache backache',
+      },
+      strengths: {
+        section: 'active_ingredient',
+        text: 'Active ingredient (in each tablet) Ibuprofen 200 mg (NSAID)*',
+      },
+    },
     answers: QUESTIONS.map(([id]) => answer(id)),
     ...overrides,
   }
@@ -97,6 +109,7 @@ export function askResponse(overrides: Partial<CustomAnswer> = {}): AskResponse 
     output_tokens: _out,
     latency_ms: _latency,
     fresh: _fresh,
+    overview: _overview,
     ...label
   } = labelAnswers()
   return {

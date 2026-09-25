@@ -70,6 +70,6 @@ describe('upstream GET', () => {
     }
     await get(http, '/x', {}, 'lookup failed')
 
-    expect(agent).toMatch(/^rx-jev/)
+    expect(agent).toBe('rx-jev (+https://rxjev.cc)')
   })
 })

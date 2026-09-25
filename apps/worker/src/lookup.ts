@@ -37,6 +37,9 @@ export async function canonicalLabels(
       openfda_ms: openfdaMs,
       openfda_requests: canonical.requests,
       openfda_cached: canonical.cached,
+      openfda_stale: canonical.stale,
+      openfda_fetched_at:
+        canonical.fetchedAt === null ? null : new Date(canonical.fetchedAt).toISOString(),
       matches: canonical.matches,
     },
   }

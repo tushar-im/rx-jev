@@ -60,7 +60,16 @@ export function TraceDetails({ sources: labelSources, label, focus }: Props): Re
             </p>
           ))}
         <p className="trace-meta">
-          {sources.openfda_cached ? (
+          {sources.openfda_stale ? (
+            <>
+              openFDA did not answer after {plural(sources.openfda_requests, 'search', 'searches')},
+              so this is the lookup from{' '}
+              {sources.openfda_fetched_at
+                ? DAY.format(new Date(sources.openfda_fetched_at))
+                : 'an earlier day'}
+              .
+            </>
+          ) : sources.openfda_cached ? (
             <>openFDA lookup from the cache, made in the last 24 hours.</>
           ) : (
             <>

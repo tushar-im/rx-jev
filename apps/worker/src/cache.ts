@@ -46,7 +46,13 @@ export class CachedOpenFda extends OpenFdaClient {
     const saved = row ? CachedLookup.safeParse(row.body) : null
     // No openFDA search is made for a cached lookup.
     if (saved?.success && row && now - row.fetched_at_ms < CACHE_MS) {
-      return { ...saved.data, requests: 0, cached: true }
+      return {
+        ...saved.data,
+        requests: 0,
+        cached: true,
+        stale: false,
+        fetchedAt: row.fetched_at_ms,
+      }
     }
 
     let fresh: CanonicalLabels
@@ -54,9 +60,16 @@ export class CachedOpenFda extends OpenFdaClient {
       fresh = await super.canonicalLabels(ingredients)
     } catch (error) {
       // Labels change a few times a year, so an older lookup beats a failed one.
-      if (error instanceof UpstreamError && saved?.success) {
+      if (error instanceof UpstreamError && saved?.success && row) {
         console.warn(`openFDA failed; serving a lookup older than a day for ${key}`)
-        return { ...saved.data, requests: 0, cached: true }
+        // Not a cache hit: the trace must say openFDA was tried, and how old this lookup is.
+        return {
+          ...saved.data,
+          requests: this.requestsMade,
+          cached: false,
+          stale: true,
+          fetchedAt: row.fetched_at_ms,
+        }
       }
       throw error
     }

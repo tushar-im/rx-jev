@@ -169,6 +169,10 @@ export const SourceTraceSchema = z.object({
   openfda_requests: z.number().int(),
   // True when the openFDA lookup was served from the 24-hour cache, so no search was made.
   openfda_cached: z.boolean(),
+  // True when openFDA did not answer, so an older cached lookup was served instead.
+  openfda_stale: z.boolean(),
+  // When a cached or stale lookup was made, ISO 8601; null for a live lookup.
+  openfda_fetched_at: z.string().nullable(),
   // Per product type with a canonical label: how many labels its search matched.
   matches: z.partialRecord(ProductTypeSchema, LabelMatchSchema),
 })

@@ -54,8 +54,12 @@ export type CanonicalLabels = {
   matches: Partial<Record<ProductType, LabelMatch>>
   // openFDA searches made, empty ones included.
   requests: number
-  // True when served from the lookup cache instead of openFDA.
+  // True when served from the lookup cache, made within the last day, instead of openFDA.
   cached: boolean
+  // True when openFDA failed and an older cached lookup was served instead.
+  stale: boolean
+  // When a cached lookup was made, in epoch milliseconds; null for a live lookup.
+  fetchedAt: number | null
 }
 
 // Raw openFDA payloads.
@@ -108,6 +112,7 @@ export function matchesIngredients(substances: string[], ingredients: string[]):
 export class OpenFdaClient {
   readonly #http: Http
   readonly #apiKey: string | null
+  #counter = { requests: 0 }
 
   constructor(http: Http, apiKey: string | null = null) {
     this.#http = http
@@ -117,12 +122,15 @@ export class OpenFdaClient {
   async canonicalLabels(ingredients: string[]): Promise<CanonicalLabels> {
     if (ingredients.length === 0) throw new Error('At least one ingredient is required')
     const counter = { requests: 0 }
+    this.#counter = counter
     const result: CanonicalLabels = {
       otc: null,
       prescription: null,
       matches: {},
       requests: 0,
       cached: false,
+      stale: false,
+      fetchedAt: null,
     }
     for (const productType of ['otc', 'prescription'] as const) {
       const found = await this.#canonical(ingredients, productType, counter)
@@ -133,6 +141,11 @@ export class OpenFdaClient {
     }
     result.requests = counter.requests
     return result
+  }
+
+  /** openFDA searches made by the latest lookup, including one that failed. */
+  get requestsMade(): number {
+    return this.#counter.requests
   }
 
   async #canonical(

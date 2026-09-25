@@ -33,11 +33,54 @@ export function labelAnswers(judged: JudgedLabel, minConfidence: number): LabelA
   }
 }
 
-/** The first of `sections` the label has with text, whole and verbatim. */
+// The heading a label prints at the start of an overview section, such as "Purposes",
+// "USE(S)", "1 INDICATIONS AND USAGE" or "Active ingredient (in each tablet)". A heading must
+// end at a word boundary, and a lone "Use" only counts before a colon, so the first word of
+// a sentence ("Use in children…") is never taken for one.
+const NUMBER = String.raw`(?:\d+(?:\.\d+)*\.?\s+)?`
+const HEADINGS: Record<string, RegExp> = {
+  purpose: /^purposes?(?:\s*\(s\))?(?![A-Za-z])/i,
+  indications_and_usage: new RegExp(
+    `^${NUMBER}(?:indications?(?:\\s+(?:and|&)\\s+usage)?|uses?\\s*\\(s\\)|uses|use(?=\\s*:))(?![A-Za-z])`,
+    'i',
+  ),
+  active_ingredient: /^active\s+ingredients?(?:\s*\([^)]*\))?(?![A-Za-z])/i,
+  dosage_forms_and_strengths: new RegExp(
+    `^${NUMBER}dosage\\s+forms?\\s+(?:and|&)\\s+strengths?(?![A-Za-z])`,
+    'i',
+  ),
+}
+// What may sit between a heading and the text: spaces, a colon, a dash or a full stop.
+const SEPARATOR = /^[\s:.\u2013-]*/
+
+/**
+ * A section split into the label's own heading and the text after it, both verbatim. A
+ * heading printed twice ("Purpose Purpose …") is dropped both times. Without a heading, or
+ * with nothing after it, the whole section is the text.
+ */
+function splitHeading(name: string, whole: string): LabelText {
+  const pattern = HEADINGS[name]
+  const start = whole.length - whole.trimStart().length
+  const match = pattern?.exec(whole.slice(start))
+  if (!pattern || !match) return { section: name, heading: null, text: whole }
+  const heading = match[0]
+  let at = start + heading.length
+  for (;;) {
+    at += SEPARATOR.exec(whole.slice(at))?.[0].length ?? 0
+    const again = pattern.exec(whole.slice(at))
+    if (!again || again[0].toLowerCase() !== heading.toLowerCase()) break
+    at += again[0].length
+  }
+  const text = whole.slice(at)
+  if (isBlank(text)) return { section: name, heading: null, text: whole }
+  return { section: name, heading, text }
+}
+
+/** The first of `sections` the label has with text, verbatim, split from its heading. */
 function section(label: Label, ...sections: string[]): LabelText | null {
   for (const name of sections) {
     const text = label.sections[name]
-    if (text !== undefined && !isBlank(text)) return { section: name, text }
+    if (text !== undefined && !isBlank(text)) return splitHeading(name, text)
   }
   return null
 }

@@ -11,14 +11,16 @@ function rxLabel() {
     product_type: 'prescription',
     layout: 'prescription',
     overview: {
-      boxed_warning: { section: 'boxed_warning', text: BOXED },
+      boxed_warning: { section: 'boxed_warning', heading: null, text: BOXED },
       purpose: null,
       uses: {
         section: 'indications_and_usage',
+        heading: null,
         text: '1 INDICATIONS AND USAGE Bupropion hydrochloride tablets are indicated for MDD.',
       },
       strengths: {
         section: 'dosage_forms_and_strengths',
+        heading: null,
         text: '3 DOSAGE FORMS AND STRENGTHS 75 mg – orange, round tablets.',
       },
     },
@@ -53,7 +55,11 @@ describe('LabelOverview', () => {
         set_id: setId,
         overview: {
           ...labelOverview(),
-          uses: { section: 'indications_and_usage', text: `${setId} ${'Uses. '.repeat(150)}` },
+          uses: {
+            section: 'indications_and_usage',
+            heading: null,
+            text: `${setId} ${'Uses. '.repeat(150)}`,
+          },
         },
       })
     const { rerender } = render(<LabelOverview label={longUses('otc-set')} onPick={vi.fn()} />)
@@ -73,7 +79,7 @@ describe('LabelOverview', () => {
   it('renders section text exactly as the label has it', () => {
     const text = '  Purpose\nPain reliever  '
     const label = labelAnswers({
-      overview: { ...labelOverview(), purpose: { section: 'purpose', text } },
+      overview: { ...labelOverview(), purpose: { section: 'purpose', heading: null, text } },
     })
     render(<LabelOverview label={label} onPick={vi.fn()} />)
 
@@ -99,6 +105,17 @@ describe('LabelOverview', () => {
     expect(screen.getByText(/75 mg – orange, round tablets\./)).toBeInTheDocument()
     // Only the long boxed warning is collapsed.
     expect(screen.getAllByRole('button', { name: 'Show all' })).toHaveLength(1)
+  })
+
+  it("captions a section with the label's own heading", () => {
+    render(<LabelOverview label={labelAnswers()} onPick={vi.fn()} />)
+
+    // "Uses" is how this label heads the section, not "Indications and usage".
+    expect(screen.getByRole('heading', { name: 'Uses' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Indications and usage' })).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Uses' }).nextElementSibling?.textContent).toBe(
+      'temporarily relieves minor aches and pains due to: headache toothache backache',
+    )
   })
 
   it('shows an OTC label its purpose and active ingredient, and no boxed warning', () => {

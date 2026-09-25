@@ -374,13 +374,25 @@ describe('the label overview', () => {
     const label = await metforminRx()
     const served = await firstLabel(METFORMIN, { jev: new FakeJev() })
 
+    // The label's own heading becomes the caption; the text is the rest, verbatim.
+    const after = (text: string | undefined, heading: string) =>
+      (text ?? '').slice(heading.length).replace(/^\s+/, '')
     expect(served.overview).toEqual({
-      boxed_warning: { section: 'boxed_warning', text: label.sections.boxed_warning },
+      boxed_warning: {
+        section: 'boxed_warning',
+        heading: null,
+        text: label.sections.boxed_warning,
+      },
       purpose: null,
-      uses: { section: 'indications_and_usage', text: label.sections.indications_and_usage },
+      uses: {
+        section: 'indications_and_usage',
+        heading: '1 INDICATIONS AND USAGE',
+        text: after(label.sections.indications_and_usage, '1 INDICATIONS AND USAGE'),
+      },
       strengths: {
         section: 'dosage_forms_and_strengths',
-        text: label.sections.dosage_forms_and_strengths,
+        heading: '3 DOSAGE FORMS AND STRENGTHS',
+        text: after(label.sections.dosage_forms_and_strengths, '3 DOSAGE FORMS AND STRENGTHS'),
       },
     })
   })
@@ -389,11 +401,25 @@ describe('the label overview', () => {
     const label = await ibuprofenOtc()
     const served = await firstLabel(IBUPROFEN, { jev: new FakeJev() })
 
+    const after = (text: string | undefined, heading: string) =>
+      (text ?? '').slice(heading.length).replace(/^\s+/, '')
     expect(served.overview).toEqual({
       boxed_warning: null,
-      purpose: { section: 'purpose', text: label.sections.purpose },
-      uses: { section: 'indications_and_usage', text: label.sections.indications_and_usage },
-      strengths: { section: 'active_ingredient', text: label.sections.active_ingredient },
+      purpose: {
+        section: 'purpose',
+        heading: 'Purposes',
+        text: after(label.sections.purpose, 'Purposes'),
+      },
+      uses: {
+        section: 'indications_and_usage',
+        heading: 'Uses',
+        text: after(label.sections.indications_and_usage, 'Uses'),
+      },
+      strengths: {
+        section: 'active_ingredient',
+        heading: 'Active ingredient (in each tablet)',
+        text: after(label.sections.active_ingredient, 'Active ingredient (in each tablet)'),
+      },
     })
   })
 
@@ -409,7 +435,7 @@ describe('the label overview', () => {
     expect(served.overview).toEqual({
       boxed_warning: null,
       purpose: null,
-      uses: { section: 'indications_and_usage', text: 'Uses Z' },
+      uses: { section: 'indications_and_usage', heading: 'Uses', text: 'Z' },
       strengths: null,
     })
   })
@@ -427,8 +453,12 @@ describe('the label overview', () => {
     const served = await firstLabel(METFORMIN, { jev: new FakeJev(), openfda: new OneLabel(label) })
 
     expect(served.overview).toMatchObject({
-      purpose: { section: 'purpose', text: 'Purpose Antihistamine' },
-      strengths: { section: 'active_ingredient', text: 'Active ingredient Loratadine 10 mg' },
+      purpose: { section: 'purpose', heading: 'Purpose', text: 'Antihistamine' },
+      strengths: {
+        section: 'active_ingredient',
+        heading: 'Active ingredient',
+        text: 'Loratadine 10 mg',
+      },
     })
   })
 

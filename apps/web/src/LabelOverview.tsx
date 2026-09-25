@@ -66,7 +66,9 @@ function LabelSection({
 }): React.JSX.Element {
   const [expanded, setExpanded] = useState(false)
   const textId = useId()
-  const name = SECTION_NAMES[text.section] ?? text.section.replaceAll('_', ' ')
+  // The label's own heading when it prints one ("Purposes", "1 INDICATIONS AND USAGE"), so
+  // the text below does not repeat it; otherwise the section's name.
+  const name = text.heading ?? SECTION_NAMES[text.section] ?? text.section.replaceAll('_', ' ')
   const long = text.text.length > LONG_CHARS
   const body = (
     <>

@@ -144,6 +144,10 @@ const run = {
 export const LabelTextSchema = z.object({
   // The openFDA section it is quoted from, such as `boxed_warning`.
   section: z.string(),
+  // The heading the label prints at the start of the section, such as "Purposes" or
+  // "1 INDICATIONS AND USAGE", or null. Shown as the caption, not repeated in the text.
+  heading: z.string().nullable(),
+  // The section after its heading, verbatim.
   text: z.string(),
 })
 export type LabelText = z.infer<typeof LabelTextSchema>

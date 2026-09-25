@@ -68,13 +68,16 @@ export function answer(questionId: string, overrides: Partial<Answer> = {}): Ans
 export function labelOverview(): LabelOverview {
   return {
     boxed_warning: null,
-    purpose: { section: 'purpose', text: 'Purpose Pain reliever/fever reducer' },
+    purpose: { section: 'purpose', heading: 'Purpose', text: 'Pain reliever/fever reducer' },
     uses: {
       section: 'indications_and_usage',
-      text: 'Uses temporarily relieves minor aches and pains due to: headache toothache backache',
+      heading: 'Uses',
+      text: 'temporarily relieves minor aches and pains due to: headache toothache backache',
     },
+    // No heading of its own, so the caption is the section's name.
     strengths: {
       section: 'active_ingredient',
+      heading: null,
       text: 'Active ingredient (in each tablet) Ibuprofen 200 mg (NSAID)*',
     },
   }

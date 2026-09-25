@@ -62,6 +62,7 @@ export function labelAnswers(overrides: Partial<LabelAnswers> = {}): LabelAnswer
     version: '5',
     effective_time: '2026-09-09',
     product_type: 'otc',
+    layout: 'otc',
     brand_name: 'Advil',
     manufacturer_name: 'Haleon US Holdings LLC',
     dailymed_url:
@@ -115,6 +116,7 @@ export function sourceTrace(overrides: Partial<SourceTrace> = {}): SourceTrace {
     rxnorm_ms: 310,
     openfda_ms: 820,
     openfda_requests: 2,
+    openfda_cached: false,
     matches: {
       otc: { total: 831, original_packager: true },
       prescription: { total: 47, original_packager: true },

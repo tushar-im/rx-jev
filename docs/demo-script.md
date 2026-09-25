@@ -73,9 +73,8 @@ Avoid these on camera:
 
 - **Captions and post copy follow the product guardrails:** never "safe", "allowed", "OK to take", or anything that sounds like advice for one person. Say what the label says.
 - **Searching "tylenol pm" shows a store-brand label with the same ingredients** (Pain Reliever PM Extra Strength), not Tylenol's own. Don't caption it as Tylenol's label. Wellbutrin likewise shows the generic bupropion label.
-- **PLAN.md says not to launch publicly before Gate 2.** A demo video isn't a launch, so:
+- **rx-jev is a public demo that launched before the Gate 2 review.** So:
   - Call it a prototype.
-  - Don't link to a public instance.
   - Keep the "not medical advice" line in both the video and the post.
 
 ## Draft post

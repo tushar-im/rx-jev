@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnswerCard } from './AnswerCard.tsx'
-import { ApiError, askLabel, type AskResponse, type LabelInfo } from './api.ts'
+import {
+  ApiError,
+  askLabel,
+  type AskResponse,
+  type LabelInfo,
+  MAX_QUESTION_CHARS as MAX_CHARS,
+  MIN_QUESTION_CHARS as MIN_CHARS,
+  questionLength as charCount,
+} from './api.ts'
 
 const UNAVAILABLE = 'Answers are unavailable right now. Try again later.'
-// The API's limits on a question's length, after trimming.
-const MIN_CHARS = 3
-const MAX_CHARS = 200
-
-// Characters as the API counts them: code points, not UTF-16 units.
-function charCount(text: string): number {
-  return [...text.trim()].length
-}
 
 type State =
   | { kind: 'idle' }

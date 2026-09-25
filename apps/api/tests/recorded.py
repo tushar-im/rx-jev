@@ -6,7 +6,8 @@ from pathlib import Path
 
 import httpx
 
-FIXTURES = Path(__file__).parent / "fixtures"
+# Shared with the TypeScript port, at the repository root.
+FIXTURES = Path(__file__).parents[3] / "fixtures"
 
 
 def _rxnorm(request: httpx.Request) -> httpx.Response:

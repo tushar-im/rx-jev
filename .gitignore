@@ -364,3 +364,15 @@ review_sheet.csv
 review_sheet.json
 second_read/
 review_sheet_compared.csv
+
+# Golden file of the whole local store: regenerate with make golden
+fixtures/golden/store.jsonl
+
+# Wrangler local state and the tools' generated config
+.wrangler/
+
+# Wrangler local secrets
+.dev.vars
+
+# The Python template above ignores lib/; the Worker's Node tools live in one.
+!apps/worker/scripts/lib/

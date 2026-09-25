@@ -1,3 +1,4 @@
+import { suggest } from '@rx-jev/contract/suggest'
 import { useEffect, useId, useRef, useState } from 'react'
 import { ApiError, fetchSuggestions, resolveDrug, type ResolvedDrug } from './api.ts'
 
@@ -11,6 +12,9 @@ type Props = {
   // Called as each lookup starts, so a failed lookup never leaves an old drug shown.
   onLookupStart?: () => void
   debounceMs?: number
+  // RxNorm's name list for matching suggestions locally; null when it cannot load, and then
+  // suggestions come from the API.
+  loadNames?: () => Promise<readonly string[] | null>
 }
 
 // A combobox over RxNorm names. Choosing a suggestion, or submitting typed text, resolves
@@ -19,6 +23,7 @@ export function DrugSearch({
   onResolved,
   onLookupStart,
   debounceMs = 200,
+  loadNames,
 }: Props): React.JSX.Element {
   const id = useId()
   const listId = `${id}-list`
@@ -30,15 +35,34 @@ export function DrugSearch({
   const [active, setActive] = useState(-1)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // RxNorm's names for local matching, once loaded; until then the API suggests.
+  const [localNames, setLocalNames] = useState<readonly string[] | null>(null)
   // Only the latest lookup may report its result.
   const lookup = useRef(0)
   const query = text.trim()
   const names = result?.query === query ? result.names : []
 
   useEffect(() => {
+    if (!loadNames) return
+    let live = true
+    loadNames()
+      .then((list) => {
+        if (live) setLocalNames(list)
+      })
+      .catch(() => {})
+    return () => {
+      live = false
+    }
+  }, [loadNames])
+
+  useEffect(() => {
     if (query.length < MIN_QUERY || text === chosen) return
     const controller = new AbortController()
     const timer = setTimeout(() => {
+      if (localNames !== null) {
+        setResult({ query, names: suggest(localNames, query) })
+        return
+      }
       fetchSuggestions(query, controller.signal)
         .then((found) => setResult({ query, names: found.names }))
         // Suggestions are a convenience; typed text can still be submitted.
@@ -48,7 +72,7 @@ export function DrugSearch({
       clearTimeout(timer)
       controller.abort()
     }
-  }, [query, text, chosen, debounceMs])
+  }, [query, text, chosen, debounceMs, localNames])
 
   function onType(value: string): void {
     setText(value)

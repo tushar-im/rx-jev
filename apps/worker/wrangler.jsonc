@@ -1,0 +1,32 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  // The API Worker. Not public: the web Worker reaches it through a service binding, so it
+  // has no workers.dev or preview URL of its own.
+  "name": "rx-jev-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "rx-jev",
+      "database_id": "d916d65d-dc39-47c2-9e53-c183a1bc5af6",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "kv_namespaces": [{ "binding": "CACHE", "id": "90c7666497e446599e0e597cea7793eb" }],
+  "durable_objects": {
+    "bindings": [{ "name": "ASK_LIMITER", "class_name": "AskLimiter" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["AskLimiter"] }],
+  // Refreshes RxNorm's name list in KV daily.
+  "triggers": { "crons": ["17 4 * * *"] },
+  "vars": {
+    "TYPESAFE_MODEL": "jev-latest",
+    "ASK_PER_MINUTE": "5",
+    "ASK_PER_DAY": "50"
+  }
+}

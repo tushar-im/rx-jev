@@ -18,7 +18,7 @@ import httpx
 from rx_jev_api.clients.openfda import OpenFdaClient
 
 BASE = "https://api.fda.gov"
-DEFAULT_OUT = Path(__file__).parent.parent / "tests" / "fixtures" / "openfda"
+DEFAULT_OUT = Path(__file__).parents[3] / "fixtures" / "openfda"
 CASES = [["ibuprofen"], ["metformin"], ["acetaminophen", "diphenhydramine"], ["loratadine"]]
 METADATA = {"id", "set_id", "version", "effective_time", "openfda"}
 

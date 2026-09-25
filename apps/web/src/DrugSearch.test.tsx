@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DrugSearch } from './DrugSearch.tsx'
 import type { ResolvedDrug } from './api.ts'
@@ -242,5 +242,45 @@ describe('DrugSearch', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Search' }))
 
     await waitFor(() => expect(onResolved).toHaveBeenCalledWith(advil))
+  })
+
+  it('suggests from the local name list without asking the API', async () => {
+    const fetchMock = mockApi({ '/api/drugs/resolve': () => [200, advil] })
+    const loadNames = vi.fn(async () => ['advil', 'advil pm', 'glipiZIDE / metFORMIN'])
+    render(<DrugSearch onResolved={vi.fn()} debounceMs={0} loadNames={loadNames} />)
+    // The list loads as the search box appears.
+    await waitFor(() => expect(loadNames).toHaveBeenCalled())
+    await act(async () => {})
+
+    fireEvent.change(screen.getByRole('combobox', { name: /drug name/i }), {
+      target: { value: 'metf' },
+    })
+
+    expect(await screen.findByRole('option', { name: 'glipiZIDE / metFORMIN' })).toBeInTheDocument()
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(loadNames).toHaveBeenCalledTimes(1)
+  })
+
+  it('asks the API for suggestions while the name list is still loading', async () => {
+    mockApi({ '/api/drugs/suggestions': suggestions })
+    const pending = new Promise<readonly string[] | null>(() => {})
+    render(<DrugSearch onResolved={vi.fn()} debounceMs={0} loadNames={() => pending} />)
+
+    fireEvent.change(screen.getByRole('combobox', { name: /drug name/i }), {
+      target: { value: 'adv' },
+    })
+
+    expect(await screen.findByRole('option', { name: 'advil' })).toBeInTheDocument()
+  })
+
+  it('asks the API for suggestions when the name list cannot load', async () => {
+    mockApi({ '/api/drugs/suggestions': suggestions })
+    render(<DrugSearch onResolved={vi.fn()} debounceMs={0} loadNames={async () => null} />)
+
+    fireEvent.change(screen.getByRole('combobox', { name: /drug name/i }), {
+      target: { value: 'adv' },
+    })
+
+    expect(await screen.findByRole('option', { name: 'advil' })).toBeInTheDocument()
   })
 })

@@ -6,7 +6,7 @@ from pathlib import Path
 import httpx
 
 BASE = "https://rxnav.nlm.nih.gov/REST"
-OUT = Path(__file__).parent.parent / "tests" / "fixtures" / "rxnorm"
+OUT = Path(__file__).parents[3] / "fixtures" / "rxnorm"
 NAMES = ["Advil", "advill", "metformin", "Tylenol PM", "xyzzynotadrug"]
 # Ingredient-set RxCUIs looked up directly; 0 is not a real concept.
 RXCUIS = ["5640", "214181", "0"]

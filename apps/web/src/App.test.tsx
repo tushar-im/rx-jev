@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App.tsx'
 import { askResponse, labelAnswers, sourceTrace } from './testing.ts'
@@ -213,6 +213,8 @@ describe('App', () => {
 
   it('stays home when a lookup started before Home finishes afterwards', async () => {
     let finish: (() => void) | undefined
+    // Set once the late lookup's body has been read; after that only its handlers remain.
+    let read = false
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
@@ -221,13 +223,20 @@ describe('App', () => {
           await new Promise<void>((resolve) => {
             finish = resolve
           })
-          return new Response(
+          const response = new Response(
             JSON.stringify({
               query: 'ibuprofen',
               rxcui: '5640',
               ingredients: [{ rxcui: '5640', name: 'ibuprofen' }],
             }),
           )
+          const json = response.json.bind(response)
+          response.json = async () => {
+            const body: unknown = await json()
+            read = true
+            return body
+          }
+          return response
         }
         return new Response(JSON.stringify({ status: 'ok' }))
       }),
@@ -238,7 +247,11 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Home' }))
     finish?.()
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Search' })).toBeEnabled())
+    await waitFor(() => expect(read).toBe(true))
+    // A macrotask, so every promise handler of the late lookup has run.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
     expect(screen.queryByRole('heading', { name: 'ibuprofen' })).not.toBeInTheDocument()
     expect(screen.getByRole('list', { name: 'Drugs to try' })).toBeInTheDocument()
   })

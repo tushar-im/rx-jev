@@ -39,7 +39,9 @@ export function project(point: Point, angle: number): Placed {
     x,
     y: point.y,
     scale: 0.65 + 0.45 * depth,
-    opacity: 0.25 + 0.75 * depth,
+    // Never below 0.65 of the text colour, which keeps 4.5:1 contrast in both themes;
+    // size and stacking show depth.
+    opacity: 0.65 + 0.35 * depth,
     layer: Math.round(depth * 100),
   }
 }
@@ -62,16 +64,19 @@ export function DrugSphere({ names, onPick }: Props): React.JSX.Element {
     [names],
   )
   const nodes = useRef<(HTMLLIElement | null)[]>([])
-  const paused = useRef(false)
+  // Paused while the pointer is over the sphere or one of its names has focus.
+  const hovered = useRef(false)
+  const focused = useRef(false)
 
   useEffect(() => {
     // Without matchMedia the sphere is drawn once and stays still.
-    if (typeof window.matchMedia !== 'function' || window.matchMedia(STILL).matches) return
+    if (typeof window.matchMedia !== 'function') return
+    const still = window.matchMedia(STILL)
     let angle = 0
     let last: number | null = null
     let frame = 0
     function tick(now: number): void {
-      if (last !== null && !paused.current) {
+      if (last !== null && !hovered.current && !focused.current) {
         angle += ((now - last) / TURN_MS) * 2 * Math.PI
         items.forEach((item, i) => {
           const node = nodes.current[i]
@@ -84,23 +89,37 @@ export function DrugSphere({ names, onPick }: Props): React.JSX.Element {
       last = now
       frame = requestAnimationFrame(tick)
     }
-    frame = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(frame)
+    // Follows the visitor's setting and the window's width as they change.
+    function update(): void {
+      cancelAnimationFrame(frame)
+      last = null
+      if (!still.matches) frame = requestAnimationFrame(tick)
+    }
+    update()
+    still.addEventListener('change', update)
+    return () => {
+      still.removeEventListener('change', update)
+      cancelAnimationFrame(frame)
+    }
   }, [items])
-
-  function pause(on: boolean): void {
-    paused.current = on
-  }
 
   return (
     <div className="home-sphere">
       <ul
         className="sphere"
         aria-label="Drugs to try"
-        onPointerEnter={() => pause(true)}
-        onPointerLeave={() => pause(false)}
-        onFocus={() => pause(true)}
-        onBlur={() => pause(false)}
+        onPointerEnter={() => {
+          hovered.current = true
+        }}
+        onPointerLeave={() => {
+          hovered.current = false
+        }}
+        onFocus={() => {
+          focused.current = true
+        }}
+        onBlur={() => {
+          focused.current = false
+        }}
       >
         {items.map((item, i) => (
           <li

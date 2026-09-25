@@ -41,7 +41,9 @@ export async function smoke(
   }
   for (const name of SMOKE_DRUGS) {
     try {
-      const { rxcui } = Resolved.parse(await get(`/api/drugs/resolve?name=${encodeURIComponent(name)}`))
+      const { rxcui } = Resolved.parse(
+        await get(`/api/drugs/resolve?name=${encodeURIComponent(name)}`),
+      )
       const { labels } = Answers.parse(await get(`/api/labels/${rxcui}/answers`))
       const parts = labels.map(
         (l) => `${l.product_type} v${l.version} ${l.fresh ? 'judged now' : 'from the store'}`,

@@ -72,20 +72,30 @@ function describe(c: Context): string {
   return `${c.req.method} ${new URL(c.req.url).pathname}`
 }
 
+/** An error and its causes, one per line, for the Worker log. */
+function causes(error: unknown): string {
+  const lines: string[] = []
+  for (let e: unknown = error; e !== undefined && lines.length < 5; ) {
+    lines.push(e instanceof Error ? `${e.name}: ${e.message}` : String(e))
+    e = e instanceof Error ? e.cause : undefined
+  }
+  return lines.join('\n  caused by ')
+}
+
 export function registerProblemHandlers<E extends HonoEnv>(app: Hono<E>): void {
   app.notFound(() => problem(404, 'Not Found'))
   app.onError((error, c) => {
     if (error instanceof ProblemError) return problem(error.status, error.detail, error.headers)
     if (error instanceof UpstreamError) {
-      console.warn(`Upstream failure on ${describe(c)}`, error)
+      console.warn(`Upstream failure on ${describe(c)}`, causes(error))
       return problem(502, 'A drug data source is unavailable. Try again later.')
     }
     if (error instanceof JudgeError) {
-      console.warn(`Jev failure on ${describe(c)}`, error)
+      console.warn(`Jev failure on ${describe(c)}`, causes(error))
       return problem(503, 'Answers are unavailable right now. Try again later.')
     }
     // Log the real cause server-side; never send it to the client.
-    console.error(`Unhandled exception on ${describe(c)}`, error)
+    console.error(`Unhandled exception on ${describe(c)}`, causes(error), error)
     return problem(500, 'An unexpected error occurred.')
   })
 }

@@ -29,7 +29,8 @@ export async function get(
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     })
   } catch (cause) {
-    throw new UpstreamError(what, { cause })
+    const reason = cause instanceof Error ? cause.message : String(cause)
+    throw new UpstreamError(`${what}: ${reason}`, { cause })
   }
 }
 
@@ -44,9 +45,11 @@ export async function parseBody<S extends z.ZodType>(
   try {
     body = await response.json()
   } catch (cause) {
-    throw new UpstreamError(what, { cause })
+    throw new UpstreamError(`${what}: the body is not JSON`, { cause })
   }
   const parsed = schema.safeParse(body)
-  if (!parsed.success) throw new UpstreamError(what, { cause: parsed.error })
+  if (!parsed.success) {
+    throw new UpstreamError(`${what}: unexpected payload`, { cause: parsed.error })
+  }
   return parsed.data
 }

@@ -77,7 +77,11 @@ function jsonFiles(directory: string): string[] {
  * closes once adding the next row would pass `batchChars` of sentence text. Returns the
  * number of batches written.
  */
-export function writePacketBatches(directory: string, items: BatchItem[], batchChars: number): number {
+export function writePacketBatches(
+  directory: string,
+  items: BatchItem[],
+  batchChars: number,
+): number {
   mkdirSync(directory, { recursive: true })
   for (const old of jsonFiles(directory)) rmSync(join(directory, old))
 
@@ -94,7 +98,10 @@ export function writePacketBatches(directory: string, items: BatchItem[], batchC
     size += chars
   }
   batches.forEach((batch, n) => {
-    writeFileSync(join(directory, `${String(n + 1).padStart(3, '0')}.json`), JSON.stringify(batch, null, 1))
+    writeFileSync(
+      join(directory, `${String(n + 1).padStart(3, '0')}.json`),
+      JSON.stringify(batch, null, 1),
+    )
   })
   return batches.length
 }
@@ -130,7 +137,9 @@ export function loadCandidateIds(directory: string, rowIds: string[]): Map<strin
 /** Every grade in the folder's JSON batch files, in file order. */
 export function readGrades(directory: string): Grade[] {
   return jsonFiles(directory).flatMap((name) => {
-    const parsed = z.array(GradeSchema).safeParse(JSON.parse(readFileSync(join(directory, name), 'utf8')))
+    const parsed = z
+      .array(GradeSchema)
+      .safeParse(JSON.parse(readFileSync(join(directory, name), 'utf8')))
     if (!parsed.success) throw new Error(`Bad grade in ${name}: ${parsed.error.message}`)
     return parsed.data
   })
@@ -163,7 +172,14 @@ export function compare(
   return rows.map((row) => {
     const grade = byRow.get(row.row_id)
     if (grade === undefined) {
-      return { row, grade: null, graded: false, stance_agrees: false, evidence: null, needs_human: true }
+      return {
+        row,
+        grade: null,
+        graded: false,
+        stance_agrees: false,
+        evidence: null,
+        needs_human: true,
+      }
     }
     const stanceAgrees = grade.stance === row.stance
     const evidence = evidenceMatch(row.evidence, grade.evidence)

@@ -79,7 +79,11 @@ export type ImportCheck = {
 }
 
 /** Confirms that every source run is found for its label in D1, with the same judgments. */
-export async function checkImport(source: SourceDb, target: Db, model?: string): Promise<ImportCheck> {
+export async function checkImport(
+  source: SourceDb,
+  target: Db,
+  model?: string,
+): Promise<ImportCheck> {
   const store = new Store(target)
   const problems: string[] = []
   const runRows = await source.select().from(judgeRuns)
@@ -94,7 +98,9 @@ export async function checkImport(source: SourceDb, target: Db, model?: string):
     if (found === null) problems.push(`run ${run.id}: not found for its label`)
     else if (found.id !== run.id) problems.push(`run ${run.id}: found run ${found.id} instead`)
     else if (Object.keys(found.judgments).length !== expected.length) {
-      problems.push(`run ${run.id}: ${Object.keys(found.judgments).length} of ${expected.length} judgments`)
+      problems.push(
+        `run ${run.id}: ${Object.keys(found.judgments).length} of ${expected.length} judgments`,
+      )
     }
   }
 

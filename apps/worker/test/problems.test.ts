@@ -1,7 +1,13 @@
 import { Hono } from 'hono'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
-import { PROBLEM_JSON, ProblemError, parseOr422, registerProblemHandlers } from '../src/problems.ts'
+import {
+  PROBLEM_JSON,
+  ProblemError,
+  parseOr422,
+  registerProblemHandlers,
+  UpstreamError,
+} from '../src/problems.ts'
 
 function app(): Hono {
   const hono = new Hono()
@@ -14,6 +20,11 @@ function app(): Hono {
   })
   hono.get('/slow-down', () => {
     throw new ProblemError(429, 'Too many.', { 'Retry-After': '30' })
+  })
+  hono.get('/upstream', () => {
+    throw new UpstreamError('openFDA label search failed', {
+      cause: new Error('Network connection lost.'),
+    })
   })
   hono.get('/needs-int', (c) => {
     const { n } = parseOr422(z.object({ n: z.coerce.number().int() }), c.req.query(), 'query')
@@ -65,5 +76,15 @@ describe('Problem Details', () => {
     expect(response.status).toBe(422)
     expect(response.headers.get('content-type')).toBe(PROBLEM_JSON)
     expect(((await response.json()) as { detail: string }).detail).toBe('Invalid request: query.n')
+  })
+
+  it('logs the cause of an upstream failure but never sends it', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const response = await app().request('/upstream')
+
+    expect(response.status).toBe(502)
+    expect(await response.text()).not.toContain('Network connection lost')
+    expect(warn.mock.calls.flat().join(' ')).toContain('Network connection lost.')
+    warn.mockRestore()
   })
 })

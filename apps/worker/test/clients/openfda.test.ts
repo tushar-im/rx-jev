@@ -169,6 +169,24 @@ describe('OpenFdaClient', () => {
     await expect(openfda.canonicalLabels(['ibuprofen'])).rejects.toBeInstanceOf(UpstreamError)
   })
 
+  it('names the cause of a network failure, so the log says why', async () => {
+    const openfda = makeClient(() => {
+      throw new TypeError('Network connection lost.')
+    })
+
+    await expect(openfda.canonicalLabels(['ibuprofen'])).rejects.toThrow(
+      'openFDA label search failed: Network connection lost.',
+    )
+  })
+
+  it('names the status of an HTTP failure', async () => {
+    const openfda = makeClient(() => new Response('denied', { status: 403 }))
+
+    await expect(openfda.canonicalLabels(['ibuprofen'])).rejects.toThrow(
+      'openFDA label search failed: HTTP 403',
+    )
+  })
+
   it('raises UpstreamError on a malformed payload', async () => {
     const openfda = makeClient(() => json(200, { results: [{ set_id: 5 }] }))
 

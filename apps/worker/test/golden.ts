@@ -12,9 +12,9 @@ import {
 } from '../src/judge.ts'
 import { splitSection } from '../src/sentences.ts'
 
-// Checks the TypeScript request builder against golden files written by Python
-// (apps/api/scripts/write_golden.py). Stored judgments are keyed by prompt hash, so any
-// difference would re-judge stored labels.
+// Checks the TypeScript request builder against golden files written by the retired Python
+// app (scripts/write_golden.py, removed in M6.11 and kept in the Git history). Stored
+// judgments are keyed by prompt hash, so any difference would re-judge stored labels.
 
 type RequestGolden = {
   prompt_hash: string

@@ -56,13 +56,13 @@ Avoid these on camera:
 
 ## Before recording
 
-1. **Run the app on `main` with the existing `apps/api/rx_jev.db`:** `make -j2 dev`. Do not delete or move the database.
+1. **Run the app on `main` with the local D1 that holds the imported store:** `make -j2 dev`. Do not delete `apps/worker/.wrangler/state`, which holds it.
 2. **Do one full dry run of every beat.**
    - If openFDA has published a newer label version since 2026-09-24, the dry run absorbs the re-judge (about 11K tokens for Tylenol PM, 42K for Wellbutrin) and stores it, so the recording stays fast.
    - Check that each card still matches the table above.
 3. **Custom questions call Jev on every take (about 2.1K tokens each).**
    - The limit is 5 asks a minute and 50 a day per client. Pace the retakes.
-   - Or set `ASK_PER_MINUTE=20` in `apps/api/.env` for the session, and remove it afterwards.
+   - Or set `ASK_PER_MINUTE=20` in `apps/worker/.dev.vars` for the session, and remove it afterwards.
 4. **Browser:** use a clean profile, one tab and no bookmarks bar. Set the window to 1600x900 at 100% zoom, so all three columns show. Keep the panel open, and pick light or dark mode and keep it for every take.
 5. **Record and edit.** Record at 60 fps. In the edit:
    - Cut the openFDA and Jev waits.

@@ -14,8 +14,6 @@ not say whether a drug is right for you. Ask a pharmacist or doctor.
 
 - Node 24 and npm
 - A TypeSafe API key from [console.typesafe.ai](https://console.typesafe.ai/)
-- Python 3.13 and [uv](https://docs.astral.sh/uv/), only for the Python reference app and the
-  golden files, until the M6 cutover
 
 ## Setup
 
@@ -30,7 +28,7 @@ TYPESAFE_API_KEY=...
 OPENFDA_API_KEY=...
 ```
 
-Create the local D1 database and import the judgment store:
+Create the local D1 database:
 
 ```bash
 make db-local
@@ -65,10 +63,9 @@ See [docs/deploy-cloudflare.md](docs/deploy-cloudflare.md).
 apps/
   worker/   API Worker: Hono, Drizzle on D1, KV, Durable Objects, TypeSafe Jev
   web/      Vite + React app, and the web Worker that serves it
-  api/      Python FastAPI app, the reference until the M6 cutover
 packages/
   contract/ zod schemas of the API, shared by both apps
-fixtures/   recorded RxNorm and openFDA responses, golden files
+fixtures/   recorded RxNorm and openFDA responses, golden files from the retired Python app
 PLAN.md     product, architecture, milestones
 CLAUDE.md   rules for AI coding agents working in this repo
 ```

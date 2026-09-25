@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    // The API Worker from `make dev-worker`; API_URL=http://127.0.0.1:8000 for the Python API.
+    // The API Worker from `make dev-worker`, unless API_URL points elsewhere.
     proxy: {
       '/api': process.env.API_URL ?? 'http://127.0.0.1:8787',
     },

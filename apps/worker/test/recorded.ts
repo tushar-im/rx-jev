@@ -51,7 +51,8 @@ async function sha1(text: string): Promise<string> {
 type Envelope = { status: number; body: unknown }
 
 export function openfdaFetch(): Fetch {
-  // Names match apps/api/scripts/record_openfda.py.
+  // Each fixture is named by the first 12 hex digits of the SHA-1 of `search|skip|limit`,
+  // as the retired Python recorder named them.
   return mockFetch(async (url) => {
     const p = url.searchParams
     const key = `${p.get('search')}|${p.get('skip')}|${p.get('limit')}`

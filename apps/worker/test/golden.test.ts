@@ -1,6 +1,7 @@
 import { describe, it } from 'vitest'
 import { type GoldenFile, checkLabel, checkShortlist } from './golden.ts'
-// Written by apps/api/scripts/write_golden.py from the recorded fixtures.
+// Written from the recorded fixtures by the retired Python app (scripts/write_golden.py,
+// removed in M6.11 and kept in the Git history).
 import golden from '../../../fixtures/golden/fixtures.json'
 
 const file = golden as unknown as GoldenFile

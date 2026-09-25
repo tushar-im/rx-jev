@@ -23,7 +23,7 @@ Run every command from the repository root unless a step says otherwise. Steps 1
 
 - **A Cloudflare account on the Workers Paid plan ($5 a month).** The Free plan allows 10 ms of CPU per request. Building the Jev request for a long label and splitting it into sentences takes longer than that.
 - **Your TypeSafe API key, and an openFDA API key.** The openFDA key is optional but recommended; get one at https://open.fda.gov/apis/authentication/.
-- **`apps/api/rx_jev.db`**, the store to import.
+- **Optional: a judgment store (`rx_jev.db`) from the retired Python app**, to import. Without one, each label is judged the first time someone opens it.
 - **`npm install` done.**
 
 ## 1. Log in to Cloudflare
@@ -78,15 +78,21 @@ the existing `CACHE` entry under `kv_namespaces`:
 There should be one `d1_databases` entry and one `kv_namespaces` entry. Commit both IDs. They
 are not secrets.
 
-Local development keys its D1 by the ID, so run `make db-local` once more after adding it.
+Local development keys its D1 by the ID, so run `make db-local` once more after adding it, with `STORE=path/to/rx_jev.db` if you import a store.
 
-## 4. Create the tables and import the store
+## 4. Create the tables, and import a store
 
 ```bash
 make db-remote
 ```
 
-This applies the D1 migrations, then copies `apps/api/rx_jev.db` into D1, keeping every ID. Then it checks each run. Expect this output:
+This applies the D1 migrations. To also copy a store from the retired Python app into D1, keeping every ID, name it:
+
+```bash
+make db-remote STORE=path/to/rx_jev.db
+```
+
+The import then checks each run. For the store rxjev.cc launched with, expect this output:
 
 ```
 141/141 runs found for their label.
@@ -200,7 +206,7 @@ The first search suggestion after a deploy can take about 10 seconds: RxNorm's n
 
 ## 12. Cutover
 
-When the smoke test passes, tell Claude to finish M6.11: remove `apps/api` and update CLAUDE.md, the Makefile and the README for the TypeScript stack. The Python app stays the reference until then.
+Done in M6.11: once the deployed smoke test passed, the Python app in `apps/api` was removed. It stays in the Git history.
 
 ## Optional: keep the site private with Cloudflare Access
 

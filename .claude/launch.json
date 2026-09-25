@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "api",
+      "name": "worker",
       "runtimeExecutable": "make",
-      "runtimeArgs": ["dev-api"],
-      "port": 8000
+      "runtimeArgs": ["dev-worker"],
+      "port": 8787
     },
     {
       "name": "web",

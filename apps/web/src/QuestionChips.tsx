@@ -1,14 +1,6 @@
 import { useId } from 'react'
-import { GROUPS, type Answer, type Group } from './api.ts'
-import { hasClearAnswer, visibleAnswers } from './questions.ts'
-
-const GROUP_TITLES: Record<Group, string> = {
-  who: 'Who is taking it',
-  conditions: 'Health conditions',
-  combinations: 'Taken with',
-  daily_life: 'Daily life',
-  serious: 'Serious warnings',
-}
+import { type Answer, GROUPS } from './api.ts'
+import { GROUP_TITLES, hasClearAnswer, visibleAnswers } from './questions.ts'
 
 type Props = {
   answers: Answer[]

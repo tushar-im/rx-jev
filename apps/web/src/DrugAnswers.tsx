@@ -10,6 +10,7 @@ import {
   type ResolvedDrug,
 } from './api.ts'
 import { PRODUCT_TYPE_TEXT } from './format.ts'
+import { LabelOverview } from './LabelOverview.tsx'
 import { QuestionChips } from './QuestionChips.tsx'
 import { hasClearAnswer, visibleAnswers } from './questions.ts'
 import { type Focus, type Session, TraceDetails } from './TracePanel.tsx'
@@ -79,16 +80,11 @@ export function DrugAnswers({ drug, chipsSlot, panelSlot, onUsage }: Props): Rea
   const label = labels[labelIndex] ?? labels[0]
   if (!label) return <p role="alert">No FDA label found for this drug.</p>
   const answer = label.answers.find((a) => a.question_id === questionId)
-  const chips = (
-    <QuestionChips
-      answers={label.answers}
-      selected={questionId}
-      onSelect={(id) => {
-        setQuestionId(id)
-        setCustomFocus(false)
-      }}
-    />
-  )
+  function pick(id: string): void {
+    setQuestionId(id)
+    setCustomFocus(false)
+  }
+  const chips = <QuestionChips answers={label.answers} selected={questionId} onSelect={pick} />
   const focus: Focus | null =
     customFocus && custom
       ? { kind: 'custom', data: custom }
@@ -166,9 +162,12 @@ export function DrugAnswers({ drug, chipsSlot, panelSlot, onUsage }: Props): Rea
               </button>
             </p>
           )}
+          <button type="button" className="link-button back" onClick={() => setQuestionId(null)}>
+            Back to the label overview
+          </button>
         </div>
       ) : (
-        <p className="hint">Pick a question to see what the label says.</p>
+        <LabelOverview label={label} onPick={pick} />
       )}
       <CustomQuestion
         key={label.set_id}

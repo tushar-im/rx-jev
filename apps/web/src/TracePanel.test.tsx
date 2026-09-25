@@ -106,6 +106,18 @@ describe('HowItWorks', () => {
     expect(document.body.textContent).not.toMatch(/0 openFDA searches/i)
   })
 
+  it('says when openFDA did not answer and an older lookup stood in', () => {
+    const sources = sourceTrace({
+      openfda_stale: true,
+      openfda_requests: 3,
+      openfda_fetched_at: '2026-08-20T10:00:00.000Z',
+    })
+    render(<TraceDetails sources={sources} label={labelAnswers()} focus={null} />)
+
+    expect(screen.getByText(/openFDA did not answer/i)).toHaveTextContent('Aug 20, 2026')
+    expect(document.body.textContent).not.toMatch(/last 24 hours/i)
+  })
+
   it('keeps a stored run visible when its token count is unknown', () => {
     const label = labelAnswers({ input_tokens: null, output_tokens: null })
     render(<TraceDetails sources={sourceTrace()} label={label} focus={null} />)

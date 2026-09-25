@@ -117,6 +117,8 @@ export function sourceTrace(overrides: Partial<SourceTrace> = {}): SourceTrace {
     openfda_ms: 820,
     openfda_requests: 2,
     openfda_cached: false,
+    openfda_stale: false,
+    openfda_fetched_at: null,
     matches: {
       otc: { total: 831, original_packager: true },
       prescription: { total: 47, original_packager: true },

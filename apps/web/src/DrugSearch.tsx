@@ -1,11 +1,14 @@
 import { suggest } from '@rx-jev/contract/suggest'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useId, useRef, useState } from 'react'
 import { ApiError, fetchSuggestions, resolveDrug, type ResolvedDrug } from './api.ts'
 
 const MIN_QUERY = 2
 const UNAVAILABLE = 'Search is unavailable right now. Try again later.'
 
 type Suggested = { query: string; names: string[] }
+
+// A name chosen outside the search, such as on the home page; `id` tells repeats apart.
+export type PickedName = { name: string; id: number }
 
 type Props = {
   onResolved: (drug: ResolvedDrug) => void
@@ -15,6 +18,8 @@ type Props = {
   // RxNorm's name list for matching suggestions locally; null when it cannot load, and then
   // suggestions come from the API.
   loadNames?: () => Promise<readonly string[] | null>
+  // Looked up as if chosen here, each time a new one arrives.
+  pick?: PickedName | null
 }
 
 // A combobox over RxNorm names. Choosing a suggestion, or submitting typed text, resolves
@@ -24,6 +29,7 @@ export function DrugSearch({
   onLookupStart,
   debounceMs = 200,
   loadNames,
+  pick,
 }: Props): React.JSX.Element {
   const id = useId()
   const listId = `${id}-list`
@@ -73,6 +79,19 @@ export function DrugSearch({
       controller.abort()
     }
   }, [query, text, chosen, debounceMs, localNames])
+
+  const choosePick = useEffectEvent((name: string) => choose(name))
+  useEffect(() => {
+    if (pick) choosePick(pick.name)
+  }, [pick])
+
+  // A lookup still running when the search goes away must not report a drug.
+  useEffect(
+    () => () => {
+      lookup.current++
+    },
+    [],
+  )
 
   function onType(value: string): void {
     setText(value)

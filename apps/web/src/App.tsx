@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { fetchHealth, type ResolvedDrug } from './api.ts'
 import { DrugAnswers } from './DrugAnswers.tsx'
-import { DrugSearch } from './DrugSearch.tsx'
+import { DrugSearch, type PickedName } from './DrugSearch.tsx'
+import { DrugSphere } from './DrugSphere.tsx'
+import { FEATURED_DRUGS } from './featured.ts'
 import { loadDrugNames } from './names.ts'
 import { HowItWorks, type Session, SessionTotals } from './TracePanel.tsx'
 
@@ -16,6 +18,10 @@ export function App(): React.JSX.Element {
   const [chipsSlot, setChipsSlot] = useState<HTMLElement | null>(null)
   const [panelSlot, setPanelSlot] = useState<HTMLElement | null>(null)
   const [session, setSession] = useState<Session>(NO_USAGE)
+  // A drug picked on the home page, handed to the search to look up.
+  const [pick, setPick] = useState<PickedName | null>(null)
+  // Bumped by Home to give a fresh, empty search; any lookup in flight is dropped with it.
+  const [searchKey, setSearchKey] = useState(0)
 
   useEffect(() => {
     fetchHealth()
@@ -31,6 +37,16 @@ export function App(): React.JSX.Element {
     }))
   }
 
+  function goHome(): void {
+    setDrug(null)
+    setPick(null)
+    setSearchKey((k) => k + 1)
+  }
+
+  function pickDrug(name: string): void {
+    setPick((p) => ({ name, id: (p?.id ?? 0) + 1 }))
+  }
+
   return (
     <div className="app">
       <div role="note" aria-label="Caution" className="demo-caution">
@@ -38,8 +54,30 @@ export function App(): React.JSX.Element {
         no pharmacist has checked them, so an answer can be incomplete or wrong.
       </div>
       <aside className="sidebar" aria-label="Search and questions">
-        <h1 className="brand">rx-jev</h1>
+        <div className="brand-row">
+          <h1 className="brand">rx-jev</h1>
+          <button
+            type="button"
+            className="home-button"
+            aria-label="Home"
+            title="Home"
+            onClick={goHome}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+              <path
+                d="M3 11 12 4l9 7M5 10v10h5v-6h4v6h5V10"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
         <DrugSearch
+          key={searchKey}
+          pick={pick}
           onResolved={setDrug}
           onLookupStart={() => setDrug(null)}
           loadNames={loadDrugNames}
@@ -59,9 +97,12 @@ export function App(): React.JSX.Element {
             />
           </section>
         ) : (
-          <p className="invite">
-            Search for a drug to see what its label says. Pick a question, or ask your own.
-          </p>
+          <>
+            <p className="invite">
+              Search for a drug to see what its label says. Pick a question, or ask your own.
+            </p>
+            <DrugSphere names={FEATURED_DRUGS} onPick={pickDrug} />
+          </>
         )}
       </main>
       <aside className="panel" aria-label="How this answer was made">

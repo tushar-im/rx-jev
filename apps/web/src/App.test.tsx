@@ -1,7 +1,14 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App.tsx'
 import { askResponse, labelAnswers, sourceTrace } from './testing.ts'
+
+// The home page shows a random pick of drugs; tests fix it, and count the picks.
+const sample = vi.hoisted(() => vi.fn((): readonly string[] => ['ibuprofen', 'naproxen']))
+vi.mock('./featured.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./featured.ts')>()),
+  sampleDrugs: sample,
+}))
 
 function mockFetch(status: number, body: unknown): void {
   vi.stubGlobal(
@@ -126,6 +133,127 @@ describe('App', () => {
     expect(
       within(screen.getByRole('main')).getByText(/search for a drug to see what its label says/i),
     ).toBeInTheDocument()
+  })
+
+  it('shows drugs to try on the home page', () => {
+    mockFetch(200, { status: 'ok' })
+    render(<App />)
+    const list = within(screen.getByRole('main')).getByRole('list', { name: 'Drugs to try' })
+
+    expect(within(list).getByRole('button', { name: 'ibuprofen' })).toBeInTheDocument()
+  })
+
+  it('looks up a drug picked from the home page', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input), 'http://localhost')
+        const body =
+          url.pathname === '/api/drugs/resolve' && url.searchParams.get('name') === 'ibuprofen'
+            ? {
+                query: 'ibuprofen',
+                rxcui: '5640',
+                ingredients: [{ rxcui: '5640', name: 'ibuprofen' }],
+              }
+            : { status: 'ok' }
+        return new Response(JSON.stringify(body), { status: 200 })
+      }),
+    )
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'ibuprofen' }))
+
+    expect(await screen.findByRole('heading', { name: 'ibuprofen' })).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: /drug name/i })).toHaveValue('ibuprofen')
+    expect(screen.queryByRole('list', { name: 'Drugs to try' })).not.toBeInTheDocument()
+  })
+
+  it('goes back to the home page from the Home button beside the brand', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const path = new URL(String(input), 'http://localhost').pathname
+        const body =
+          path === '/api/drugs/resolve'
+            ? { query: 'Advil', rxcui: '5640', ingredients: [{ rxcui: '5640', name: 'ibuprofen' }] }
+            : path === '/api/drugs/suggestions'
+              ? { query: 'Advil', names: [] }
+              : { status: 'ok' }
+        return new Response(JSON.stringify(body), { status: 200 })
+      }),
+    )
+    render(<App />)
+    const input = screen.getByRole('combobox', { name: /drug name/i })
+    fireEvent.change(input, { target: { value: 'Advil' } })
+    fireEvent.submit(screen.getByRole('search'))
+    expect(await screen.findByRole('heading', { name: 'ibuprofen' })).toBeInTheDocument()
+
+    const sidebar = screen.getByRole('complementary', { name: 'Search and questions' })
+    fireEvent.click(within(sidebar).getByRole('button', { name: 'Home' }))
+
+    expect(screen.queryByRole('heading', { name: 'ibuprofen' })).not.toBeInTheDocument()
+    expect(screen.getByRole('list', { name: 'Drugs to try' })).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: /drug name/i })).toHaveValue('')
+  })
+
+  it('shows a fresh pick of drugs each time Home is pressed', () => {
+    mockFetch(200, { status: 'ok' })
+    sample.mockReturnValueOnce(['ibuprofen', 'naproxen']).mockReturnValueOnce(['aspirin'])
+    render(<App />)
+    expect(screen.getByRole('button', { name: 'naproxen' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Home' }))
+
+    const list = screen.getByRole('list', { name: 'Drugs to try' })
+    expect(
+      within(list)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['aspirin'])
+  })
+
+  it('stays home when a lookup started before Home finishes afterwards', async () => {
+    let finish: (() => void) | undefined
+    // Set once the late lookup's body has been read; after that only its handlers remain.
+    let read = false
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const path = new URL(String(input), 'http://localhost').pathname
+        if (path === '/api/drugs/resolve') {
+          await new Promise<void>((resolve) => {
+            finish = resolve
+          })
+          const response = new Response(
+            JSON.stringify({
+              query: 'ibuprofen',
+              rxcui: '5640',
+              ingredients: [{ rxcui: '5640', name: 'ibuprofen' }],
+            }),
+          )
+          const json = response.json.bind(response)
+          response.json = async () => {
+            const body: unknown = await json()
+            read = true
+            return body
+          }
+          return response
+        }
+        return new Response(JSON.stringify({ status: 'ok' }))
+      }),
+    )
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: 'ibuprofen' }))
+    await waitFor(() => expect(finish).toBeDefined())
+    fireEvent.click(screen.getByRole('button', { name: 'Home' }))
+    finish?.()
+
+    await waitFor(() => expect(read).toBe(true))
+    // A macrotask, so every promise handler of the late lookup has run.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(screen.queryByRole('heading', { name: 'ibuprofen' })).not.toBeInTheDocument()
+    expect(screen.getByRole('list', { name: 'Drugs to try' })).toBeInTheDocument()
   })
 
   it('lists the questions in the sidebar and answers in the main area', async () => {

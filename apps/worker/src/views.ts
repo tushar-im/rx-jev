@@ -8,7 +8,7 @@ import {
   StanceViewSchema,
 } from '@rx-jev/contract'
 import type { JudgedLabel } from './answering.ts'
-import { CATALOG, type Question } from './catalog.ts'
+import { CATALOG, labelFormat, type Question } from './catalog.ts'
 import type { Label } from './clients/openfda.ts'
 import { type Distribution, NONE, questionKey } from './judge.ts'
 import { isBlank } from './python.ts'
@@ -42,13 +42,20 @@ function section(label: Label, ...sections: string[]): LabelText | null {
   return null
 }
 
-/** The label sections shown before a question is picked. */
+/**
+ * The label sections shown before a question is picked. OTC sections are shown by the
+ * label's layout, as the catalog reads it, since some labels marked prescription use the
+ * OTC Drug Facts layout.
+ */
 export function labelOverview(label: Label): LabelOverview {
+  const otc = labelFormat(label) === 'otc'
   return {
     boxed_warning: section(label, 'boxed_warning'),
-    purpose: section(label, 'purpose'),
+    purpose: otc ? section(label, 'purpose') : null,
     uses: section(label, 'indications_and_usage'),
-    strengths: section(label, 'dosage_forms_and_strengths', 'active_ingredient'),
+    strengths: otc
+      ? section(label, 'active_ingredient')
+      : section(label, 'dosage_forms_and_strengths'),
   }
 }
 

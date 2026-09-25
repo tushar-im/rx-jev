@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { STANCES } from './api.ts'
 import { LabelOverview } from './LabelOverview.tsx'
-import { answer, labelAnswers } from './testing.ts'
+import { answer, labelAnswers, labelOverview } from './testing.ts'
 
 const BOXED = `WARNING: SUICIDAL THOUGHTS AND BEHAVIORS ${'Antidepressants increased the risk. '.repeat(40)}`
 
@@ -45,6 +45,49 @@ describe('LabelOverview', () => {
       'aria-expanded',
       'true',
     )
+  })
+
+  it('starts every section of another label collapsed', () => {
+    const longUses = (setId: string) =>
+      labelAnswers({
+        set_id: setId,
+        overview: {
+          ...labelOverview(),
+          uses: { section: 'indications_and_usage', text: `${setId} ${'Uses. '.repeat(150)}` },
+        },
+      })
+    const { rerender } = render(<LabelOverview label={longUses('otc-set')} onPick={vi.fn()} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Show all' }))
+    expect(screen.getByRole('button', { name: 'Show less' })).toBeInTheDocument()
+
+    // The other label has the same section in the same place.
+    rerender(<LabelOverview label={longUses('rx-set')} onPick={vi.fn()} />)
+
+    expect(screen.getByRole('button', { name: 'Show all' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+    expect(screen.queryByRole('button', { name: 'Show less' })).toBeNull()
+  })
+
+  it('renders section text exactly as the label has it', () => {
+    const text = '  Purpose\nPain reliever  '
+    const label = labelAnswers({
+      overview: { ...labelOverview(), purpose: { section: 'purpose', text } },
+    })
+    render(<LabelOverview label={label} onPick={vi.fn()} />)
+
+    expect(screen.getByRole('heading', { name: 'Purpose' }).nextElementSibling?.textContent).toBe(
+      text,
+    )
+  })
+
+  it('shows the grid alone when the API sends no overview', () => {
+    const { overview: _overview, ...label } = labelAnswers()
+    render(<LabelOverview label={label} onPick={vi.fn()} />)
+
+    expect(screen.getByRole('region', { name: 'At a glance' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Purpose' })).toBeNull()
   })
 
   it('quotes the uses and strengths under their section names', () => {

@@ -170,7 +170,8 @@ export const LabelAnswersSchema = LabelInfoSchema.extend({
     .nullable(),
   // True when this request judged the label; false when it came from the store.
   fresh: z.boolean(),
-  overview: LabelOverviewSchema,
+  // Always sent by the Worker; absent from the Python reference API until the cutover.
+  overview: LabelOverviewSchema.optional(),
   answers: z.array(AnswerSchema),
 })
 export type LabelAnswers = z.infer<typeof LabelAnswersSchema>

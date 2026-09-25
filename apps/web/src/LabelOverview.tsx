@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { GROUPS, type LabelAnswers, type LabelText } from './api.ts'
+import { GROUPS, type LabelAnswers, type LabelOverview, type LabelText } from './api.ts'
 import { PRODUCT_TYPE_TEXT } from './format.ts'
 import { GROUP_TITLES, hasClearAnswer, visibleAnswers } from './questions.ts'
 
@@ -19,6 +19,13 @@ const SECTION_NAMES: Record<string, string> = {
 // Sections longer than this start collapsed; the full text stays on the page.
 const LONG_CHARS = 600
 
+const NO_OVERVIEW: LabelOverview = {
+  boxed_warning: null,
+  purpose: null,
+  uses: null,
+  strengths: null,
+}
+
 const DATE = new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeZone: 'UTC' })
 
 type Props = {
@@ -27,7 +34,10 @@ type Props = {
 }
 
 export function LabelOverview({ label, onPick }: Props): React.JSX.Element {
-  const { boxed_warning, purpose, uses, strengths } = label.overview
+  // The Python reference API sends no overview; then only the grid is shown.
+  const { boxed_warning, purpose, uses, strengths } = label.overview ?? NO_OVERVIEW
+  // Keyed by label and section, so another label's sections always start collapsed.
+  const key = (text: LabelText): string => `${label.set_id}:${text.section}`
   return (
     <div className="label-overview">
       <p className="overview-source">
@@ -38,10 +48,10 @@ export function LabelOverview({ label, onPick }: Props): React.JSX.Element {
           Read the full label on DailyMed
         </a>
       </p>
-      {boxed_warning && <LabelSection text={boxed_warning} boxed />}
-      {purpose && <LabelSection text={purpose} />}
-      {uses && <LabelSection text={uses} />}
-      {strengths && <LabelSection text={strengths} />}
+      {boxed_warning && <LabelSection key={key(boxed_warning)} text={boxed_warning} boxed />}
+      {purpose && <LabelSection key={key(purpose)} text={purpose} />}
+      {uses && <LabelSection key={key(uses)} text={uses} />}
+      {strengths && <LabelSection key={key(strengths)} text={strengths} />}
       <AtAGlance label={label} onPick={onPick} />
     </div>
   )
@@ -62,7 +72,7 @@ function LabelSection({
     <>
       <h3>{name}</h3>
       <p id={textId} className="label-text" data-collapsed={long && !expanded}>
-        {text.text.trim()}
+        {text.text}
       </p>
       {long && (
         <button
@@ -107,7 +117,7 @@ function AtAGlance({ label, onPick }: Props): React.JSX.Element {
                 // warning, when the label has one, is already quoted in full above.
                 const clear = hasClearAnswer(a)
                 const above =
-                  a.question_id === 'boxed_warning' && label.overview.boxed_warning !== null
+                  a.question_id === 'boxed_warning' && Boolean(label.overview?.boxed_warning)
                 const status = above ? 'Shown above' : clear ? 'Clear answer' : 'No clear answer'
                 return (
                   <li key={a.question_id}>

@@ -7,7 +7,7 @@ import { buildRequest, MAX_CHOICE_OPTIONS, NONE } from '../src/judge.ts'
 import { PROBLEM_JSON } from '../src/problems.ts'
 import { IBUPROFEN, METFORMIN, OneLabel, runs, type TestOverrides, testApp } from './helpers.ts'
 import { FakeJev, MODEL_VERSION } from './jev.ts'
-import { ibuprofenOtc, longText, metforminRx } from './labels.ts'
+import { ibuprofenOtc, labelWith, longText, metforminRx } from './labels.ts'
 
 type AnswerBody = {
   question_id: string
@@ -394,6 +394,41 @@ describe('the label overview', () => {
       purpose: { section: 'purpose', text: label.sections.purpose },
       uses: { section: 'indications_and_usage', text: label.sections.indications_and_usage },
       strengths: { section: 'active_ingredient', text: label.sections.active_ingredient },
+    })
+  })
+
+  it('shows OTC sections only on labels with the OTC layout', async () => {
+    // Prescription layout: no Drug Facts sections, so purpose and active ingredient are not
+    // its overview even if present.
+    const label = labelWith(
+      { purpose: 'Purpose X', active_ingredient: 'Active Y', indications_and_usage: 'Uses Z' },
+      'prescription',
+    )
+    const served = await firstLabel(METFORMIN, { jev: new FakeJev(), openfda: new OneLabel(label) })
+
+    expect(served.overview).toEqual({
+      boxed_warning: null,
+      purpose: null,
+      uses: { section: 'indications_and_usage', text: 'Uses Z' },
+      strengths: null,
+    })
+  })
+
+  it('reads a prescription label with the OTC layout as OTC, as the catalog does', async () => {
+    const label = labelWith(
+      {
+        do_not_use: 'Do not use if allergic.',
+        purpose: 'Purpose Antihistamine',
+        active_ingredient: 'Active ingredient Loratadine 10 mg',
+        dosage_forms_and_strengths: '3 DOSAGE FORMS AND STRENGTHS Tablets.',
+      },
+      'prescription',
+    )
+    const served = await firstLabel(METFORMIN, { jev: new FakeJev(), openfda: new OneLabel(label) })
+
+    expect(served.overview).toMatchObject({
+      purpose: { section: 'purpose', text: 'Purpose Antihistamine' },
+      strengths: { section: 'active_ingredient', text: 'Active ingredient Loratadine 10 mg' },
     })
   })
 

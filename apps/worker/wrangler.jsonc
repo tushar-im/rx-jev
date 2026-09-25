@@ -9,8 +9,10 @@
   "workers_dev": false,
   "preview_urls": false,
   "observability": { "enabled": true },
-  // Run next to openFDA: from far-away Cloudflare locations its searches often stall.
-  "placement": { "mode": "targeted", "hostname": "api.fda.gov" },
+  // Run next to openFDA, which is hosted in AWS GovCloud in Oregon: from far-away Cloudflare
+  // locations its searches often stall. Targeting the hostname left the Worker where the
+  // visitor is (cf-placement: local-BOM), so the nearest public AWS region is pinned instead.
+  "placement": { "mode": "targeted", "region": "aws:us-west-2" },
   "d1_databases": [
     {
       "binding": "DB",

@@ -6,9 +6,11 @@ import type { RxNormClient } from './clients/rxnorm.ts'
 import type { Db } from './db/index.ts'
 import { openfdaCache } from './db/schema.ts'
 import type { Http } from './http.ts'
+import { UpstreamError } from './problems.ts'
 
 // Caches for slow-changing upstream data. openFDA takes 4 to 8 seconds to find a drug's
-// canonical labels, and labels change a few times a year, so a lookup is reused for a day.
+// canonical labels, and labels change a few times a year, so a lookup is reused for a day,
+// and an older one is served when openFDA fails.
 // RxNorm's name list for suggestions is refreshed daily by a Cron Trigger.
 
 export const CACHE_MS = 86_400_000
@@ -19,7 +21,10 @@ const CachedLookup = z.object({
   matches: z.partialRecord(z.enum(['otc', 'prescription']), LabelMatchSchema),
 })
 
-/** openFDA with lookups kept in D1 for 24 hours. A failed lookup is never kept. */
+/**
+ * openFDA with lookups kept in D1 for 24 hours, or longer when openFDA fails. A failed
+ * lookup is never kept.
+ */
 export class CachedOpenFda extends OpenFdaClient {
   readonly #db: Db
   readonly #now: () => number
@@ -38,12 +43,23 @@ export class CachedOpenFda extends OpenFdaClient {
       .from(openfdaCache)
       .where(eq(openfdaCache.key, key))
       .limit(1)
-    const cached =
-      row && now - row.fetched_at_ms < CACHE_MS ? CachedLookup.safeParse(row.body) : null
+    const saved = row ? CachedLookup.safeParse(row.body) : null
     // No openFDA search is made for a cached lookup.
-    if (cached?.success) return { ...cached.data, requests: 0, cached: true }
+    if (saved?.success && row && now - row.fetched_at_ms < CACHE_MS) {
+      return { ...saved.data, requests: 0, cached: true }
+    }
 
-    const fresh = await super.canonicalLabels(ingredients)
+    let fresh: CanonicalLabels
+    try {
+      fresh = await super.canonicalLabels(ingredients)
+    } catch (error) {
+      // Labels change a few times a year, so an older lookup beats a failed one.
+      if (error instanceof UpstreamError && saved?.success) {
+        console.warn(`openFDA failed; serving a lookup older than a day for ${key}`)
+        return { ...saved.data, requests: 0, cached: true }
+      }
+      throw error
+    }
     const body = { otc: fresh.otc, prescription: fresh.prescription, matches: fresh.matches }
     await this.#db
       .insert(openfdaCache)

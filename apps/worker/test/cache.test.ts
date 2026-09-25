@@ -84,6 +84,27 @@ describe('the openFDA lookup cache', () => {
     expect(cached.openfda_requests).toBe(0)
   })
 
+  it('serves an old lookup when openFDA fails, rather than a 502', async () => {
+    let now = 1_000
+    let fail = false
+    const flaky: Fetch = async (input, init) =>
+      fail ? new Response('down', { status: 503 }) : openfdaFetch()(input, init)
+    const openfda = cachedOpenFda(flaky, () => now)
+    const first = await openfda.canonicalLabels(['ibuprofen'])
+
+    now += 30 * DAY_MS
+    fail = true
+    const stale = await openfda.canonicalLabels(['ibuprofen'])
+    expect(stale.cached).toBe(true)
+    expect(stale.otc).toEqual(first.otc)
+  })
+
+  it('still fails when openFDA fails and nothing is cached', async () => {
+    const down: Fetch = async () => new Response('down', { status: 503 })
+
+    await expect(cachedOpenFda(down, () => 1_000).canonicalLabels(['ibuprofen'])).rejects.toThrow()
+  })
+
   it('does not cache a failed lookup', async () => {
     let fail = true
     const flaky: Fetch = async (input, init) =>

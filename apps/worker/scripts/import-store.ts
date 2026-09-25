@@ -1,23 +1,21 @@
-// Import the Python judgment store into D1 (M6.6), then check every run is found.
+// Import a judgment store from the retired Python app (`rx_jev.db`) into D1 (M6.6), then
+// check every run is found.
 //
-//   node scripts/import-store.ts [path/to/rx_jev.db] [--remote]
+//   node scripts/import-store.ts path/to/rx_jev.db [--remote]
 //
 // Without --remote it fills the local D1 that `wrangler dev` uses; apply the migrations
 // first with `npx wrangler d1 migrations apply DB --local`. With --remote it writes to the
 // deployed database (after `wrangler login` and `wrangler d1 migrations apply DB --remote`).
 
 import { existsSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { openD1, parseTarget } from './lib/d1.ts'
 import { checkImport, importStore } from './lib/import.ts'
 import { openSource } from './lib/source.ts'
 
-const DEFAULT_SOURCE = resolve(dirname(fileURLToPath(import.meta.url)), '../../api/rx_jev.db')
-
 async function main(): Promise<void> {
   const args = process.argv.slice(2)
-  const path = args.find((a) => !a.startsWith('--')) ?? DEFAULT_SOURCE
+  const path = args.find((a) => !a.startsWith('--'))
+  if (path === undefined) throw new Error('Usage: import-store.ts path/to/rx_jev.db [--remote]')
   if (!existsSync(path)) throw new Error(`No store at ${path}`)
   const target = parseTarget(args)
   const source = openSource(path)

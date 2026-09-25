@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url'
 import { describe, it } from 'vitest'
 import { checkLabel, type LabelGolden } from '../golden.ts'
 
-// The golden file of the whole local store, written by `make golden`. It is not committed
-// (it holds every stored label), so this runs only where it has been generated.
+// The golden file of the whole local store, written by the retired Python app before M6.11.
+// It is not committed (it holds every stored label), so this runs only where it exists.
 const HERE = dirname(fileURLToPath(import.meta.url))
 const STORE = resolve(HERE, '../../../../fixtures/golden/store.jsonl')
 const CUSTOM_QUESTION = 'Can I drink grapefruit juice while taking this?'

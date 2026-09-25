@@ -16,21 +16,19 @@ npm workspaces:
   serves the build and passes `/api/*` to the API Worker.
 - `packages/contract`: the zod schemas of every API request and response, and `suggest`.
   Both apps import them; never redefine an API shape elsewhere.
-- `fixtures/`: recorded RxNorm and openFDA responses, and the golden files from Python.
-- `apps/api`: the Python FastAPI app, kept as the reference until the M6.11 cutover. Do not
-  add features to it.
+- `fixtures/`: recorded RxNorm and openFDA responses, and the golden files written by the
+  retired Python app (removed in M6.11; it is in the Git history).
 - Root `Makefile` wraps every common command. Deployment: `docs/deploy-cloudflare.md`.
 
 ## Commands
 
 ```bash
-make install       # npm install + uv sync
-make db-local      # local D1: migrations, then import apps/api/rx_jev.db
+make install       # npm install
+make db-local      # local D1 migrations (STORE=path/to/rx_jev.db also imports an old store)
 make -j2 dev       # API Worker on :8787, web on :5173 with /api proxied
-make test          # Worker (workerd + Node) + web + Python tests
-make lint          # biome format + oxlint + tsc, and ruff for Python
-make format        # biome format + ruff format
-make golden        # regenerate the Python golden files
+make test          # Worker (workerd + Node) + web tests
+make lint          # biome format + oxlint + tsc
+make format        # biome format
 ```
 
 ## Product guardrails, non-negotiable

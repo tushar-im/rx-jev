@@ -70,7 +70,7 @@ Fixed for every question:
 ### Question catalog, v1
 
 Section names are real openFDA fields, listed in priority order. The code in
-[catalog.py](apps/api/src/rx_jev_api/catalog.py) is the source of truth. The mapper picks the
+[catalog.ts](apps/worker/src/catalog.ts) is the source of truth. The mapper picks the
 column by the sections a label actually has, not its product type metadata. Older
 prescription labels lack `warnings_and_cautions`, so `warnings` and `precautions` stand in
 (shown in italics below).
@@ -92,17 +92,20 @@ prescription labels lack `warnings_and_cautions`, so `warnings` and `precautions
 ## Architecture
 
 ```
-apps/web  (Vite + React, zod)
-   |  /api proxy
-apps/api  (FastAPI)
+apps/web     (Vite + React, zod; served by the web Worker)
+   |  /api/* over a service binding
+apps/worker  (Hono on Cloudflare Workers)
    |-- rxnorm client      name -> ingredient, RxCUI
    |-- openfda client     RxCUI -> canonical label JSON
    |-- label parser       sections -> candidate sentences
    |-- judge              TypeSafe Jev, one request per label
-   |-- store              SQLite via SQLModel
+   |-- store              D1 via Drizzle
 ```
 
-- **Storage.** SQLite through SQLModel for v1. Tables: `label` (set_id, version, raw JSON,
+v1 was a Python FastAPI app with SQLite. M6 ported it to Workers and M6.11 removed it; it
+stays in the Git history.
+
+- **Storage.** D1 through Drizzle. Tables: `label` (set_id, version, raw JSON,
   fetched_at), `judge_run` (one Jev request: set_id, version, prompt_hash, requested model,
   reported model_version, latency, tokens), `judgment` (run, question_id, kind `stance` or
   `evidence`, full distribution, confidence, `reviewed`). Verdicts are derived at read time so
@@ -122,7 +125,7 @@ apps/api  (FastAPI)
   reported version, and the batch script lists every label judged by a version other than
   `validated_model_version` (config, `jev-1.13.0`), whose thresholds were never checked.
   To move stored labels to a new version, re-check the thresholds on it, then re-judge.
-- **External data.** Every openFDA, RxNorm and Jev response is parsed with Pydantic on the
+- **External data.** Every openFDA, RxNorm and Jev response is parsed with zod on the
   way in. Every API response is parsed with zod in the browser.
 - **Errors.** RFC 7807 Problem Details everywhere.
 
@@ -323,7 +326,8 @@ tests), so this is the cheapest time to port.
   - a Cloudflare rate-limiting rule on `/api/labels/*`;
   - a spending cap on the TypeSafe account.
 - **Python stays until cutover.** `apps/api` remains the reference until every port test and
-  golden file passes and the deployed Worker has passed its smoke test. Then it is removed.
+  golden file passes and the deployed Worker has passed its smoke test. Then it is removed
+  (done).
 
 Stories:
 
@@ -381,10 +385,9 @@ Where it stands:
   changes and are judged again when first opened.
 - Additions beyond the Python API: `openfda_cached` in the source trace, `/api/drugs/names`
   for the browser's name list, and the `ETag` on stored answers.
-- M6.11 is prepared: Wrangler configs, `make db-remote`, `make deploy`, `make smoke`, and
-  the steps in `docs/deploy-cloudflare.md`. Creating the Cloudflare resources, the secrets,
-  the safeguards and the deploy need the owner's account. `apps/api` is removed only after
-  the deployed smoke test passes.
+- M6.11 is done. rxjev.cc runs on Workers with the imported store, and the deployed smoke
+  test passed on Tylenol PM, Wellbutrin and Benadryl. `apps/api` is then removed; the golden
+  files it wrote stay in `fixtures/golden/` and still pin the prompt hashes.
 
 ### M7 Label overview
 

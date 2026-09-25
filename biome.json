@@ -19,8 +19,7 @@
       "!**/node_modules",
       "!fixtures/**",
       "!**/dist",
-      "!**/.wrangler",
-      "!apps/api/**"
+      "!**/.wrangler"
     ]
   },
   "formatter": {

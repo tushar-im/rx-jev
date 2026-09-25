@@ -373,3 +373,6 @@ fixtures/golden/store.jsonl
 
 # Wrangler local secrets
 .dev.vars
+
+# The Python template above ignores lib/; the Worker's Node tools live in one.
+!apps/worker/scripts/lib/

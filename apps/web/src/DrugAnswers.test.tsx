@@ -325,23 +325,23 @@ describe('DrugAnswers', () => {
     mockAnswers(200, both)
     render(<DrugAnswers drug={ibuprofen} />)
 
-    const glance = await screen.findByRole('region', { name: 'At a glance' })
+    const clear = await screen.findByRole('region', { name: 'Clear answers' })
     expect(screen.getByRole('heading', { name: 'Purpose' })).toBeInTheDocument()
-    fireEvent.click(within(glance).getByRole('button', { name: /pregnancy/i }))
+    fireEvent.click(within(clear).getByRole('button', { name: /^Pregnancy/ }))
 
     expect(
       screen.getByRole('heading', { name: 'What the label says about pregnancy' }),
     ).toBeInTheDocument()
-    expect(screen.queryByRole('region', { name: 'At a glance' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Clear answers' })).toBeNull()
   })
 
   it('goes back to the overview from an answer', async () => {
     mockAnswers(200, both)
     render(<DrugAnswers drug={ibuprofen} />)
-    const glance = await screen.findByRole('region', { name: 'At a glance' })
-    fireEvent.click(within(glance).getByRole('button', { name: /pregnancy/i }))
+    const clear = await screen.findByRole('region', { name: 'Clear answers' })
+    fireEvent.click(within(clear).getByRole('button', { name: /^Pregnancy/ }))
 
     fireEvent.click(screen.getByRole('button', { name: 'Back to the label overview' }))
-    expect(screen.getByRole('region', { name: 'At a glance' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Clear answers' })).toBeInTheDocument()
   })
 })

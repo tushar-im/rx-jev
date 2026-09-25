@@ -398,9 +398,10 @@ stored, so there is no new data source:
   `purpose` on OTC labels.
 - **Strengths:** `dosage_forms_and_strengths` on newer prescription labels,
   `active_ingredient` on OTC labels; left out when the label has neither.
-- **At a glance:** every question, grouped as in the sidebar, marked "Clear answer" or "No
-  clear answer" and opening its card. It never shows a category: a verdict is only shown on
-  its card, next to its quote and provenance.
+- **Clear answers:** one line naming only the questions this label answers clearly, as
+  links to their cards. The sidebar chips already list every question, so the overview does
+  not repeat them. It never shows a category: a verdict is only shown on its card, next to
+  its quote and provenance.
 - The label's provenance and the DailyMed link, as on every card.
 
 Every text block is one label section, verbatim, captioned with its section name. Long
@@ -414,7 +415,7 @@ sections.
 Stories:
 
 - M7.1 The answers API carries each label's overview sections (`overview` in the contract).
-- M7.2 The overview in the middle column, with the at-a-glance grid.
+- M7.2 The overview in the middle column, with the line of clear answers.
 
 ### GATE 2 Regulatory and wording review
 
